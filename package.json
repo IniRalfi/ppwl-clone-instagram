@@ -1,0 +1,23 @@
+{
+  "name": "ppwl-clone-instagram",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:fe": "bun --cwd frontend dev",
+    "dev:be": "bun --cwd backend dev",
+    "dev": "bun run dev:be & bun run dev:fe",
+    "build:shared": "bun --cwd shared build",
+    "build:fe": "bun --cwd frontend build",
+    "build:be": "bun --cwd backend build",
+    "build": "bun run build:shared && bun run build:fe && bun run build:be",
+    "db:generate": "bun --cwd backend prisma generate",
+    "db:migrate": "bun --cwd backend prisma migrate dev",
+    "db:seed": "bun --cwd backend prisma db seed",
+    "db:studio": "bun --cwd backend prisma studio"
+  }
+}

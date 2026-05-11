@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.bun/
+
+# Build output
+dist/
+.output/
+
+# Environment — JANGAN PERNAH COMMIT!
+.env
+.env.local
+.env.production
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+bun-error.log
+
+# IDE
+.vscode/settings.json
+.idea/
