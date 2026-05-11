@@ -1,120 +1,100 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+/* =========================================
+   DEKLARASI FONT KUSTOM
+========================================= */
+@font-face {
+  font-family: "Instagram Sans Condensed";
+  src: url("/font/instagram-sans-consended-regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+@font-face {
+  font-family: "Instagram Sans Condensed";
+  src: url("/font/instagram-sans-consesded-bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+@theme {
+  /* =========================================
+     1. WARNA DASAR & BACKGROUND (Sudah ada)
+  ========================================= */
+  --color-ig-background: rgb(12, 16, 20);
+  --color-ig-secondary-bg: rgb(37, 41, 46);
+  --color-ig-primary: rgb(0, 149, 246);
+  --color-ig-text: rgb(245, 245, 245);
+
+  /* =========================================
+     2. WARNA FITUR SPESIFIK IG (BARU)
+  ========================================= */
+  /* Direct Message (DM) Bubbles */
+  --color-ig-chat-in: rgb(37, 41, 46); /* ig-incoming-message-bubble */
+  --color-ig-chat-out: rgb(74, 93, 249); /* ig-outgoing-message-bubble */
+
+  /* Badge & Notifikasi */
+  --color-ig-badge: rgb(255, 48, 64); /* Merah notif angka */
+  --color-ig-live: rgb(255, 1, 105); /* Badge LIVE merah muda */
+  --color-ig-close-friends: rgb(28, 209, 79); /* Hijau Close Friends */
+  --color-ig-subscribers: rgb(118, 56, 250); /* Ungu konten eksklusif */
+
+  /* =========================================
+     3. GRADIEN KHAS INSTAGRAM (BARU)
+     Untuk border story atau icon
+  ========================================= */
+  --color-ig-grad-yellow: rgb(255, 214, 0);
+  --color-ig-grad-orange: rgb(255, 122, 0);
+  --color-ig-grad-red: rgb(255, 48, 64);
+  --color-ig-grad-pink: rgb(255, 1, 105);
+  --color-ig-grad-purple: rgb(118, 56, 250);
+
+  /* =========================================
+     4. UKURAN LAYOUT & NAVIGASI (BARU)
+     Gunakan sebagai width/height/margin/padding
+  ========================================= */
+  /* Sidebar Kiri (Navigasi) */
+  --spacing-nav-narrow: 72px; /* Lebar saat di-collapse */
+  --spacing-nav-medium: 244px; /* Lebar standar */
+  --spacing-nav-wide: 335px; /* Lebar di layar besar */
+
+  /* Feed & Kanan */
+  --spacing-feed-sidebar: 319px; /* feed-sidebar-width */
+  --spacing-right-rail: 352px; /* right-rail-width */
+
+  /* Search & Modal */
+  --spacing-search-height: 40px; /* search-box-height */
+  --spacing-modal-min-h: 391px; /* creation-modal-min-height */
+  --spacing-modal-max-h: 898px; /* creation-modal-max-height */
+
+  /* Grid Margin (Jarak antar postingan) */
+  --spacing-grid-desktop: 28px;
+  --spacing-grid-mobile: 2px;
+
+  /* =========================================
+     5. KETEBALAN HURUF / FONT WEIGHT (BARU)
+  ========================================= */
+  --font-weight-ig-light: 300;
+  --font-weight-ig-regular: 400;
+  --font-weight-ig-medium: 500;
+  --font-weight-ig-semibold: 600;
+  --font-weight-ig-bold: 700;
+
+  /* Z-Index (Untuk tumpukan layer modal/popup) */
+  --z-index-modal: 100;
+
+  /* =========================================
+     6. FONT FAMILY (BARU)
+  ========================================= */
+  --font-sans:
+    "Instagram Sans Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
-    @apply bg-background text-foreground;
+    @apply font-sans bg-ig-background text-ig-text antialiased;
   }
 }
