@@ -11,10 +11,22 @@
 
 Kamu lagi mengerjakan **Clone Instagram** sebagai tugas capstone.
 
-- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · ShadCN UI · React Router DOM
-- **Monorepo:** Folder utama ada 3: `frontend/`, `backend/`, `shared/`
-- **Semua file kamu ada di:** `frontend/src/`
-- **Aplikasi sudah berjalan** di `http://localhost:5173` (jalankan `bun dev` dari root)
+- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · React Router DOM
+- **Kamu cukup fokus ke folder:** `frontend/src/`
+- **Backend & Database sudah siap di cloud** — kamu tidak perlu install database apapun.
+- **Cara jalankan:**
+  ```bash
+  # 1. Clone repo (kalau belum)
+  git clone https://github.com/IniRalfi/ppwl-clone-instagram.git
+  cd ppwl-clone-instagram/frontend
+
+  # 2. Install dependencies
+  bun install
+
+  # 3. Jalankan (cukup ini saja!)
+  bun dev
+  ```
+  Buka `http://localhost:5173` di browser. Selesai!
 
 ---
 
@@ -48,19 +60,16 @@ frontend/src/
 
 ---
 
-## 🔗 Tipe Data yang Tersedia
+## 🔗 Tipe Data — Salin Langsung, Jangan Import dari Mana-mana
 
-**Jangan buat tipe data sendiri.** Import dari file yang sudah ada:
+Gunakan tipe data ini langsung di file kamu:
 
 ```typescript
-// Import dari: "../../../shared/src/types/post"
-import type { Post } from "../../../shared/src/types/post";
-
-// Bentuk data Post:
+// Salin tipe ini ke dalam file yang butuh
 interface Post {
   id: string;
-  content: string;           // Caption postingan
-  imageUrl: string | null;   // URL gambar (bisa null kalau belum ada gambar)
+  content: string;      // Caption postingan
+  imageUrl: string | null;
   authorId: string;
   author: {
     id: string;
@@ -68,159 +77,111 @@ interface Post {
     name: string;
     avatarUrl: string | null;
   };
-  _count?: {
-    likes: number;           // Jumlah like
-    comments: number;        // Jumlah komentar
+  _count: {
+    likes: number;
+    comments: number;
   };
-  isLiked?: boolean;         // Apakah user yang login sudah like postingan ini
-  createdAt: string;         // Format ISO: "2026-05-19T07:30:00Z"
-  updatedAt: string;
+  createdAt: string;
 }
-```
-
-**Import auth store** untuk tahu token user yang login:
-```typescript
-import { useAuthStore } from "../store/auth.store";
-// Gunakan: const { user, token } = useAuthStore();
 ```
 
 ---
 
-## 🌐 API Endpoint
+## 🌐 API yang Sudah Siap Digunakan
+
+Backend sudah jalan di cloud. **Tidak perlu install atau jalankan backend apapun.**
 
 ```
-Base URL: import.meta.env.VITE_API_URL
-→ di local: http://localhost:3000
-→ di production: https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws
+Base URL (sudah ada di .env.development):
+→ http://localhost:3000   (saat kamu buka di lokal, Rafli sudah sediakan)
 ```
 
-**Endpoint Feed:**
-```
-GET {VITE_API_URL}/posts
-Response: { data: Post[] }
-```
+> ✅ API sudah diatur otomatis via file `.env.development`. Kamu **tidak perlu ubah apapun**.
 
-**Contoh fetch:**
+Cara ambil data postingan:
 ```typescript
-const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
+// Ambil dari environment variable — sudah otomatis
+const API_URL = import.meta.env.VITE_API_URL;
+
+const res = await fetch(`${API_URL}/posts`);
 const json = await res.json();
-const posts: Post[] = json.data; // Array postingan, urut dari terbaru
+// json.data → array of Post
+```
+
+**Endpoint yang kamu butuhkan:**
+```
+GET {VITE_API_URL}/posts       → Ambil semua postingan
+Response: { data: Post[] }
 ```
 
 ---
 
 ## 📋 TODO LIST — Kerjakan Urut dari Atas
 
-### ✅ Langkah 1 — `PostCard.tsx` (Kartu Satu Postingan)
+### ✅ Langkah 1 — `PostCard.tsx` (Komponen Satu Kartu Postingan)
 
-Komponen yang menampilkan **satu postingan** persis seperti Instagram.
+Komponen satu item postingan di feed — persis seperti kartu di Instagram.
 
-**Tampilan (urut dari atas ke bawah):**
-1. **Header:** Foto profil (avatar) + username + tombol "•••" (opsional)
-2. **Gambar:** Foto postingan (jika ada `imageUrl`)
-3. **Aksi:** Tombol like (❤️), tombol komentar (💬), tombol share (↗)
-4. **Jumlah Like:** Teks "X suka"
-5. **Caption:** `username` **bold** lalu teks `content`
-6. **Komentar:** Teks "Lihat semua X komentar" yang bisa diklik ke `/posts/:id`
-7. **Waktu:** Format relatif, ex: "2 jam lalu"
-
-**Nama props & struktur yang harus dipakai:**
+**Props yang harus diterima:**
 ```typescript
 // frontend/src/components/post/PostCard.tsx
-import type { Post } from "../../../../shared/src/types/post"; // 4 level naik ke root!
-import { Heart, MessageCircle, Send } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
-
 interface PostCardProps {
-  post: Post;
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+  imageUrls: string[];     // URL gambar postingan (bisa kosong)
+  caption: string;
+  likesCount: number;
+  timeAgo: string;
 }
+```
 
-export function PostCard({ post }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(post._count?.likes ?? 0);
+**Yang harus tampil di kartu:**
+- Avatar + username di bagian atas
+- Gambar postingan (jika ada), atau placeholder kotak abu jika tidak ada gambar
+- Ikon ❤️ dengan jumlah like, ikon 💬 dengan jumlah komentar
+- Caption di bawah
+- Teks waktu posting (contoh: "19 Mei")
+- Klik jumlah komentar atau ikon komentar → navigasi ke `/posts/:id`
 
-  const handleLike = () => {
-    if (isLiked) {
-      setIsLiked(false);
-      setLikeCount((prev) => prev - 1);
-    } else {
-      setIsLiked(true);
-      setLikeCount((prev) => prev + 1);
-    }
-    // TODO: nanti hit API like/unlike
-  };
+**Struktur dasar:**
+```typescript
+import { Link } from "react-router-dom";
 
+export function PostCard({ id, username, avatarUrl, imageUrls, caption, likesCount, timeAgo }: PostCardProps) {
   return (
-    <article className="border-b border-neutral-800 pb-4 mb-2">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-ig-secondary-bg flex items-center justify-center text-ig-text text-sm font-semibold">
-          {post.author.name.charAt(0).toUpperCase()}
+    <div className="border border-neutral-800 rounded-md bg-ig-background">
+      {/* Header: Avatar + Username */}
+      <div className="flex items-center p-3 gap-3">
+        <div className="w-8 h-8 rounded-full bg-ig-secondary-bg overflow-hidden">
+          {avatarUrl
+            ? <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center text-ig-text text-xs font-bold">{username[0]?.toUpperCase()}</div>
+          }
         </div>
-        {/* Username */}
-        <span className="text-ig-text font-semibold text-sm">
-          {post.author.username}
-        </span>
+        <span className="text-ig-text font-semibold text-sm">{username}</span>
       </div>
 
-      {/* Gambar Postingan */}
-      {post.imageUrl && (
-        <img
-          src={post.imageUrl}
-          alt={`Postingan dari ${post.author.username}`}
-          className="w-full object-cover max-h-[600px]"
-        />
+      {/* Gambar (jika ada) */}
+      {imageUrls[0] && (
+        <img src={imageUrls[0]} alt="post" className="w-full object-cover" />
       )}
 
-      {/* Tombol Aksi */}
-      <div className="flex items-center gap-4 px-4 pt-3">
-        <button
-          onClick={handleLike}
-          aria-label={isLiked ? "Hapus like" : "Like postingan"}
-          className="transition-transform active:scale-90"
-        >
-          <Heart
-            className={`w-6 h-6 ${isLiked ? "fill-ig-badge text-ig-badge" : "text-ig-text"}`}
-          />
-        </button>
-        <Link to={`/posts/${post.id}`} aria-label="Lihat komentar">
-          <MessageCircle className="w-6 h-6 text-ig-text" />
-        </Link>
-        <Send className="w-6 h-6 text-ig-text" />
+      {/* Aksi: Like + Komentar */}
+      <div className="p-3 flex gap-4">
+        <button className="text-ig-text">❤️ {likesCount}</button>
+        <Link to={`/posts/${id}`} className="text-ig-text">💬 Komentar</Link>
       </div>
-
-      {/* Jumlah Like */}
-      <p className="px-4 pt-2 text-ig-text text-sm font-semibold">
-        {likeCount} suka
-      </p>
 
       {/* Caption */}
-      <p className="px-4 pt-1 text-ig-text text-sm">
-        <span className="font-semibold mr-1">{post.author.username}</span>
-        {post.content}
-      </p>
-
-      {/* Link ke komentar */}
-      {(post._count?.comments ?? 0) > 0 && (
-        <Link
-          to={`/posts/${post.id}`}
-          className="px-4 pt-1 block text-neutral-500 text-sm"
-        >
-          Lihat semua {post._count?.comments} komentar
-        </Link>
-      )}
+      <div className="px-3 pb-2">
+        <span className="text-ig-text text-sm font-semibold mr-1">{username}</span>
+        <span className="text-ig-text text-sm">{caption}</span>
+      </div>
 
       {/* Waktu */}
-      <p className="px-4 pt-1 text-neutral-500 text-xs uppercase">
-        {new Date(post.createdAt).toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-      </p>
-    </article>
+      <p className="px-3 pb-3 text-neutral-500 text-xs">{timeAgo}</p>
+    </div>
   );
 }
 ```
@@ -229,106 +190,65 @@ export function PostCard({ post }: PostCardProps) {
 
 ### ✅ Langkah 2 — `HomePage.tsx` (Halaman Feed)
 
-Halaman yang menampilkan **daftar semua postingan** (scroll ke bawah seperti IG).
+Halaman utama yang menampilkan daftar postingan dari API.
 
-**Nama state & struktur yang harus dipakai:**
 ```typescript
 // frontend/src/pages/HomePage.tsx
-import { useEffect, useState } from "react";
-import type { Post } from "../../../shared/src/types/post";
-import { PostCard } from "../components/post/PostCard";
+import { useEffect, useState } from 'react';
+import { PostCard } from '../components/post/PostCard';
+
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+}
 
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
-        if (!res.ok) throw new Error("Gagal memuat postingan");
-        const json = await res.json();
-        setPosts(json.data);
-      } catch (err) {
-        setError("Tidak bisa memuat postingan. Coba lagi nanti.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPosts();
+    fetch(`${import.meta.env.VITE_API_URL}/posts`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.data) setPosts(json.data);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <p className="text-neutral-500 animate-pulse">Memuat postingan...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center py-16">
-        <p className="text-ig-badge">{error}</p>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex justify-center py-20 text-ig-text">Memuat...</div>;
 
   return (
-    <div className="max-w-[468px] mx-auto">
-      {posts.length === 0 ? (
-        <p className="text-neutral-500 text-center py-16">
-          Belum ada postingan.
-        </p>
-      ) : (
-        posts.map((post) => <PostCard key={post.id} post={post} />)
-      )}
+    <div className="min-h-screen bg-ig-background flex flex-col items-center pb-20 pt-4">
+      <div className="w-full max-w-[470px] flex flex-col gap-4 px-3">
+        {posts.map(post => (
+          <PostCard
+            key={post.id}
+            id={post.id}
+            username={post.author.username}
+            avatarUrl={post.author.avatarUrl}
+            imageUrls={post.imageUrl ? [post.imageUrl] : []}
+            caption={post.content}
+            likesCount={post._count.likes}
+            timeAgo={new Date(post.createdAt).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' })}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 ```
-
----
-
-### ✅ Langkah 3 — Tambah Header Sementara di HomePage
-
-Sementara belum ada Sidebar dari Salsabila, tambahkan header di atas feed. **ThemeToggle sudah tersedia**, tinggal dipakai:
-
-```typescript
-// Tambahkan import ini di HomePage.tsx:
-import { useAuthStore } from "../store/auth.store";
-import { ThemeToggle } from "../components/common/ThemeToggle";
-
-// Di dalam komponen, sebelum return:
-const logout = useAuthStore((state) => state.logout);
-
-// Wrap return dengan ini:
-return (
-  <div className="min-h-screen bg-ig-background">
-    {/* Header sticky sementara */}
-    <div className="flex justify-between items-center px-4 py-3 border-b border-neutral-800 sticky top-0 bg-ig-background z-10">
-      <span className="text-ig-text font-semibold text-lg">Instagram</span>
-      <div className="flex items-center gap-2">
-        <ThemeToggle />   {/* ← Tombol dark/light mode */}
-        <button
-          onClick={logout}
-          className="text-ig-primary text-sm font-semibold"
-        >
-          Keluar
-        </button>
-      </div>
-    </div>
-    {/* Feed di sini */}
-    <div className="max-w-[468px] mx-auto">
-      {posts.map((post) => <PostCard key={post.id} post={post} />)}
-    </div>
-  </div>
-);
-```
-
-> **Catatan:** Tombol ini nanti digantikan Sidebar Salsabila. `ThemeToggle` akan tetap ada di Sidebar.
 
 ---
 
@@ -338,29 +258,27 @@ return (
 ```bash
 git checkout dev
 git pull origin dev
-git checkout -b adella/homepage-feed
+git checkout -b adella/homepage-postcard
 ```
 
 ### 2. Commit setiap selesai 1 langkah
 ```bash
 git add .
 git commit -m "feat(post): add PostCard component"
-# Lanjut ke langkah 2, lalu:
-git commit -m "feat(home): add HomePage with posts feed"
-# Lanjut ke langkah 3, lalu:
-git commit -m "feat(home): add temporary logout button"
+# Lanjut langkah 2:
+git commit -m "feat(home): add HomePage with API fetch"
 ```
 
 ### 3. Push ke branch kamu
 ```bash
-git push origin adella/homepage-feed
+git push origin adella/homepage-postcard
 ```
 
 ### 4. Buat Pull Request di GitHub
 1. Buka **github.com/IniRalfi/ppwl-clone-instagram**
 2. Klik **"Compare & pull request"** yang muncul otomatis
 3. **Base branch:** `dev` ← PASTIKAN INI! (bukan `main`)
-4. **Title PR:** `feat: HomePage feed & PostCard component (Adella)`
+4. **Title PR:** `feat: HomePage & PostCard (Adella)`
 5. Klik **"Create pull request"**
 6. Kabari Rafli di grup — dia yang review dan merge
 
@@ -368,38 +286,27 @@ git push origin adella/homepage-feed
 
 ---
 
-## ✅ Cara Test Komponen
+## ✅ Cara Test
 
-### Test PostCard
-1. Jalankan `bun dev` dari folder root
-2. Login di `http://localhost:5173/login`
-3. Setelah login → otomatis redirect ke `/` (HomePage)
-4. **Yang harus muncul:**
-   - Daftar postingan dari backend
-   - Setiap postingan ada: username, gambar (kalau ada), tombol like, caption
-5. **Test like:**
-   - Klik tombol ❤️ → ikon jadi merah, angka like bertambah 1
-   - Klik lagi → ikon balik putih, angka berkurang 1
+1. Jalankan `bun dev` dari folder `frontend/`
+2. Buka `http://localhost:5173`
+3. **Yang harus muncul:** Daftar kartu postingan dengan gambar, username, caption, jumlah like
+4. **Klik ikon komentar** → harus pindah ke halaman `/posts/:id`
 
-### Test HomePage
-- Kalau postingan kosong → muncul teks "Belum ada postingan."
-- Kalau API gagal → muncul pesan error berwarna merah
-- Kalau loading → muncul teks berkedip "Memuat postingan..."
-
-### Kalau Ada Error di Terminal atau Browser
-1. Copy seluruh pesan error (teks merah)
-2. Paste ke AI bersama kode file yang bermasalah
-3. Ketik: _"Ini error yang muncul di proyek React TypeScript Vite, tolong bantu perbaiki"_
+### Kalau Ada Error di Terminal
+1. Copy seluruh pesan error
+2. Paste ke AI bersama kode file yang error
+3. Ketik: _"Ini error di proyek React TypeScript Vite, tolong bantu perbaiki"_
 
 ---
 
 ## ❓ FAQ
 
-**Q: `import type { Post }` error "module not found"?**
-A: Jalankan `bun install` dari folder **root** monorepo, bukan dari dalam `frontend/`.
+**Q: Harus install database dulu?**
+A: **TIDAK PERLU.** Backend dan database sudah jalan di cloud. Kamu cukup jalankan `bun dev` dari folder `frontend/`.
 
-**Q: Gambar tidak muncul, `imageUrl` kosong?**
-A: Database mungkin belum ada data dengan gambar. Normal — komponen sudah handle kasus `imageUrl: null` dengan tidak menampilkan `<img>`.
+**Q: Kenapa data tidak muncul (loading terus)?**
+A: Pastikan kamu menjalankan `bun dev` dari folder `frontend/`, bukan dari root atau `backend/`. Cek juga file `.env.development` sudah ada.
 
-**Q: Warna `text-ig-badge` atau `fill-ig-badge` tidak jalan?**
-A: Pastikan kamu tidak salah tulis class-nya. Tailwind v4 menggunakan CSS variable — class `fill-ig-badge` harus ada di `@theme` di `index.css`.
+**Q: `import.meta.env.VITE_API_URL` undefined?**
+A: File `.env.development` harus ada di dalam folder `frontend/`. Tanya Rafli untuk minta filenya kalau belum ada.

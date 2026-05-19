@@ -11,10 +11,22 @@
 
 Kamu lagi mengerjakan **Clone Instagram** sebagai tugas capstone.
 
-- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · ShadCN UI · React Router DOM
-- **Monorepo:** Folder utama ada 3: `frontend/`, `backend/`, `shared/`
-- **Semua file kamu ada di:** `frontend/src/`
-- **Aplikasi sudah berjalan** di `http://localhost:5173` (jalankan `bun dev` dari root)
+- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · React Router DOM
+- **Kamu cukup fokus ke folder:** `frontend/src/`
+- **Backend & Database sudah siap di cloud** — kamu tidak perlu install database apapun.
+- **Cara jalankan:**
+  ```bash
+  # 1. Clone repo (kalau belum)
+  git clone https://github.com/IniRalfi/ppwl-clone-instagram.git
+  cd ppwl-clone-instagram/frontend
+
+  # 2. Install dependencies
+  bun install
+
+  # 3. Jalankan (cukup ini saja!)
+  bun dev
+  ```
+  Buka `http://localhost:5173` di browser. Selesai!
 
 ---
 
@@ -46,65 +58,61 @@ frontend/src/
 
 ---
 
-## 🔗 Tipe Data yang Tersedia
+## 🔗 Tipe Data — Salin Langsung, Jangan Import dari Mana-mana
 
-**Jangan buat tipe data sendiri.** Import dari path berikut:
+Gunakan tipe data ini langsung di file kamu (salin ke dalam file yang membutuhkannya):
 
 ```typescript
-// Dari pages/ProfilePage.tsx (3 level ke root):
-import type { User } from "../../../shared/src/types/user";
-import type { Post } from "../../../shared/src/types/post";
-
-// Dari components/common/Avatar.tsx (4 level ke root):
-import type { User } from "../../../../shared/src/types/user";
-```
-
-**Bentuk tipe `User`:**
-```typescript
+// Tipe User — salin ke dalam ProfilePage.tsx
 interface User {
   id: string;
   email: string;
   username: string;
   name: string;
-  avatarUrl: string | null;   // URL foto profil (bisa null)
-  bio: string | null;         // Bio pengguna (bisa null)
-  provider: string;
-  postCount: number;          // Jumlah post
-  commentCount: number;       // Jumlah komentar
+  avatarUrl: string | null;
+  bio: string | null;
+}
+
+// Tipe Post — salin ke dalam ProfilePage.tsx
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  authorId: string;
+  _count?: {
+    likes: number;
+    comments: number;
+  };
   createdAt: string;
-  updatedAt: string;
 }
 ```
 
-**Data user yang login** sudah tersimpan di auth store:
+**Data user yang login** sudah tersimpan di auth store (sudah dibuat Rafli):
 ```typescript
 import { useAuthStore } from "../store/auth.store";
-const { user } = useAuthStore();
-// user.name, user.username, user.avatarUrl, dll
+const { user, logout } = useAuthStore();
+// user.name, user.username, user.avatarUrl, user.bio, dll
 ```
 
 ---
 
-## 🌐 API Endpoint
+## 🌐 API yang Sudah Siap Digunakan
 
-```
-Base URL: import.meta.env.VITE_API_URL
-→ di local: http://localhost:3000
-→ di production: https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws
+Backend sudah jalan di cloud. **Tidak perlu install atau jalankan backend apapun.**
+
+```typescript
+// Ambil semua postingan lalu filter berdasarkan authorId
+const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
+const json = await res.json();
+// Filter hanya postingan milik user yang login:
+const myPosts = json.data.filter((post: Post) => post.authorId === user.id);
 ```
 
-**Endpoint yang dipakai:**
+**Endpoint yang digunakan:**
 ```
-GET {VITE_API_URL}/posts
+GET {VITE_API_URL}/posts     → Ambil semua postingan
 Response: { data: Post[] }
-
-→ Saring (filter) hasilnya di frontend untuk hanya tampilkan post milik user sendiri:
-  posts.filter(post => post.authorId === user.id)
 ```
-
-> **Catatan:** Backend belum punya endpoint `GET /users/:id` untuk profil spesifik.
-> Gunakan data user dari `useAuthStore()` (sudah ada sejak login) untuk header profil.
-> Untuk daftar postingan, fetch `/posts` lalu filter berdasarkan `authorId`.
 
 ---
 
@@ -119,23 +127,22 @@ Komponen foto profil bulat yang bisa dipakai di mana saja (di komentar, header p
 - Jika tidak ada → tampilkan inisial nama (huruf pertama) di lingkaran berwarna
 - Ada 3 ukuran: `sm` (komentar), `md` (default/PostCard), `lg` (halaman profil)
 
-**Nama props & struktur:**
 ```typescript
 // frontend/src/components/common/Avatar.tsx
 
 type AvatarSize = "sm" | "md" | "lg";
 
 interface AvatarProps {
-  name: string;                 // Nama lengkap (untuk inisial)
-  avatarUrl?: string | null;    // URL foto (opsional)
-  size?: AvatarSize;            // Ukuran (default: "md")
-  className?: string;           // Class tambahan jika perlu
+  name: string;
+  avatarUrl?: string | null;
+  size?: AvatarSize;
+  className?: string;
 }
 
 const sizeClasses: Record<AvatarSize, string> = {
-  sm: "w-8 h-8 text-xs",      // Kecil — untuk komentar
-  md: "w-10 h-10 text-sm",    // Sedang — untuk PostCard
-  lg: "w-20 h-20 text-2xl",   // Besar — untuk halaman profil
+  sm: "w-8 h-8 text-xs",
+  md: "w-10 h-10 text-sm",
+  lg: "w-20 h-20 text-2xl",
 };
 
 export function Avatar({ name, avatarUrl, size = "md", className = "" }: AvatarProps) {
@@ -165,16 +172,13 @@ export function Avatar({ name, avatarUrl, size = "md", className = "" }: AvatarP
 
 **Cara pakai Avatar di komponen lain:**
 ```typescript
-import { Avatar } from "../common/Avatar";
+import { Avatar } from "../components/common/Avatar";
 
 // Di PostCard (ukuran medium):
 <Avatar name={post.author.name} avatarUrl={post.author.avatarUrl} size="md" />
 
 // Di halaman profil (ukuran besar):
 <Avatar name={user.name} avatarUrl={user.avatarUrl} size="lg" />
-
-// Di komentar (ukuran kecil):
-<Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} size="sm" />
 ```
 
 ---
@@ -187,19 +191,24 @@ Halaman profil persis seperti Instagram — header di atas, grid postingan di ba
 1. **Header Profil:**
    - Kiri: Avatar besar (`size="lg"`)
    - Kanan: Username (bold), Nama, Bio
-   - Bawah kanan: Statistik — jumlah **Postingan · Disukai · Komentar**
-2. **Tombol Edit Profil** (sementara tidak perlu fungsional)
+   - Bawah: Jumlah postingan
+2. **Tombol Keluar** (untuk logout)
 3. **Grid 3 Kolom** — foto-foto postingan user (klik → ke `/posts/:id`)
 
-**Nama state & struktur:**
 ```typescript
 // frontend/src/pages/ProfilePage.tsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { Avatar } from "../components/common/Avatar";
-import { apiClient } from "../services/api.client";
-import type { Post } from "../../../shared/src/types/post";
+
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  authorId: string;
+  _count?: { likes: number; comments: number; };
+}
 
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
@@ -209,25 +218,21 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchMyPosts = async () => {
-      try {
-        const json = await apiClient.get<{ data: Post[] }>("/posts");
-        // Filter hanya postingan milik user yang login
-        const filtered = json.data.filter((post) => post.authorId === user.id);
-        setMyPosts(filtered);
-      } catch {
-        // Abaikan error — tetap tampilkan profil dengan grid kosong
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMyPosts();
+    fetch(`${import.meta.env.VITE_API_URL}/posts`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.data) {
+          // Filter hanya postingan milik user yang sedang login
+          const filtered = json.data.filter((post: Post) => post.authorId === user.id);
+          setMyPosts(filtered);
+        }
+      })
+      .finally(() => setIsLoading(false));
   }, [user]);
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-ig-background">
         <p className="text-neutral-500">Silakan login terlebih dahulu.</p>
       </div>
     );
@@ -235,17 +240,19 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-ig-background max-w-[935px] mx-auto px-4">
-      {/* ── Header Profil ───────────────────────────── */}
+      {/* ── Header Profil ── */}
       <div className="flex items-start gap-8 py-8 border-b border-neutral-800">
         {/* Avatar Besar */}
         <Avatar name={user.name} avatarUrl={user.avatarUrl} size="lg" />
 
         {/* Info Profil */}
         <div className="flex-1">
-          {/* Username + Edit */}
+          {/* Username + Tombol Keluar */}
           <div className="flex items-center gap-4 mb-3">
             <h1 className="text-ig-text text-xl font-semibold">{user.username}</h1>
-            <button className="px-4 py-1.5 text-ig-text text-sm font-semibold bg-ig-secondary-bg rounded-lg hover:bg-neutral-700 transition-colors">
+            <button
+              className="px-4 py-1.5 text-ig-text text-sm font-semibold bg-ig-secondary-bg rounded-lg hover:bg-neutral-700 transition-colors"
+            >
               Edit Profil
             </button>
             <button
@@ -258,51 +265,36 @@ export default function ProfilePage() {
 
           {/* Statistik */}
           <div className="flex gap-6 mb-3">
-            <div className="text-center">
+            <div>
               <span className="text-ig-text font-semibold">{myPosts.length}</span>
               <span className="text-ig-text text-sm ml-1">postingan</span>
-            </div>
-            <div className="text-center">
-              <span className="text-ig-text font-semibold">{user.postCount ?? 0}</span>
-              <span className="text-ig-text text-sm ml-1">disukai</span>
-            </div>
-            <div className="text-center">
-              <span className="text-ig-text font-semibold">{user.commentCount ?? 0}</span>
-              <span className="text-ig-text text-sm ml-1">komentar</span>
             </div>
           </div>
 
           {/* Nama + Bio */}
           <p className="text-ig-text text-sm font-semibold">{user.name}</p>
-          {user.bio && (
+          {user.bio ? (
             <p className="text-ig-text text-sm mt-1 whitespace-pre-line">{user.bio}</p>
-          )}
-          {!user.bio && (
+          ) : (
             <p className="text-neutral-600 text-sm mt-1 italic">Belum ada bio.</p>
           )}
         </div>
       </div>
 
-      {/* ── Grid Postingan ──────────────────────────── */}
+      {/* ── Grid Postingan ── */}
       <div className="py-4">
         {isLoading ? (
-          <p className="text-neutral-500 text-sm text-center py-8 animate-pulse">
-            Memuat postingan...
-          </p>
+          <p className="text-neutral-500 text-sm text-center py-8">Memuat postingan...</p>
         ) : myPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
             <span className="text-4xl">📷</span>
             <p className="text-ig-text font-semibold">Belum Ada Postingan</p>
             <p className="text-neutral-500 text-sm">Mulai bagikan foto pertamamu!</p>
-            <Link
-              to="/create"
-              className="mt-2 text-ig-primary text-sm font-semibold hover:opacity-80"
-            >
+            <Link to="/create" className="mt-2 text-ig-primary text-sm font-semibold hover:opacity-80">
               Buat Postingan
             </Link>
           </div>
         ) : (
-          /* Grid 3 kolom — max 2 post karena limit capstone */
           <div className="grid grid-cols-3 gap-[2px]">
             {myPosts.map((post) => (
               <Link
@@ -317,7 +309,6 @@ export default function ProfilePage() {
                     className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
                   />
                 ) : (
-                  /* Placeholder kalau tidak ada gambar */
                   <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
                     <span className="text-neutral-600 text-xs text-center px-2 line-clamp-3">
                       {post.content}
@@ -325,14 +316,10 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                {/* Overlay info saat hover */}
+                {/* Overlay hover */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <span className="text-white text-sm font-semibold">
-                    ❤️ {post._count?.likes ?? 0}
-                  </span>
-                  <span className="text-white text-sm font-semibold">
-                    💬 {post._count?.comments ?? 0}
-                  </span>
+                  <span className="text-white text-sm font-semibold">❤️ {post._count?.likes ?? 0}</span>
+                  <span className="text-white text-sm font-semibold">💬 {post._count?.comments ?? 0}</span>
                 </div>
               </Link>
             ))}
@@ -358,9 +345,8 @@ git checkout -b olivia/profile-avatar
 ### 2. Commit setiap selesai 1 langkah
 ```bash
 git add .
-git commit -m "feat(avatar): add reusable Avatar component with size variants"
-# Lanjut langkah 2:
-git commit -m "feat(profile): add ProfilePage with header and post grid"
+git commit -m "feat(avatar): add reusable Avatar component"
+git commit -m "feat(profile): add ProfilePage with post grid"
 ```
 
 ### 3. Push ke branch kamu
@@ -380,31 +366,19 @@ git push origin olivia/profile-avatar
 
 ---
 
-## ✅ Cara Test Komponen
+## ✅ Cara Test
 
-### Test Avatar
-1. Sementara, tambahkan di `ProfilePage.tsx` atau mana saja:
-   ```tsx
-   import { Avatar } from "../components/common/Avatar";
-   <Avatar name="Olivia Naura" size="sm" />
-   <Avatar name="Olivia Naura" size="md" />
-   <Avatar name="Olivia Naura" size="lg" />
-   ```
-2. **Yang harus muncul:** 3 lingkaran berbeda ukuran dengan huruf "O"
-3. Coba tambahkan `avatarUrl="https://picsum.photos/100"` → harus tampil gambar
-
-### Test ProfilePage
-1. Login → buka `http://localhost:5173/profile`
-2. **Yang harus muncul:**
-   - Avatar besar di kiri (inisial nama atau foto)
+1. Jalankan `bun dev` dari folder `frontend/`
+2. Login → buka `http://localhost:5173/profile`
+3. **Yang harus muncul:**
+   - Avatar besar di kiri (inisial nama atau foto dari Google)
    - Username, nama, bio (atau teks "Belum ada bio.")
-   - Statistik: postingan, disukai, komentar
    - Grid foto postingan (atau empty state dengan tombol "Buat Postingan")
-3. **Klik foto di grid** → harus pindah ke `/posts/:id`
-4. **Klik Keluar** → harus logout dan redirect ke `/login`
+4. **Klik foto di grid** → harus pindah ke `/posts/:id`
+5. **Klik Keluar** → harus logout dan redirect ke `/login`
 
-### Kalau Ada Error di Terminal
-1. Copy seluruh pesan error (teks merah)
+### Kalau Ada Error
+1. Copy seluruh pesan error
 2. Paste ke AI bersama kode file yang error
 3. Ketik: _"Ini error di proyek React TypeScript Vite, tolong bantu perbaiki"_
 
@@ -412,14 +386,14 @@ git push origin olivia/profile-avatar
 
 ## ❓ FAQ
 
-**Q: `user.bio` dan `user.postCount` tidak ada / undefined?**
-A: Data dari `useAuthStore()` berasal dari response login. Jika backend belum mengembalikan field itu, gunakan fallback: `user.bio ?? null` dan `user.postCount ?? 0`.
+**Q: Harus install database atau backend dulu?**
+A: **TIDAK PERLU.** Backend dan database sudah jalan di cloud. Kamu cukup jalankan `bun dev` dari folder `frontend/`.
+
+**Q: `user.bio` undefined?**
+A: Gunakan fallback: `user.bio ?? null`. Data dari store login mungkin tidak semua field terisi.
 
 **Q: Grid tidak muncul, `myPosts` selalu kosong?**
-A: Pastikan `user.id` sudah ada di store. Print `console.log(user)` dulu untuk cek. Mungkin data seed belum punya post dari user yang sedang login.
+A: Pastikan kamu sudah login dengan akun yang punya postingan. Print `console.log(user.id)` dulu untuk cek ID user-nya.
 
-**Q: Import `Avatar` dari `../../components/common/Avatar` error?**
-A: Pastikan path relatif sudah benar. Dari `pages/ProfilePage.tsx` → ke `components/common/Avatar` pathnya adalah `"../components/common/Avatar"`.
-
-**Q: Gambar di grid tidak muncul (imageUrl null)?**
-A: Normal — data seed mungkin belum ada gambar. Komponen sudah handle kasus ini dengan placeholder teks caption.
+**Q: Import Avatar error "module not found"?**
+A: Pastikan path-nya sudah benar. Dari `pages/ProfilePage.tsx` ke `components/common/Avatar` pathnya adalah `"../components/common/Avatar"`.

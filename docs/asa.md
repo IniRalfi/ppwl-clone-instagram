@@ -11,10 +11,22 @@
 
 Kamu lagi mengerjakan **Clone Instagram** sebagai tugas capstone.
 
-- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · ShadCN UI · React Router DOM
-- **Monorepo:** Folder utama ada 3: `frontend/`, `backend/`, `shared/`
-- **Semua file kamu ada di:** `frontend/src/`
-- **Aplikasi sudah berjalan** di `http://localhost:5173` (jalankan `bun dev` dari root)
+- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · React Router DOM
+- **Kamu cukup fokus ke folder:** `frontend/src/`
+- **Backend & Database sudah siap di cloud** — kamu tidak perlu install database apapun.
+- **Cara jalankan:**
+  ```bash
+  # 1. Clone repo (kalau belum)
+  git clone https://github.com/IniRalfi/ppwl-clone-instagram.git
+  cd ppwl-clone-instagram/frontend
+
+  # 2. Install dependencies
+  bun install
+
+  # 3. Jalankan (cukup ini saja!)
+  bun dev
+  ```
+  Buka `http://localhost:5173` di browser. Selesai!
 
 ---
 
@@ -31,7 +43,7 @@ Proyek ini punya warna kustom sendiri. **Jangan gunakan warna Tailwind biasa** s
 | `text-ig-badge` | `rgb(255, 48, 64)` | Merah (badge notif) |
 | `bg-ig-badge` | `rgb(255, 48, 64)` | Background badge merah |
 
-**Font:** Sudah di-set di `globals.css`. Tidak perlu install font baru.
+**Font:** Sudah di-set otomatis. Tidak perlu install font baru.
 
 ---
 
@@ -52,171 +64,82 @@ frontend/src/
 
 ---
 
-## 🔗 Tipe Data yang Tersedia
+## 🔗 Tipe Data — Salin Langsung, Jangan Import dari Mana-mana
 
-File ini sudah ada di proyek, **import dari sini, jangan buat ulang:**
+Gunakan tipe data ini langsung di file kamu (salin ke dalam file yang membutuhkannya):
 
 ```typescript
-// Import dari: "../../../shared/src/types/notification"
-export type NotificationType = "like" | "comment" | "reply";
-
-export interface Notification {
+interface Notification {
   id: string;
-  type: NotificationType;    // "like" | "comment" | "reply"
-  message: string;           // Contoh: "Adella menyukai postinganmu"
-  isRead: boolean;           // true = sudah dibaca, false = belum
-  refId: string | null;      // ID postingan yang terkait (boleh null)
+  type: "like" | "comment" | "follow" | "welcome";
+  message: string;
+  isRead: boolean;
   receiverId: string;
-  createdAt: string;         // Format ISO string, ex: "2026-05-19T07:30:00Z"
+  refId: string | null;
+  createdAt: string;
 }
-```
-
-**Import auth store** untuk tahu siapa user yang login:
-```typescript
-import { useAuthStore } from "../store/auth.store";
-// Gunakan: const { user, token } = useAuthStore();
 ```
 
 ---
 
-## 🌐 API Endpoint
+## 🌐 API yang Sudah Siap Digunakan
 
-Semua request ke URL berikut (sudah di-set di `.env.development`):
+Backend sudah jalan di cloud. **Tidak perlu install atau jalankan backend apapun.**
 
-```
-Base URL: import.meta.env.VITE_API_URL
-→ di local: http://localhost:3000
-→ di production: https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws
-```
-
-**Endpoint Notifikasi:**
-```
-GET {VITE_API_URL}/notifications
-Response: { data: Notification[] }
-```
-
-**Contoh fetch:**
 ```typescript
-const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`);
+// Cara ambil data notifikasi
+const API_URL = import.meta.env.VITE_API_URL;
+
+const res = await fetch(`${API_URL}/notifications`);
 const json = await res.json();
-const notifications: Notification[] = json.data;
+// json.data → array of Notification
+```
+
+**Endpoint yang kamu butuhkan:**
+```
+GET {VITE_API_URL}/notifications    → Ambil semua notifikasi
+Response: { data: Notification[] }
 ```
 
 ---
 
 ## 📋 TODO LIST — Kerjakan Urut dari Atas
 
-### ✅ Langkah 1 — `Sidebar.tsx` (Navigasi Kiri Desktop)
+### ✅ Langkah 1 — `BottomNav.tsx` (Navigasi Bawah untuk HP)
 
-Buat komponen navigasi kiri persis seperti Instagram di desktop.
+Navigasi yang **hanya muncul di layar kecil** (HP). Letaknya di bagian paling bawah layar (fixed).
 
-**Spesifikasi:**
-- Gunakan library ikon: `lucide-react` (sudah terinstall)
-- Menu yang ada (urut dari atas):
-  1. **Logo** Instagram (teks "Instagram" dengan font `font-["Instagram_Sans_Condensed"]`)
-  2. **Home** → ikon `Home`, navigasi ke `/`
-  3. **Search** → ikon `Search` (tidak perlu fungsional dulu, cukup tampil)
-  4. **Create** → ikon `PlusSquare`, navigasi ke `/create`
-  5. **Notifications** → ikon `Heart`, navigasi ke `/notifications`
-  6. **Profile** → ikon `User`, navigasi ke `/profile`
-  7. **Logout** → ikon `LogOut`, di paling bawah
-
-**Store tema sudah tersedia** — kamu hanya perlu import komponen toggle:
-```typescript
-// ThemeToggle sudah jadi di: components/common/ThemeToggle.tsx
-// Tinggal import dan taruh di Sidebar
-import { ThemeToggle } from "../common/ThemeToggle";
-```
-
-**Nama variabel & struktur yang harus dipakai:**
-```typescript
-// frontend/src/components/layout/Sidebar.tsx
-import { Home, Search, PlusSquare, Heart, User, LogOut } from "lucide-react";
-import { NavLink } from "react-router-dom";
-import { useAuthStore } from "../../store/auth.store";
-import { ThemeToggle } from "../common/ThemeToggle";
-
-const navItems = [
-  { icon: Home,       label: "Beranda",    to: "/" },
-  { icon: Search,     label: "Cari",       to: "/search" },
-  { icon: PlusSquare, label: "Buat Post",  to: "/create" },
-  { icon: Heart,      label: "Notifikasi", to: "/notifications" },
-  { icon: User,       label: "Profil",     to: "/profile" },
-];
-
-export function Sidebar() {
-  const logout = useAuthStore((state) => state.logout);
-  return (
-    <aside className="flex flex-col h-screen w-[72px] md:w-[244px] bg-ig-background border-r border-neutral-800 px-3 py-6">
-      {/* Logo */}
-      <span className="text-ig-text font-semibold text-xl mb-8 px-2 hidden md:block">Instagram</span>
-      
-      {/* Menu navigasi */}
-      <nav className="flex flex-col gap-1 flex-1">
-        {navItems.map(({ icon: Icon, label, to }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors hover:bg-ig-secondary-bg ${
-                isActive ? "text-ig-text font-semibold" : "text-neutral-400"
-              }`
-            }
-          >
-            <Icon className="w-6 h-6 flex-shrink-0" />
-            <span className="hidden md:block text-sm">{label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Bagian bawah: ThemeToggle + Logout */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <ThemeToggle />
-          <span className="hidden md:block text-ig-text text-sm">Tema</span>
-        </div>
-        <button
-          onClick={logout}
-          className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-ig-secondary-bg text-neutral-400 transition-colors w-full"
-        >
-          <LogOut className="w-6 h-6 flex-shrink-0" />
-          <span className="hidden md:block text-sm">Keluar</span>
-        </button>
-      </div>
-    </aside>
-  );
-}
-```
-
-**Styling wajib:**
-- Lebar sidebar: `w-[72px] md:w-[244px]` (sempit di tablet, lebar di desktop)
-- Background: `bg-ig-background`
-- Border kanan: `border-r border-neutral-800`
-- Item aktif (NavLink active): teks/ikon jadi `text-ig-text font-semibold`
-- Hover: `hover:bg-ig-secondary-bg rounded-lg`
-
----
-
-### ✅ Langkah 2 — `BottomNav.tsx` (Navigasi Bawah HP)
-
-Komponen yang **hanya muncul di HP** (layar kecil).
-
-**Spesifikasi:**
-- Posisi: `fixed bottom-0 left-0 right-0` (nempel di bawah layar)
-- Background: `bg-ig-background border-t border-neutral-800`
-- Isi: 5 ikon (Home, Search, PlusSquare, Heart, User) — **tanpa teks label**
-- Ikon aktif: `text-ig-text`, tidak aktif: `text-neutral-500`
-
-**Nama variabel & struktur:**
 ```typescript
 // frontend/src/components/layout/BottomNav.tsx
-import { Home, Search, PlusSquare, Heart, User } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { Home, Search, PlusSquare, Bell, User } from "lucide-react";
 
 export function BottomNav() {
+  const location = useLocation();
+
+  const navItems = [
+    { icon: Home,       path: "/",              label: "Beranda" },
+    { icon: Search,     path: "/search",         label: "Cari" },
+    { icon: PlusSquare, path: "/create",         label: "Buat" },
+    { icon: Bell,       path: "/notifications",  label: "Notifikasi" },
+    { icon: User,       path: "/profile",        label: "Profil" },
+  ];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-ig-background border-t border-neutral-800 flex md:hidden">
-      {/* 5 NavLink di sini, masing-masing flex-1 */}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-ig-background border-t border-neutral-800 flex justify-around items-center h-14 md:hidden">
+      {navItems.map(({ icon: Icon, path, label }) => {
+        const isActive = location.pathname === path;
+        return (
+          <Link
+            key={path}
+            to={path}
+            aria-label={label}
+            className={`flex flex-col items-center justify-center p-2 transition-opacity ${isActive ? "opacity-100" : "opacity-50 hover:opacity-75"}`}
+          >
+            <Icon className={`w-6 h-6 ${isActive ? "text-ig-text" : "text-ig-text"}`} strokeWidth={isActive ? 2.5 : 1.5} />
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -224,149 +147,170 @@ export function BottomNav() {
 
 ---
 
-### ✅ Langkah 3 — `MainLayout.tsx` (Pembungkus Utama)
+### ✅ Langkah 2 — `Sidebar.tsx` (Navigasi Kiri untuk Desktop)
 
-Ini yang **paling penting**. Tugasnya menggabungkan Sidebar dan BottomNav dengan konten halaman.
+Navigasi yang **hanya muncul di layar besar** (laptop/desktop). Menempel di sisi kiri.
 
-**Logika responsive:**
-- **Di desktop (md ke atas):** tampilkan `Sidebar` di kiri, sembunyikan `BottomNav`
-- **Di HP (di bawah md):** sembunyikan `Sidebar`, tampilkan `BottomNav` di bawah
+```typescript
+// frontend/src/components/layout/Sidebar.tsx
+import { Link, useLocation } from "react-router-dom";
+import { Home, Search, PlusSquare, Bell, User } from "lucide-react";
+import { ThemeToggle } from "../common/ThemeToggle";
 
-**Struktur layout:**
+export function Sidebar() {
+  const location = useLocation();
+
+  const navItems = [
+    { icon: Home,       path: "/",              label: "Beranda" },
+    { icon: Search,     path: "/search",         label: "Cari" },
+    { icon: PlusSquare, path: "/create",         label: "Buat" },
+    { icon: Bell,       path: "/notifications",  label: "Notifikasi" },
+    { icon: User,       path: "/profile",        label: "Profil" },
+  ];
+
+  return (
+    <aside className="hidden md:flex flex-col w-[244px] h-screen sticky top-0 border-r border-neutral-800 bg-ig-background px-3 py-6">
+      {/* Logo */}
+      <div className="px-3 mb-6">
+        <h1 className="text-ig-text font-bold text-xl">Instagram</h1>
+      </div>
+
+      {/* Menu */}
+      <nav className="flex flex-col gap-1 flex-1">
+        {navItems.map(({ icon: Icon, path, label }) => {
+          const isActive = location.pathname === path;
+          return (
+            <Link
+              key={path}
+              to={path}
+              className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors hover:bg-ig-secondary-bg ${isActive ? "font-bold" : ""}`}
+            >
+              <Icon className="w-6 h-6 text-ig-text" strokeWidth={isActive ? 2.5 : 1.5} />
+              <span className="text-ig-text text-[15px]">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Theme Toggle di bawah */}
+      <div className="px-3 mt-4">
+        <ThemeToggle />
+      </div>
+    </aside>
+  );
+}
+```
+
+---
+
+### ✅ Langkah 3 — `MainLayout.tsx` (Pembungkus Halaman)
+
+Komponen yang menyatukan `Sidebar` dan `BottomNav`. Semua halaman yang butuh navigasi dibungkus dengan ini.
+
 ```typescript
 // frontend/src/components/layout/MainLayout.tsx
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="flex min-h-screen bg-ig-background">
-      {/* Sidebar: tampil di desktop, tersembunyi di mobile */}
-      <aside className="hidden md:flex">
-        <Sidebar />
-      </aside>
+      {/* Sidebar kiri (desktop) */}
+      <Sidebar />
 
-      {/* Konten Utama */}
+      {/* Konten utama */}
       <main className="flex-1 pb-16 md:pb-0">
         {children}
       </main>
 
-      {/* BottomNav: tampil di mobile, tersembunyi di desktop */}
+      {/* Bottom nav (HP) */}
       <BottomNav />
     </div>
   );
 }
 ```
 
-> **Catatan `pb-16`:** Agar konten tidak tertutup BottomNav di HP.
+**Cara pakai di `App.tsx` (tanyakan Rafli untuk integrasinya):**
+```typescript
+// Contoh cara pakai di halaman:
+import { MainLayout } from "../components/layout/MainLayout";
+
+<MainLayout>
+  <HomePage />
+</MainLayout>
+```
 
 ---
 
-### ✅ Langkah 4 — Pasang `MainLayout` ke `App.tsx`
+### ✅ Langkah 4 — `NotificationPage.tsx` (Halaman Daftar Notifikasi)
 
-Setelah `MainLayout.tsx` jadi, **kasih tahu Rafli** agar dia update `App.tsx`. Tapi kalau mau coba sendiri, ini caranya:
+Halaman yang menampilkan semua notifikasi user dari API.
 
-```typescript
-// Tambahkan import di App.tsx:
-import { MainLayout } from "./components/layout/MainLayout";
-
-// Bungkus semua ProtectedRoute dengan MainLayout:
-<Route path="/" element={
-  <ProtectedRoute>
-    <MainLayout>
-      <HomePage />
-    </MainLayout>
-  </ProtectedRoute>
-} />
-```
-
-> ⚠️ **Halaman Login dan Register TIDAK perlu dibungkus MainLayout** — mereka halaman publik.
-
----
-
-### ✅ Langkah 5 — `NotificationPage.tsx`
-
-Halaman daftar notifikasi.
-
-**Spesifikasi tampilan per item notifikasi:**
-- Kiri: Avatar bulat (inisial nama, jika tidak ada foto)
-- Tengah: Teks `message` dari notifikasi + waktu (format: "2 jam lalu")
-- Kanan: Titik biru kecil jika `isRead === false`
-
-**Format waktu:** Gunakan fungsi ini (sudah ada di shared):
-```typescript
-import { formatRelativeTime } from "../../../shared/src/utils/date";
-// Output singkat — contoh:
-// "30d" = 30 detik lalu
-// "5m"  = 5 menit lalu
-// "2j"  = 2 jam lalu
-// "3h"  = 3 hari lalu
-```
-
-**Nama state & struktur:**
 ```typescript
 // frontend/src/pages/NotificationPage.tsx
 import { useEffect, useState } from "react";
-import type { Notification } from "../../../shared/src/types/notification";
+import { Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
+
+interface Notification {
+  id: string;
+  type: "like" | "comment" | "follow" | "welcome";
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+function getIcon(type: string) {
+  if (type === "like") return <Heart className="w-5 h-5 text-red-500" />;
+  if (type === "comment") return <MessageCircle className="w-5 h-5 text-blue-400" />;
+  if (type === "follow") return <UserPlus className="w-5 h-5 text-green-400" />;
+  return <Bell className="w-5 h-5 text-yellow-400" />;
+}
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`);
-        const json = await res.json();
-        setNotifications(json.data);
-      } catch (error) {
-        console.error("Gagal memuat notifikasi:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNotifications();
+    fetch(`${import.meta.env.VITE_API_URL}/notifications`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.data) setNotifications(json.data);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <p className="text-ig-text text-center py-8">Memuat...</p>;
-
   return (
-    <div className="max-w-xl mx-auto px-4 pt-6">
-      <h1 className="text-ig-text text-lg font-semibold mb-4">Notifikasi</h1>
-      {notifications.length === 0 ? (
-        <p className="text-neutral-500 text-center">Belum ada notifikasi.</p>
+    <div className="min-h-screen bg-ig-background text-ig-text max-w-[600px] mx-auto px-4 pt-6">
+      <h1 className="text-xl font-bold mb-6">Notifikasi</h1>
+
+      {isLoading ? (
+        <p className="text-neutral-500 text-center py-10">Memuat notifikasi...</p>
+      ) : notifications.length === 0 ? (
+        <div className="text-center py-16">
+          <Bell className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
+          <p className="text-neutral-400">Belum ada notifikasi.</p>
+        </div>
       ) : (
-        <ul className="divide-y divide-neutral-800">
-          {notifications.map((notif) => (
-            <NotificationItem key={notif.id} notif={notif} />
+        <div className="flex flex-col divide-y divide-neutral-800">
+          {notifications.map(notif => (
+            <div key={notif.id} className={`flex items-start gap-3 py-4 ${!notif.isRead ? "bg-ig-secondary-bg/30 rounded-lg px-2" : ""}`}>
+              <div className="mt-1 flex-shrink-0">{getIcon(notif.type)}</div>
+              <div className="flex-1">
+                <p className="text-sm text-ig-text">{notif.message}</p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {new Date(notif.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              {!notif.isRead && <div className="w-2 h-2 bg-ig-primary rounded-full mt-2 flex-shrink-0" />}
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
-  );
-}
-```
-
-**Komponen `NotificationItem`** (buat di file yang sama, di bawah):
-```typescript
-function NotificationItem({ notif }: { notif: Notification }) {
-  return (
-    <li className="flex items-center gap-3 py-3">
-      {/* Avatar bulat dengan inisial */}
-      <div className="w-10 h-10 rounded-full bg-ig-secondary-bg flex items-center justify-center text-ig-text text-sm font-semibold flex-shrink-0">
-        N
-      </div>
-      {/* Pesan notifikasi */}
-      <div className="flex-1">
-        <p className="text-ig-text text-sm">{notif.message}</p>
-        <p className="text-neutral-500 text-xs mt-0.5">{notif.createdAt}</p>
-      </div>
-      {/* Titik biru jika belum dibaca */}
-      {!notif.isRead && (
-        <div className="w-2 h-2 rounded-full bg-ig-primary flex-shrink-0" />
-      )}
-    </li>
   );
 }
 ```
@@ -375,73 +319,60 @@ function NotificationItem({ notif }: { notif: Notification }) {
 
 ## 🐙 Git Workflow — Langkah Demi Langkah
 
-### 1. Sebelum mulai ngoding — ambil kode terbaru
+### 1. Sebelum mulai ngoding
 ```bash
 git checkout dev
 git pull origin dev
-git checkout -b salsabila/layout-notifikasi
+git checkout -b asa/layout-notification
 ```
 
-### 2. Sering commit (setiap selesai 1 langkah)
+### 2. Commit setiap selesai 1 langkah
 ```bash
 git add .
-git commit -m "feat(layout): add Sidebar component"
-# atau
 git commit -m "feat(layout): add BottomNav component"
-# atau
-git commit -m "feat(layout): add MainLayout responsive wrapper"
-# atau
-git commit -m "feat(notifications): add NotificationPage with API fetch"
+git commit -m "feat(layout): add Sidebar component"
+git commit -m "feat(layout): add MainLayout wrapper"
+git commit -m "feat(notification): add NotificationPage"
 ```
 
 ### 3. Push ke branch kamu
 ```bash
-git push origin salsabila/layout-notifikasi
+git push origin asa/layout-notification
 ```
 
 ### 4. Buat Pull Request di GitHub
 1. Buka **github.com/IniRalfi/ppwl-clone-instagram**
-2. Klik tombol **"Compare & pull request"** yang muncul
-3. **Base branch:** `dev` (bukan `main`!)
-4. **Title PR:** `feat: Layout navigasi & halaman notifikasi (Salsabila)`
+2. Klik **"Compare & pull request"** yang muncul otomatis
+3. **Base branch:** `dev` ← PASTIKAN INI! (bukan `main`)
+4. **Title PR:** `feat: Layout & NotificationPage (Salsabila)`
 5. Klik **"Create pull request"**
-6. Kabari Rafli di grup — dia yang akan review dan merge
+6. Kabari Rafli di grup — dia yang review dan merge
 
-> ⚠️ **JANGAN merge sendiri ke `main`!** Selalu ke `dev` dulu.
+> ⚠️ **JANGAN merge sendiri ke `main`!**
 
 ---
 
-## ✅ Cara Test Komponen
+## ✅ Cara Test
 
-### Test Sidebar & BottomNav
-1. Jalankan `bun dev` dari folder root
+1. Jalankan `bun dev` dari folder `frontend/`
 2. Buka `http://localhost:5173`
-3. Login dengan akun yang sudah ada
-4. Coba resize browser:
-   - **Lebar > 768px** → Sidebar harus muncul di kiri, BottomNav sembunyi
-   - **Lebar < 768px** → Sidebar sembunyi, BottomNav muncul di bawah
-5. Klik setiap item navigasi — halaman harus berpindah
+3. **Yang harus muncul:** Navigasi kiri (di laptop) atau navigasi bawah (di HP)
+4. Klik **"Notifikasi"** → harus pindah ke `/notifications` dan menampilkan daftar notifikasi
 
-### Test NotificationPage
-1. Buka `http://localhost:5173/notifications`
-2. Harus muncul daftar notifikasi dari API
-3. Kalau API kosong, tampilkan teks "Belum ada notifikasi."
-4. Kalau `isRead: false`, harus ada titik biru di kanan
-
-### Kalau Ada Error di Terminal
-1. Copy seluruh pesan error (teks merah di terminal)
-2. Paste ke AI, sertakan juga kode file yang error
-3. Ketik: _"Ini error yang muncul, tolong bantu perbaiki"_
+### Kalau Ada Error
+1. Copy seluruh pesan error
+2. Paste ke AI bersama kode file yang error
+3. Ketik: _"Ini error di proyek React TypeScript Vite, tolong bantu perbaiki"_
 
 ---
 
 ## ❓ FAQ
 
-**Q: Saya tidak bisa import dari `../../../shared/src/types/...`, error module not found?**
-A: Pastikan kamu menjalankan `bun install` dari folder **root** monorepo, bukan dari dalam `frontend/`.
+**Q: Harus install database atau backend dulu?**
+A: **TIDAK PERLU.** Backend dan database sudah jalan di cloud. Kamu cukup jalankan `bun dev` dari folder `frontend/`.
 
-**Q: Warna `bg-ig-background` tidak berfungsi?**
-A: Pastikan kamu import Tailwind di `index.css` dengan `@import "tailwindcss"` (bukan `@tailwind base`).
+**Q: `lucide-react` tidak ditemukan?**
+A: Jalankan `bun install` dari dalam folder `frontend/`. Jangan dari folder root.
 
-**Q: Ikon dari lucide-react tidak muncul?**
-A: Pastikan nama ikon benar (case-sensitive). Cek di [lucide.dev](https://lucide.dev) untuk nama yang tepat.
+**Q: Notifikasi tidak muncul?**
+A: Pastikan sudah login dulu di aplikasi. Data notifikasi ada di database production.

@@ -8,6 +8,7 @@ import { postRoutes } from "@/modules/post/post.routes";
 import { userRoutes } from "@/modules/user/user.routes";
 import { commentRoutes } from "@/modules/comment/comment.routes";
 import { notificationRoutes } from "@/modules/notification/notification.routes";
+import { dataRoutes } from "@/modules/data/data.route";
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
@@ -17,7 +18,8 @@ export const app = new Elysia()
   .use(postRoutes)
   .use(userRoutes)
   .use(commentRoutes)
-  .use(notificationRoutes);
+  .use(notificationRoutes)
+  .use(dataRoutes);
 
 export type App = typeof app;
 export default app;

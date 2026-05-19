@@ -11,10 +11,22 @@
 
 Kamu lagi mengerjakan **Clone Instagram** sebagai tugas capstone.
 
-- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · ShadCN UI · React Router DOM
-- **Monorepo:** Folder utama ada 3: `frontend/`, `backend/`, `shared/`
-- **Semua file kamu ada di:** `frontend/src/`
-- **Aplikasi sudah berjalan** di `http://localhost:5173` (jalankan `bun dev` dari root)
+- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · React Router DOM
+- **Kamu cukup fokus ke folder:** `frontend/src/`
+- **Backend & Database sudah siap di cloud** — kamu tidak perlu install database apapun.
+- **Cara jalankan:**
+  ```bash
+  # 1. Clone repo (kalau belum)
+  git clone https://github.com/IniRalfi/ppwl-clone-instagram.git
+  cd ppwl-clone-instagram/frontend
+
+  # 2. Install dependencies
+  bun install
+
+  # 3. Jalankan (cukup ini saja!)
+  bun dev
+  ```
+  Buka `http://localhost:5173` di browser. Selesai!
 
 ---
 
@@ -46,32 +58,20 @@ frontend/src/
     └── CreatePostPage.tsx      ← Halaman form buat postingan baru
 ```
 
-> ℹ️ `pages/PostDetailPage.tsx` sudah dikerjakan oleh teammate — **jangan diedit**.
-> ℹ️ `services/api.client.ts` sudah tersedia — **langsung pakai, jangan buat ulang**.
+> ℹ️ `pages/PostDetailPage.tsx` sudah dikerjakan oleh Rafli — **jangan diedit**.
 
 ---
 
-## 🔗 Tipe Data yang Tersedia
+## 🔗 Tipe Data — Salin Langsung, Jangan Import dari Mana-mana
 
-**Jangan buat tipe data sendiri.** Import dari path berikut:
+Gunakan tipe data ini langsung di file kamu (salin ke dalam file yang membutuhkannya):
 
 ```typescript
-// Dari pages/ (3 level ke root):
-import type { Post, CreatePostDto } from "../../../shared/src/types/post";
-
-// Dari components/common/ (4 level ke root):
-import type { Post } from "../../../../shared/src/types/post";
-
-// Dari hooks/ (3 level ke root):
-import type { Post, CreatePostDto } from "../../../shared/src/types/post";
-```
-
-**Bentuk tipe data:**
-```typescript
+// Tipe Post — salin ke dalam file yang butuh
 interface Post {
   id: string;
-  content: string;           // Caption
-  imageUrl: string | null;   // URL gambar
+  content: string;
+  imageUrl: string | null;
   authorId: string;
   author: {
     id: string;
@@ -85,53 +85,30 @@ interface Post {
   };
   isLiked?: boolean;
   createdAt: string;
-  updatedAt: string;
-}
-
-interface CreatePostDto {
-  content: string;   // Caption yang ditulis user
-  imageUrl?: string; // URL gambar (setelah diupload)
 }
 ```
 
 ---
 
-## 🌐 API Client yang Sudah Tersedia
+## 🌐 API yang Sudah Siap Digunakan
 
-File `services/api.client.ts` sudah ada. Langsung import:
-
-```typescript
-import { apiClient, ApiError } from "../services/api.client";
-// Gunakan:
-// apiClient.get<T>(path)              → GET request
-// apiClient.post<T>(path, body)       → POST request
-// apiClient.delete<T>(path)           → DELETE request
-```
-
-**Cara ambil token dari store** (untuk request yang butuh auth):
-```typescript
-import { useAuthStore } from "../store/auth.store";
-const { token } = useAuthStore();
-```
-
----
-
-## 🌐 API Endpoints
+Backend sudah jalan di cloud. **Tidak perlu install atau jalankan backend apapun.**
 
 ```
-Base URL: import.meta.env.VITE_API_URL
-→ di local: http://localhost:3000
-→ di production: https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws
+Base URL (sudah ada di .env.development, tidak perlu ubah apapun):
+→ Diakses via: import.meta.env.VITE_API_URL
 ```
+
+**Endpoint yang kamu butuhkan:**
 
 | Method | Endpoint | Fungsi |
 |---|---|---|
 | GET | `/posts` | Ambil semua postingan |
-| POST | `/posts` | Buat postingan baru (butuh auth) |
+| POST | `/posts` | Buat postingan baru |
 
 **Response GET /posts:**
 ```json
-{ "data": [ { "id": "...", "content": "...", "imageUrl": null, ... } ] }
+{ "data": [ { "id": "...", "content": "...", "imageUrl": null, "author": {...}, "_count": {...} } ] }
 ```
 
 **Request POST /posts (body JSON):**
@@ -153,16 +130,15 @@ Komponen tombol ❤️ yang bisa dipakai di `PostCard` maupun `PostDetailPage`.
 - Diklik lagi: ikon balik putih + count -1
 - Animasi: scale saat diklik (`active:scale-90`)
 
-**Nama props & struktur:**
 ```typescript
 // frontend/src/components/common/LikeButton.tsx
 import { useState } from "react";
 import { Heart } from "lucide-react";
 
 interface LikeButtonProps {
-  initialCount: number;        // Jumlah like awal dari data API
-  initialIsLiked?: boolean;    // Apakah sudah di-like user ini (default: false)
-  onToggle?: (isLiked: boolean) => void; // Callback opsional ke parent
+  initialCount: number;
+  initialIsLiked?: boolean;
+  onToggle?: (isLiked: boolean) => void;
 }
 
 export function LikeButton({
@@ -177,8 +153,7 @@ export function LikeButton({
     const newIsLiked = !isLiked;
     setIsLiked(newIsLiked);
     setCount((prev) => newIsLiked ? prev + 1 : prev - 1);
-    onToggle?.(newIsLiked); // Panggil callback jika ada
-    // TODO Fase berikutnya: hit API like/unlike
+    onToggle?.(newIsLiked);
   };
 
   return (
@@ -191,8 +166,8 @@ export function LikeButton({
         <Heart
           className={`w-6 h-6 transition-colors ${
             isLiked
-              ? "fill-ig-badge text-ig-badge"  // Merah saat di-like
-              : "text-ig-text"                  // Putih/normal
+              ? "fill-ig-badge text-ig-badge"
+              : "text-ig-text"
           }`}
         />
       </button>
@@ -202,11 +177,10 @@ export function LikeButton({
 }
 ```
 
-**Cara pakai di PostCard (referensi Adella):**
+**Cara pakai di PostCard:**
 ```typescript
 import { LikeButton } from "../common/LikeButton";
 
-// Di dalam PostCard:
 <LikeButton
   initialCount={post._count?.likes ?? 0}
   initialIsLiked={post.isLiked ?? false}
@@ -217,20 +191,32 @@ import { LikeButton } from "../common/LikeButton";
 
 ### ✅ Langkah 2 — `usePosts.ts` (Custom Hook Fetch Posts)
 
-Hook yang dipakai halaman `HomePage` untuk ambil data posts dari API.
+Hook yang dipakai halaman `HomePage` untuk ambil data posts dari API. Dengan hook ini, kode di `HomePage` jadi lebih rapi dan mudah dibaca.
 
-**Nama state & struktur:**
 ```typescript
 // frontend/src/hooks/usePosts.ts
-import { useEffect, useState } from "react";
-import type { Post } from "../../../shared/src/types/post";
-import { apiClient, ApiError } from "../services/api.client";
+import { useEffect, useState, useCallback } from "react";
+
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  authorId: string;
+  author: {
+    id: string;
+    username: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  _count?: { likes: number; comments: number; };
+  createdAt: string;
+}
 
 interface UsePostsReturn {
   posts: Post[];
   isLoading: boolean;
   error: string | null;
-  refetch: () => void; // Fungsi untuk refresh data manual
+  refetch: () => void;
 }
 
 export function usePosts(): UsePostsReturn {
@@ -238,38 +224,39 @@ export function usePosts(): UsePostsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const json = await apiClient.get<{ data: Post[] }>("/posts");
-      setPosts(json.data);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(`Error ${err.status}: ${err.message}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
+      const json = await res.json();
+      if (json.data) {
+        setPosts(json.data);
       } else {
-        setError("Gagal memuat postingan. Coba lagi nanti.");
+        setError("Data tidak ditemukan.");
       }
+    } catch {
+      setError("Gagal memuat postingan. Coba lagi nanti.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   return { posts, isLoading, error, refetch: fetchPosts };
 }
 ```
 
-**Cara pakai di HomePage (referensi Adella):**
+**Cara pakai di HomePage:**
 ```typescript
 import { usePosts } from "../hooks/usePosts";
 
 export default function HomePage() {
   const { posts, isLoading, error, refetch } = usePosts();
-  // ...
+  // gunakan posts untuk render PostCard
 }
 ```
 
@@ -283,24 +270,20 @@ Halaman form untuk upload foto + caption.
 1. File yang dipilih **harus gambar** (accept `.jpg`, `.jpeg`, `.png`, `.gif`) — video tidak boleh masuk
 2. Jika file bukan gambar → tampilkan pesan error merah di bawah input
 3. Caption tidak boleh kosong
-4. Kalau backend mengembalikan error limit (lebih dari 2 post) → tampilkan pesan error dari API
 
-**Nama state & struktur:**
 ```typescript
 // frontend/src/pages/CreatePostPage.tsx
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
-import { ApiError } from "../services/api.client";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 export default function CreatePostPage() {
   const navigate = useNavigate();
-  const { token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [caption, setCaption] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -313,54 +296,45 @@ export default function CreatePostPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Cek apakah tipe file diperbolehkan
     if (!ALLOWED_TYPES.includes(file.type)) {
       setFileError("❌ File harus berupa gambar (.jpg, .png, .gif). Video tidak diperbolehkan.");
-      setSelectedFile(null);
       setPreviewUrl(null);
       return;
     }
 
     setFileError(null);
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file)); // Preview gambar
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!caption.trim()) return;
-    if (fileError) return;
+    if (!caption.trim() || fileError) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      // Saat ini kirim tanpa imageUrl dulu (upload S3 dikerjakan bersama Rafli)
       const body = {
         content: caption.trim(),
         imageUrl: previewUrl ?? undefined,
+        authorId: user?.id,
       };
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Tangkap error limit dari backend
         setSubmitError(data.message ?? "Gagal membuat postingan.");
         return;
       }
 
-      // Berhasil → balik ke beranda
-      navigate("/");
-    } catch (err) {
+      navigate("/"); // Berhasil → balik ke beranda
+    } catch {
       setSubmitError("Gagal terhubung ke server. Coba lagi.");
     } finally {
       setIsSubmitting(false);
@@ -371,10 +345,7 @@ export default function CreatePostPage() {
     <div className="min-h-screen bg-ig-background">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
-        <button
-          onClick={() => navigate("/")}
-          className="text-ig-text text-sm"
-        >
+        <button onClick={() => navigate("/")} className="text-ig-text text-sm">
           Batal
         </button>
         <h1 className="text-ig-text font-semibold text-sm">Postingan Baru</h1>
@@ -390,19 +361,14 @@ export default function CreatePostPage() {
 
       {/* Form */}
       <form id="create-post-form" onSubmit={handleSubmit} className="p-4 space-y-4">
-        {/* Preview Gambar */}
+        {/* Preview Gambar atau Area Pilih Foto */}
         {previewUrl ? (
           <div className="relative">
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="w-full max-h-[400px] object-cover rounded-lg"
-            />
+            <img src={previewUrl} alt="Preview" className="w-full max-h-[400px] object-cover rounded-lg" />
             <button
               type="button"
               onClick={() => {
                 setPreviewUrl(null);
-                setSelectedFile(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
               className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm"
@@ -431,9 +397,7 @@ export default function CreatePostPage() {
         />
 
         {/* Error file */}
-        {fileError && (
-          <p className="text-ig-badge text-sm">{fileError}</p>
-        )}
+        {fileError && <p className="text-ig-badge text-sm">{fileError}</p>}
 
         {/* Input Caption */}
         <textarea
@@ -446,7 +410,7 @@ export default function CreatePostPage() {
         />
         <p className="text-neutral-600 text-xs text-right">{caption.length}/500</p>
 
-        {/* Error submit (dari API) */}
+        {/* Error submit dari API */}
         {submitError && (
           <p className="text-ig-badge text-sm bg-ig-badge/10 px-3 py-2 rounded-lg">
             {submitError}
@@ -473,9 +437,7 @@ git checkout -b yasmin/create-post-likebutton
 ```bash
 git add .
 git commit -m "feat(like): add reusable LikeButton component"
-# Lanjut langkah 2:
 git commit -m "feat(hooks): add usePosts custom hook"
-# Lanjut langkah 3:
 git commit -m "feat(post): add CreatePostPage with image validation"
 ```
 
@@ -496,10 +458,10 @@ git push origin yasmin/create-post-likebutton
 
 ---
 
-## ✅ Cara Test Komponen
+## ✅ Cara Test
 
 ### Test LikeButton
-1. Sementara, tambahkan sementara di `HomePage.tsx`:
+1. Tambahkan sementara di `HomePage.tsx`:
    ```tsx
    import { LikeButton } from "../components/common/LikeButton";
    <LikeButton initialCount={42} initialIsLiked={false} />
@@ -513,34 +475,28 @@ git push origin yasmin/create-post-likebutton
 2. **Test validasi file:**
    - Coba pilih file `.mp4` atau `.pdf` → harus muncul pesan error merah
    - Pilih file `.jpg` → harus muncul preview gambar
-3. **Test submit:**
-   - Isi caption → klik "Bagikan" → harus redirect ke `/`
+3. **Test submit:** Isi caption → klik "Bagikan" → harus redirect ke `/`
 4. **Test tombol Batal:** Klik Batal → harus balik ke `/`
 
 ### Test usePosts Hook
-1. Buka HomePage dan ganti fetch manual dengan `usePosts()`:
+1. Import di `HomePage.tsx`:
    ```tsx
-   const { posts, isLoading, error } = usePosts();
+   const { posts, isLoading } = usePosts();
    ```
 2. Postingan harus tetap muncul seperti sebelumnya
-
-### Kalau Ada Error di Terminal
-1. Copy seluruh pesan error
-2. Paste ke AI bersama kode file yang error
-3. Ketik: _"Ini error di proyek React TypeScript Vite, tolong bantu perbaiki"_
 
 ---
 
 ## ❓ FAQ
 
+**Q: Harus install database atau backend dulu?**
+A: **TIDAK PERLU.** Backend dan database sudah jalan di cloud. Kamu cukup jalankan `bun dev` dari folder `frontend/`.
+
 **Q: `fill-ig-badge` tidak berfungsi (ikon tidak jadi merah)?**
-A: Pastikan class ditulis `fill-ig-badge text-ig-badge` keduanya sekaligus. Tailwind v4 butuh `fill-*` untuk mengisi warna SVG dan `text-*` untuk outline-nya.
+A: Pastikan class ditulis `fill-ig-badge text-ig-badge` keduanya sekaligus.
 
-**Q: Import `Post` error "module not found"?**
-A: Jalankan `bun install` dari folder **root** monorepo (bukan dari dalam `frontend/`).
+**Q: Form bisa submit tapi postingan tidak muncul di beranda?**
+A: Refresh halaman beranda. Data baru langsung masuk ke database di cloud.
 
-**Q: Form bisa submit tapi tidak ada gambar?**
-A: Normal! Upload gambar ke S3 akan dikerjakan bersama Rafli di fase berikutnya. Saat ini form cukup kirim `content` saja.
-
-**Q: Error 403 saat POST /posts?**
-A: Endpoint `/posts` masih GET only (backend belum diupdate untuk POST). Kabari Rafli — dia yang update backend-nya.
+**Q: `lucide-react` error "module not found"?**
+A: Jalankan `bun install` dari dalam folder `frontend/`. Jangan dari folder root atau `backend/`.
