@@ -1,0 +1,59 @@
+name: Deploy Frontend to AWS S3
+
+on:
+  push:
+    branches:
+      - main
+    # Agar CI/CD jalan cuma kalau ada perubahan di folder frontend
+    paths:
+      - 'frontend/**'
+
+# Ubah permission agar bisa menggunakan fitur OIDC AWS (jika di-setup) atau Secrets biasa
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Path default dikerjakan di folder frontend
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: 📦 Install Dependencies
+        run: bun install
+
+      - name: 🛠️ Build Frontend
+        run: bun run build
+        env:
+          # Pastikan URL backend saat production disuntikkan ke sini
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: ☁️ Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1 # Ganti ke region S3 kamu (contoh: ap-southeast-1 untuk Singapore)
+
+      - name: 🚀 Sync to AWS S3
+        # Perintah ini meng-upload isi folder dist ke dalam bucket S3
+        # - delete: Menghapus file di S3 yang tidak ada di folder dist terbaru
+        run: |
+          aws s3 sync ./dist s3://${{ secrets.AWS_S3_BUCKET_NAME }} --delete
+
+      # (Opsional) Jika kamu pakai CloudFront di depan S3, uncomment ini untuk reset cache-nya
+      # - name: 🧹 Invalidate CloudFront Cache
+      #   run: |
+      #     aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths "/*"
