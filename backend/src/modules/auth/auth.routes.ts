@@ -70,8 +70,10 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       });
       
       if (!googleRes.ok) {
+        const errText = await googleRes.text();
+        console.error("Google Info Error:", errText);
         set.status = 401;
-        return { message: "Token Google tidak valid" };
+        return { message: `Google Error: ${errText}` };
       }
 
       const googleUser = await googleRes.json();
