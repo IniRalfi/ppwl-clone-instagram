@@ -4,10 +4,9 @@ on:
   push:
     branches:
       - main
-      - dev
     # Agar CI/CD jalan cuma kalau ada perubahan di folder frontend
     paths:
-      - 'frontend/**'
+      - "frontend/**"
 
 # Ubah permission agar bisa menggunakan fitur OIDC AWS (jika di-setup) atau Secrets biasa
 permissions:
@@ -17,7 +16,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     # Path default dikerjakan di folder frontend
     defaults:
       run:
