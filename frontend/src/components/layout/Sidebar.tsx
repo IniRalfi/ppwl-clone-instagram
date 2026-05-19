@@ -27,7 +27,6 @@ export function Sidebar() {
         </span>
       </div>
       
-      {/* Menu Navigasi */}
       <nav className="flex flex-col gap-1 flex-1">
         {navItems.map(({ icon: Icon, label, to }) => (
           <NavLink
@@ -45,7 +44,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bagian Bawah: ThemeToggle + Logout */}
       <div className="flex flex-col gap-2 pt-4 border-t border-neutral-800/50">
         <div className="flex items-center gap-4 px-3 py-2 rounded-lg hover:bg-ig-secondary-bg/50 transition-colors">
           <ThemeToggle />

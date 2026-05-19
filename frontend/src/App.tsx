@@ -19,11 +19,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export function App() {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protected routes wrapped in MainLayout */}
       <Route path="/" element={
         <ProtectedRoute>
           <MainLayout>

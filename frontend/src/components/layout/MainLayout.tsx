@@ -13,12 +13,11 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Sidebar />
       </div>
 
-      {/* Konten Utama Aplikasi */}
       <main className="flex-1 min-w-0 pb-16 md:pb-0 overflow-y-auto">
         {children}
       </main>
 
-      {/* BottomNav: Tampil di mobile (di bawah md), tersembunyi di desktop */}
+      
       <BottomNav />
     </div>
   );
