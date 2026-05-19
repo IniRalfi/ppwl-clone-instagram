@@ -2,13 +2,14 @@ import { Home, Search, PlusSquare, Heart, User, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { ThemeToggle } from "../common/ThemeToggle";
+import { toast } from "sonner";
 
 const navItems = [
-  { icon: Home,       label: "Beranda",    to: "/" },
-  { icon: Search,      label: "Cari",       to: "/search" },
-  { icon: PlusSquare, label: "Buat Post",  to: "/create" },
-  { icon: Heart,      label: "Notifikasi", to: "/notifications" },
-  { icon: User,       label: "Profil",     to: "/profile" },
+  { icon: Home,       label: "Beranda",    to: "/",             wip: false },
+  { icon: Search,     label: "Cari",       to: "/search",       wip: true  },
+  { icon: PlusSquare, label: "Buat Post",  to: "/create",       wip: false },
+  { icon: Heart,      label: "Notifikasi", to: "/notifications", wip: false },
+  { icon: User,       label: "Profil",     to: "/profile",      wip: false },
 ];
 
 export function Sidebar() {
@@ -29,20 +30,37 @@ export function Sidebar() {
       
       {/* Menu Navigasi */}
       <nav className="flex flex-col gap-1 flex-1">
-        {navItems.map(({ icon: Icon, label, to }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-4 px-3 py-3 rounded-lg transition-colors hover:bg-ig-secondary-bg group ${
-                isActive ? "text-ig-text font-semibold" : "text-neutral-400"
-              }`
-            }
-          >
-            <Icon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105" />
-            <span className="hidden md:block text-sm">{label}</span>
-          </NavLink>
-        ))}
+        {navItems.map(({ icon: Icon, label, to, wip }) =>
+          wip ? (
+            // Tombol WIP — tampilkan toast, tidak navigasi ke mana-mana
+            <button
+              key={to}
+              onClick={() =>
+                toast.info("🚧 Masih dalam proses pengembangan", {
+                  description: `Fitur "${label}" belum tersedia saat ini.`,
+                  duration: 2500,
+                })
+              }
+              className="flex items-center gap-4 px-3 py-3 rounded-lg transition-colors hover:bg-ig-secondary-bg text-neutral-400 w-full text-left group"
+            >
+              <Icon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105" />
+              <span className="hidden md:block text-sm">{label}</span>
+            </button>
+          ) : (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-4 px-3 py-3 rounded-lg transition-colors hover:bg-ig-secondary-bg group ${
+                  isActive ? "text-ig-text font-semibold" : "text-neutral-400"
+                }`
+              }
+            >
+              <Icon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105" />
+              <span className="hidden md:block text-sm">{label}</span>
+            </NavLink>
+          )
+        )}
       </nav>
 
       {/* Bagian Bawah: ThemeToggle + Logout */}

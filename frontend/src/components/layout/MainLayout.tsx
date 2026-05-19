@@ -9,7 +9,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="flex min-h-screen bg-ig-background text-ig-text">
       {/* Sidebar: Tampil di desktop (md ke atas), tersembunyi di mobile */}
-      <div className="hidden md:flex flex-shrink-0">
+      <div className="hidden md:flex flex-shrink-0 sticky top-0 h-screen">
         <Sidebar />
       </div>
 
