@@ -1,22 +1,40 @@
-import React from 'react';
-import { Avatar as ShadcnAvatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+// frontend/src/components/common/Avatar.tsx
+
+type AvatarSize = "sm" | "md" | "lg";
 
 interface AvatarProps {
-  src?: string;
-  fallback: string;
+  name: string;
+  avatarUrl?: string | null;
+  size?: AvatarSize;
   className?: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ src, fallback, className }) => {
-  return (
-    <ShadcnAvatar className={className}>
-      <AvatarImage src={src} alt="User Avatar" className="object-cover" />
-      {/* Fallback muncul berupa huruf inisial jika foto profilnya kosong */}
-      <AvatarFallback className="bg-zinc-800 text-ig-primary text-sm font-medium uppercase">
-        {fallback}
-      </AvatarFallback>
-    </ShadcnAvatar>
-  );
+const sizeClasses: Record<AvatarSize, string> = {
+  sm: "w-8 h-8 text-xs",
+  md: "w-10 h-10 text-sm",
+  lg: "w-20 h-20 text-2xl",
 };
 
-export default Avatar;
+export function Avatar({ name, avatarUrl, size = "md", className = "" }: AvatarProps) {
+  const initial = name?.charAt(0).toUpperCase() ?? "?";
+  const sizeClass = sizeClasses[size];
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={`Foto profil ${name}`}
+        className={`rounded-full object-cover ${sizeClass} ${className}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-full bg-ig-secondary-bg flex items-center justify-center text-ig-text font-semibold flex-shrink-0 ${sizeClass} ${className}`}
+      aria-label={`Avatar ${name}`}
+    >
+      {initial}
+    </div>
+  );
+}
