@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev
     # Agar CI/CD jalan cuma kalau ada perubahan di folder frontend
     paths:
       - 'frontend/**'
