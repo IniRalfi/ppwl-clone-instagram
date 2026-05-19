@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-import Avatar from '../common/Avatar'; 
+import { Avatar } from "../common/Avatar";
 import { useNavigate } from 'react-router-dom';
 
 // 🌟 1. DEKLARASI TIPE DATA TAG AGAR BERJALAN AMAN DI TYPESCRIPT

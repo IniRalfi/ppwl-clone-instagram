@@ -1,5 +1,3 @@
-// frontend/src/components/common/Avatar.tsx
-
 type AvatarSize = "sm" | "md" | "lg";
 
 interface AvatarProps {
