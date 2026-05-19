@@ -7,7 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Toaster } from "sonner";
 import { useThemeStore } from "./store/theme.store";
 
-// Sinkronisasi tema dari localStorage ke class <html> saat pertama load
+// Sinkronisasi tema dari localStorage ke class <html> saat pertama load.
 function ThemeSync() {
   const theme = useThemeStore((state) => state.theme);
   useEffect(() => {
@@ -29,5 +29,5 @@ createRoot(document.getElementById("root")!).render(
         <Toaster richColors position="top-right" />
       </BrowserRouter>
     </GoogleOAuthProvider>
-  </StrictMode>,
+  </StrictMode>
 );
