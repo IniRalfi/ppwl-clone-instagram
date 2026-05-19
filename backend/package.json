@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
+    "build:lambda": "bun build src/lambda.ts --outdir dist --target node --format cjs --minify",
     "start": "NODE_ENV=production bun dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
