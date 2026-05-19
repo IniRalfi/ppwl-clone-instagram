@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { toast } from "sonner";
 import loginHero from "../assets/login.webp";
-import { Facebook } from "lucide-react";
+import { ThemeToggle } from "../components/common/ThemeToggle";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -54,8 +55,41 @@ export default function LoginPage() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsLoading(true);
+        // Kirim token Google ke backend
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: tokenResponse.access_token }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setAuth(data.data.user, data.data.accessToken);
+          toast.success(`Selamat datang, ${data.data.user.name}! 👋`);
+          navigate("/");
+        } else {
+          toast.error(data.message || "Gagal login dengan Google.");
+        }
+      } catch (err) {
+        toast.error("Kesalahan jaringan saat Google Login.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => toast.error("Google Login Dibatalkan"),
+  });
+
   return (
-    <div className="min-h-screen bg-[#000000] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#000000] flex flex-col font-sans relative">
+      {/* Theme Toggle di pojok kanan atas */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Container Utama: Dibagi 2 Kolom (Desktop) */}
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* ── PANEL KIRI: Hero Section (Desktop Saja) ── */}
@@ -177,7 +211,7 @@ export default function LoginPage() {
             </form>
 
             {/* Forgot Password Link */}
-            {isLogin && (
+            {/* {isLogin && (
               <div className="mt-4 text-center">
                 <button
                   type="button"
@@ -186,17 +220,22 @@ export default function LoginPage() {
                   Forgot password?
                 </button>
               </div>
-            )}
+            )} */}
 
-            {/* Log in with Facebook */}
+            {/* Log in with Google */}
             <div className="mt-8">
-              <button className="w-full border border-[#363636] hover:bg-[#1A1A1A] text-white text-[15px] font-semibold py-[11px] rounded-full transition-colors flex items-center justify-center gap-2">
-                <Facebook
-                  className="w-[18px] h-[18px] text-[#1877F2]"
-                  fill="#1877F2"
-                  strokeWidth={0}
-                />
-                Log in with Facebook
+              <button 
+                type="button"
+                onClick={() => googleLogin()}
+                className="w-full border border-[#363636] hover:bg-[#1A1A1A] text-white text-[15px] font-semibold py-[11px] rounded-full transition-colors flex items-center justify-center gap-2"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Log in with Google
               </button>
             </div>
 
@@ -238,34 +277,6 @@ export default function LoginPage() {
       {/* ── FOOTER: Links Meta ── */}
       <div className="w-full bg-[#000000] pb-12 pt-6 px-4">
         <div className="max-w-[1600px] mx-auto flex flex-col items-center">
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-4">
-            {[
-              "Meta",
-              "About",
-              "Blog",
-              "Jobs",
-              "Help",
-              "API",
-              "Privacy",
-              "Terms",
-              "Locations",
-              "Popular",
-              "Instagram Lite",
-              "Meta AI",
-              "Threads",
-              "Contact Uploading & Non-Users",
-              "Meta Verified",
-              "Meta in Indonesia",
-            ].map((link) => (
-              <a
-                key={link}
-                href="#"
-                className="text-[#737373] hover:text-[#A8A8A8] transition-colors text-[16px] leading-[14px]"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
           <div className="flex items-center gap-4 text-[#737373] text-[14px] leading-[14px]">
             <span className="flex items-center gap-1 cursor-pointer">
               English

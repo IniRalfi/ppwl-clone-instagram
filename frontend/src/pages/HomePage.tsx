@@ -1,8 +1,9 @@
-// frontend/src/pages/HomePage.tsx
-
 import React, { useEffect, useState } from 'react';
 import { PostCard } from '../components/post/PostCard'; 
 import { toast } from 'sonner';
+import { useAuthStore } from '../store/auth.store';
+import { useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 
 // Tipe data sesuai dengan response dari backend
 interface Post {
@@ -25,6 +26,15 @@ interface Post {
 const HomePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const logout = useAuthStore((state) => state.logout);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Berhasil log out.");
+    navigate("/login");
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -49,8 +59,25 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text pt-6 pb-20 flex flex-col items-center">
-      <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0">
+    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col items-center">
+      
+      {/* ── TOP NAVBAR SEDERHANA ── */}
+      <div className="w-full h-14 border-b border-ig-border bg-ig-background flex items-center justify-center sticky top-0 z-50">
+        <div className="w-full max-w-[550px] px-4 flex justify-between items-center">
+          <h1 className="text-xl font-bold font-sans">Clone Instagram</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <button 
+              onClick={handleLogout}
+              className="text-sm font-semibold text-red-500 hover:text-red-400 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0 pt-6 pb-20">
         
         {isLoading ? (
           <div className="flex justify-center items-center py-20 text-ig-secondary-text">

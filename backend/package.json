@@ -18,11 +18,15 @@
     "@elysiajs/cors": "latest",
     "@elysiajs/jwt": "latest",
     "@prisma/client": "^6",
+    "@react-oauth/google": "^0.13.5",
     "elysia": "latest"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "prisma": "^6",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "bun prisma/seed.ts"
   }
 }
