@@ -26,4 +26,47 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     });
     
     return { data: posts };
+  })
+  .get("/:id", async ({ params: { id }, set }) => {
+    const post = await db.post.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatarUrl: true,
+          }
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                name: true,
+                avatarUrl: true,
+              }
+            }
+          },
+          orderBy: {
+            createdAt: "asc"
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          }
+        }
+      }
+    });
+
+    if (!post) {
+      set.status = 404;
+      return { message: "Post not found" };
+    }
+
+    return { data: post };
   });
