@@ -107,7 +107,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       isFooter ? 'bottom-6' : 'top-6'
     }`}>
       <div className="flex items-center space-x-3 mb-4">
-        <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-14 w-14 border border-ig-border bg-ig-secondary-bg" />
+        <Avatar avatarUrl={avatarUrl} name={username} className="h-14 w-14 border border-ig-border" />
         <div>
           <div className="font-bold text-ig-text text-[15px]">{username}</div>
           <div className="text-xs text-ig-secondary-text max-w-[180px] truncate">{bio}</div>
@@ -139,7 +139,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* ================= HEADER POSTINGAN ================= */}
       <div className="flex items-center justify-between px-4 py-3 relative">
         <div className="flex items-center space-x-3">
-          <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-9 w-9 border border-ig-border bg-ig-secondary-bg" />
+          <Avatar avatarUrl={avatarUrl} name={username} size="sm" className="border border-ig-border" />
           
           <div className="flex items-baseline space-x-2 relative group">
             <span className="font-semibold text-[15px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
