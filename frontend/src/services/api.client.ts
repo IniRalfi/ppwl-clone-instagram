@@ -1,9 +1,16 @@
 // Base URL backend — sesuaikan dengan environment variable Vite
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-// Helper: ambil token dari localStorage
+// Helper: ambil token dari Zustand persist store (key: "auth-storage")
 function getToken(): string | null {
-  return localStorage.getItem("token");
+  try {
+    const raw = localStorage.getItem("auth-storage");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // Tipe generik response dari API

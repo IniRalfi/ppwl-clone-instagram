@@ -44,6 +44,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
           user: {
             id: user.id,
             name: user.name,
+            username: user.username,  // ← wajib ada untuk auth store
             email: user.email,
             avatarUrl: user.avatarUrl,
           },
