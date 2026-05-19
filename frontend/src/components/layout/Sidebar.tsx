@@ -1,7 +1,7 @@
-import { Home, Search, PlusSquare, Heart, User, LogOut } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
-import { ThemeToggle } from "../common/ThemeToggle";
+import { useThemeStore } from "../../store/theme.store";
 import { toast } from "sonner";
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
 
 export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
+  const { theme, toggleTheme } = useThemeStore();
 
   return (
     <aside className="flex flex-col h-screen w-[72px] md:w-[244px] bg-ig-background border-r border-neutral-800 px-3 py-6 transition-all duration-300">
@@ -63,12 +64,19 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Bagian Bawah: ThemeToggle + Logout */}
+      {/* Bagian Bawah: Tema + Logout */}
       <div className="flex flex-col gap-2 pt-4 border-t border-neutral-800/50">
-        <div className="flex items-center gap-4 px-3 py-2 rounded-lg hover:bg-ig-secondary-bg/50 transition-colors">
-          <ThemeToggle />
-          <span className="hidden md:block text-ig-text text-sm select-none">Tema</span>
-        </div>
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-ig-secondary-bg text-neutral-400 transition-colors w-full text-left group"
+        >
+          {theme === "dark" ? (
+            <Sun className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105" />
+          ) : (
+            <Moon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105" />
+          )}
+          <span className="hidden md:block text-sm">Tema</span>
+        </button>
         
         <button
           onClick={logout}
