@@ -2,9 +2,11 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { env } from "@/config/env";
 
-// Import routes (akan kita isi satu per satu)
-// import { authRoutes } from "@/modules/auth/auth.routes";
-// import { postRoutes } from "@/modules/post/post.routes";
+import { authRoutes } from "@/modules/auth/auth.routes";
+import { postRoutes } from "@/modules/post/post.routes";
+import { userRoutes } from "@/modules/user/user.routes";
+import { commentRoutes } from "@/modules/comment/comment.routes";
+import { notificationRoutes } from "@/modules/notification/notification.routes";
 
 const app = new Elysia()
   .use(
@@ -14,8 +16,11 @@ const app = new Elysia()
     }),
   )
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
-  // .use(authRoutes)
-  // .use(postRoutes)
+  .use(authRoutes)
+  .use(postRoutes)
+  .use(userRoutes)
+  .use(commentRoutes)
+  .use(notificationRoutes)
   .listen(env.PORT);
 
 console.log(`🚀 Backend berjalan di http://localhost:${env.PORT}`);
