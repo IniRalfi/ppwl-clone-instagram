@@ -3,6 +3,7 @@ import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, ChevronLeft, Chev
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import Avatar from '../common/Avatar'; 
+import { useNavigate } from 'react-router-dom';
 
 // 🌟 1. DEKLARASI TIPE DATA TAG AGAR BERJALAN AMAN DI TYPESCRIPT
 interface PostTag {
@@ -12,6 +13,7 @@ interface PostTag {
 }
 
 interface PostCardProps {
+  id: string;
   username: string;
   avatarUrl: string;
   imageUrls: string[]; 
@@ -26,9 +28,10 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
-  username, avatarUrl, imageUrls, caption, likesCount, timeAgo,
+  id, username, avatarUrl, imageUrls, caption, likesCount, timeAgo,
   postsCount, followers, following, bio, tags = []
 }) => {
+  const navigate = useNavigate();
   // 🌟 State utama untuk memantau on/off label tag melayang
   const [showTags, setShowTags] = useState(false);
   
@@ -263,7 +266,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
             {/* 2. TOMBOL COMMENT */}
             <div className="flex items-center space-x-1.5 text-ig-text">
-              <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
+              <Button onClick={() => navigate(`/posts/${id}`)} variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
                 <MessageCircle className="h-6 w-6" />
               </Button>
               <span className="text-sm font-semibold select-none text-ig-secondary-text">6</span>

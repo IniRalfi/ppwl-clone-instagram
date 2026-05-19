@@ -69,6 +69,7 @@ const HomePage: React.FC = () => {
         {DUMMY_POSTS.map((post) => (
           <PostCard
             key={post.id}
+            id={post.id}
             username={post.username}
             avatarUrl={post.avatarUrl}
             imageUrls={post.imageUrls} 
