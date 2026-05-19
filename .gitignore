@@ -23,4 +23,3 @@ bun-error.log
 # IDE
 .vscode/settings.json
 .idea/
-deploy.sh

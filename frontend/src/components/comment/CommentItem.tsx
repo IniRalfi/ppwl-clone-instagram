@@ -34,7 +34,6 @@ export function CommentItem({
     <div>
       {/* ── Satu baris komentar ── */}
       <div className="flex gap-2.5 py-2.5">
-
         {/* Avatar */}
         <div className="flex-shrink-0">
           {comment.author.avatarUrl ? (
@@ -80,16 +79,25 @@ export function CommentItem({
           type="button"
           className="flex-shrink-0 self-start mt-1 text-neutral-500 hover:text-red-400 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth={1.5} className="w-3.5 h-3.5">
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            className="w-3.5 h-3.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
           </svg>
         </button>
       </div>
 
       {/*
-       * ── Replies section ──
+       * ── Replies section ──-
        * Hanya dirender di level TOP (bukan isReply).
        * Semua replies ditampilkan FLAT dan sejajar — persis seperti Instagram.
        * Indent ml-9 hanya SATU kali di sini, tidak bertambah per level.
@@ -105,9 +113,7 @@ export function CommentItem({
             {/* Garis horizontal kecil — persis gaya IG */}
             <span className="block w-6 h-px bg-neutral-600" />
             <span className="text-[12px] text-neutral-400 font-semibold hover:text-ig-text transition-colors">
-              {repliesOpen
-                ? "Sembunyikan balasan"
-                : `Lihat ${replyCount} balasan`}
+              {repliesOpen ? "Sembunyikan balasan" : `Lihat ${replyCount} balasan`}
             </span>
           </button>
 
@@ -124,8 +130,7 @@ export function CommentItem({
                      * arahkan parentId ke komentar ROOT agar semua balasan
                      * tetap flat di bawah komentar utama — sama seperti IG.
                      */
-                    (_parentId, username) =>
-                      onReplyClick(comment.id, username)
+                    (_parentId, username) => onReplyClick(comment.id, username)
                   }
                   isReply={true}
                 />
@@ -178,21 +183,27 @@ function collectFlatReplies(replies: Comment[]): Comment[] {
 function formatTimeAgo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60_000);
-  const hours   = Math.floor(diff / 3_600_000);
-  const days    = Math.floor(diff / 86_400_000);
-  const weeks   = Math.floor(days / 7);
+  const hours = Math.floor(diff / 3_600_000);
+  const days = Math.floor(diff / 86_400_000);
+  const weeks = Math.floor(days / 7);
 
   if (minutes < 1) return "Baru saja";
   if (minutes < 60) return `${minutes}m`;
-  if (hours   < 24) return `${hours}j`;
-  if (days    <  7) return `${days}h`;
+  if (hours < 24) return `${hours}j`;
+  if (days < 7) return `${days}h`;
   return `${weeks}mg`;
 }
 
 function getAvatarColor(username: string): string {
   const colors = [
-    "#3b82f6", "#8b5cf6", "#ec4899", "#f97316",
-    "#10b981", "#06b6d4", "#f59e0b", "#ef4444",
+    "#3b82f6",
+    "#8b5cf6",
+    "#ec4899",
+    "#f97316",
+    "#10b981",
+    "#06b6d4",
+    "#f59e0b",
+    "#ef4444",
   ];
   let hash = 0;
   for (let i = 0; i < username.length; i++) {
