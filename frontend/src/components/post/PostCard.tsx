@@ -100,28 +100,28 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   // Fungsi Cetak Hover Card Melayang saat Username di-hover
   const renderHoverCard = (isFooter = false) => (
-    <div className={`absolute left-0 w-[300px] bg-zinc-950 border border-zinc-800 rounded-xl p-4 shadow-2xl opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50 text-left normal-case font-normal ${
+    <div className={`absolute left-0 w-[300px] bg-ig-background border border-ig-border rounded-xl p-4 shadow-2xl opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50 text-left normal-case font-normal ${
       isFooter ? 'bottom-6' : 'top-6'
     }`}>
       <div className="flex items-center space-x-3 mb-4">
-        <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-14 w-14 border border-zinc-700 bg-zinc-800" />
+        <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-14 w-14 border border-ig-border bg-ig-secondary-bg" />
         <div>
-          <div className="font-bold text-zinc-100 text-[15px]">{username}</div>
-          <div className="text-xs text-zinc-400 max-w-[180px] truncate">{bio}</div>
+          <div className="font-bold text-ig-text text-[15px]">{username}</div>
+          <div className="text-xs text-ig-secondary-text max-w-[180px] truncate">{bio}</div>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 text-center border-t border-b border-zinc-800 py-3 mb-4">
+      <div className="grid grid-cols-3 gap-2 text-center border-t border-b border-ig-border py-3 mb-4">
         <div>
-          <div className="font-bold text-sm text-zinc-100">{postsCount}</div>
-          <div className="text-[11px] text-zinc-400">posts</div>
+          <div className="font-bold text-sm text-ig-text">{postsCount}</div>
+          <div className="text-[11px] text-ig-secondary-text">posts</div>
         </div>
         <div>
-          <div className="font-bold text-sm text-zinc-100">{followers}</div>
-          <div className="text-[11px] text-zinc-400">followers</div>
+          <div className="font-bold text-sm text-ig-text">{followers}</div>
+          <div className="text-[11px] text-ig-secondary-text">followers</div>
         </div>
         <div>
-          <div className="font-bold text-sm text-zinc-100">{following}</div>
-          <div className="text-[11px] text-zinc-400">following</div>
+          <div className="font-bold text-sm text-ig-text">{following}</div>
+          <div className="text-[11px] text-ig-secondary-text">following</div>
         </div>
       </div>
       <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm py-2 rounded-lg transition-colors cursor-pointer text-center block border-none">
@@ -131,22 +131,22 @@ export const PostCard: React.FC<PostCardProps> = ({
   );
 
   return (
-    <Card className="w-full border-none bg-ig-background text-zinc-100 rounded-none sm:rounded-lg overflow-hidden text-left relative">
+    <Card className="w-full border-none bg-ig-background text-ig-text rounded-none sm:rounded-lg overflow-hidden text-left relative">
       
       {/* ================= HEADER POSTINGAN ================= */}
       <div className="flex items-center justify-between px-4 py-3 relative">
         <div className="flex items-center space-x-3">
-          <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-9 w-9 border border-zinc-700 bg-zinc-800" />
+          <Avatar src={avatarUrl} fallback={username[0].toUpperCase()} className="h-9 w-9 border border-ig-border bg-ig-secondary-bg" />
           
           <div className="flex items-baseline space-x-2 relative group">
-            <span className="font-semibold text-[15px] text-zinc-100 hover:text-zinc-400 cursor-pointer">
+            <span className="font-semibold text-[15px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
               {username}
             </span>
-            <span className="text-xs text-zinc-400">• {timeAgo}</span>
+            <span className="text-xs text-ig-secondary-text">• {timeAgo}</span>
             {renderHoverCard(false)}
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-zinc-100 hover:text-zinc-400 hover:bg-transparent rounded-full h-8 w-8 p-0 flex items-center justify-center">
+        <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent rounded-full h-8 w-8 p-0 flex items-center justify-center">
           <MoreHorizontal className="h-5 w-5" />
         </Button>
       </div>
@@ -177,7 +177,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               {index === 0 && showTags && tags.map((tag, tIdx) => (
                 <div
                   key={tIdx}
-                  className="absolute bg-zinc-950/90 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-lg pointer-events-auto border border-zinc-800 animate-in fade-in zoom-in-95 duration-150 after:content-[''] after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-b-zinc-950/90"
+                  className="absolute bg-ig-background/90 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-lg pointer-events-auto border border-ig-border animate-in fade-in zoom-in-95 duration-150 after:content-[''] after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-b-zinc-950/90"
                   style={{ 
                     left: `${tag.x}%`, 
                     top: `${tag.y}%`,
@@ -251,30 +251,30 @@ export const PostCard: React.FC<PostCardProps> = ({
                 size="icon" 
                 onClick={() => setIsLiked(!isLiked)}
                 className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent ${
-                  isLiked ? 'text-red-500 hover:text-red-600' : 'text-zinc-100 hover:text-zinc-400'
+                  isLiked ? 'text-red-500 hover:text-red-600' : 'text-ig-text hover:text-ig-secondary-text'
                 }`}
               >
                 <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
               </Button>
-              <span className="text-sm font-semibold select-none text-zinc-400">
+              <span className="text-sm font-semibold select-none text-ig-secondary-text">
                 {currentLikes > 1000 ? `${(currentLikes / 1000).toFixed(1)}K` : currentLikes}
               </span>
             </div>
 
             {/* 2. TOMBOL COMMENT */}
-            <div className="flex items-center space-x-1.5 text-zinc-100">
-              <Button variant="ghost" size="icon" className="text-zinc-100 hover:text-zinc-400 hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
+            <div className="flex items-center space-x-1.5 text-ig-text">
+              <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
                 <MessageCircle className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-zinc-400">6</span>
+              <span className="text-sm font-semibold select-none text-ig-secondary-text">6</span>
             </div>
 
             {/* 3. TOMBOL SHARE (PESAWAT) */}
-            <div className="flex items-center space-x-1.5 text-zinc-100">
-              <Button variant="ghost" size="icon" className="text-zinc-100 hover:text-zinc-400 hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg]">
+            <div className="flex items-center space-x-1.5 text-ig-text">
+              <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg]">
                 <Send className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-zinc-400">19</span>
+              <span className="text-sm font-semibold select-none text-ig-secondary-text">19</span>
             </div>
 
           </div>
@@ -285,7 +285,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             size="icon" 
             onClick={() => setIsBookmarked(!isBookmarked)}
             className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent ${
-              isBookmarked ? 'text-zinc-100' : 'text-zinc-100 hover:text-zinc-400'
+              isBookmarked ? 'text-ig-text' : 'text-ig-text hover:text-ig-secondary-text'
             }`}
           >
             <Bookmark className={`h-6 w-6 ${isBookmarked ? 'fill-current' : ''}`} />
@@ -293,22 +293,22 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
         
         {/* CAPTION BOX */}
-        <div className="text-[14px] leading-relaxed pt-1 border-t border-zinc-900 relative">
+        <div className="text-[14px] leading-relaxed pt-1 border-t border-ig-border relative">
           <div>
             <span className="inline-block relative group mr-2">
-              <span className="font-semibold cursor-pointer text-zinc-100 hover:underline">
+              <span className="font-semibold cursor-pointer text-ig-text hover:underline">
                 {username}
               </span>
               {renderHoverCard(true)}
             </span>
 
-            <span className="text-zinc-100 whitespace-pre-wrap">{displayedCaption}</span>
+            <span className="text-ig-text whitespace-pre-wrap">{displayedCaption}</span>
             
             {shouldTruncate && !isExpanded && (
-              <button onClick={() => setIsExpanded(true)} className="text-zinc-400 font-normal hover:text-zinc-300 ml-1 bg-transparent border-none p-0 cursor-pointer inline-block">... more</button>
+              <button onClick={() => setIsExpanded(true)} className="text-ig-secondary-text font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block">... more</button>
             )}
             {isExpanded && shouldTruncate && (
-              <button onClick={() => setIsExpanded(false)} className="text-zinc-500 text-xs font-normal hover:text-zinc-400 ml-1 bg-transparent border-none p-0 cursor-pointer inline-block">(less)</button>
+              <button onClick={() => setIsExpanded(false)} className="text-ig-secondary-text text-xs font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block">(less)</button>
             )}
           </div>
         </div>

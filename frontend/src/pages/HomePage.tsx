@@ -63,7 +63,7 @@ const DUMMY_POSTS = [
 
 const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-ig-background text-zinc-100 pt-6 pb-20 flex flex-col items-center">
+    <div className="min-h-screen bg-ig-background text-ig-text pt-6 pb-20 flex flex-col items-center">
       <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0">
         
         {DUMMY_POSTS.map((post) => (
@@ -83,7 +83,7 @@ const HomePage: React.FC = () => {
           />
         ))}
         
-        <div className="text-center text-zinc-500 text-sm mt-6 pb-8">
+        <div className="text-center text-ig-secondary-text text-sm mt-6 pb-8">
           ✓ Kamu sudah melihat semua postingan
         </div>
       </div>
