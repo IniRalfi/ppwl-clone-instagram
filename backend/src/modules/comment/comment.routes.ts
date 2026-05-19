@@ -39,6 +39,24 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         }
       });
       
+      // Ambil data post untuk mengetahui siapa pemiliknya
+      const post = await db.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true }
+      });
+
+      // Buat notifikasi jika yang komen bukan yang punya post
+      if (post && post.authorId !== authorId) {
+        await db.notification.create({
+          data: {
+            type: "comment",
+            message: `${newComment.author?.username || 'Seseorang'} mengomentari postinganmu: "${content.substring(0, 20)}..."`,
+            receiverId: post.authorId,
+            refId: postId,
+          }
+        });
+      }
+      
       return newComment;
     } catch (error) {
       set.status = 500;

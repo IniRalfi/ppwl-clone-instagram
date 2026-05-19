@@ -3,8 +3,8 @@ import { db } from "@/db/client";
 
 export const userRoutes = new Elysia({ prefix: "/users" })
   .get("/", async ({ query, set }) => {
-    // Sesuai target capstone: hanya bisa diakses dengan secret key
-    if (query.key !== "your-secret-key") {
+    // Membaca key rahasia dari file .env (API_SECRET_KEY)
+    if (query.key !== process.env.API_SECRET_KEY) {
       set.status = 401;
       return { message: "Unauthorized: Invalid secret key" };
     }
