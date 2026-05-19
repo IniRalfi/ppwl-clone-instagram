@@ -19,5 +19,8 @@
     "db:migrate": "bun --cwd backend prisma migrate dev",
     "db:seed": "bun --cwd backend prisma db seed",
     "db:studio": "bun --cwd backend prisma studio"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.0"
   }
 }
