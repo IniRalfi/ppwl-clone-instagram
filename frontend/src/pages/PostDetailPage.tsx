@@ -112,20 +112,38 @@ export function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex justify-center pb-20 pt-6 px-4">
-      <div className="w-full max-w-[935px] flex flex-col md:flex-row bg-ig-background border border-ig-border md:h-[600px] overflow-hidden rounded-xl shadow-2xl">
+    <div 
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
+      onClick={() => navigate('/')}
+    >
+      {/* Tombol X (Close) */}
+      <button 
+        onClick={() => navigate('/')}
+        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[60]"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      {/* Modal Content */}
+      <div 
+        className="w-full max-w-[1200px] flex flex-col md:flex-row bg-ig-background border border-ig-border md:h-[85vh] overflow-hidden rounded-md shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()} // Mencegah klik di dalam modal tertutup
+      >
         
         {/* KIRI: POST GAMBAR/KONTEN */}
-        <div className="w-full md:w-[55%] flex items-center justify-center bg-black border-r border-ig-border overflow-hidden relative">
+        <div className="w-full md:w-[60%] flex items-center justify-center bg-black border-r border-ig-border overflow-hidden relative">
           {post.imageUrl ? (
-            <img src={post.imageUrl} alt="Post" className="object-contain w-full h-full max-h-[600px]" />
+            <img src={post.imageUrl} alt="Post" className="object-contain w-full h-full" />
           ) : (
             <div className="p-10 text-center text-lg">{post.content}</div>
           )}
         </div>
 
         {/* KANAN: KOMENTAR & INFO */}
-        <div className="w-full md:w-[45%] flex flex-col h-full bg-ig-background relative">
+        <div className="w-full md:w-[40%] flex flex-col h-full bg-ig-background relative">
           
           {/* Header Info User */}
           <div className="flex items-center p-4 border-b border-ig-border">

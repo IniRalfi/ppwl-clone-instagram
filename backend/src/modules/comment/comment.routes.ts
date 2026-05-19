@@ -58,8 +58,9 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
       }
       
       return newComment;
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error creating comment:", error);
       set.status = 500;
-      return { message: "Gagal menyimpan komentar" };
+      return { message: "Gagal menyimpan komentar", error: error?.message || String(error) };
     }
   });
