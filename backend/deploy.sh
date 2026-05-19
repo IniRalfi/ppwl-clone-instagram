@@ -33,13 +33,20 @@ echo "==> 5b. Menunggu Lambda selesai update..."
 aws lambda wait function-updated --function-name "$FUNCTION"
 
 echo "==> 6. Set PRISMA_QUERY_ENGINE_LIBRARY env var..."
+
+# Load secret dari .env.production secara aman
+set -a
+source .env.production
+set +a
+
 aws lambda update-function-configuration \
   --function-name "$FUNCTION" \
   --environment "Variables={
-    DATABASE_URL=postgresql://neondb_owner:npg_NwQBemxV3gb4@ep-old-sunset-aqih8jj4-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require,
-    JWT_SECRET=bTihGOa5jzSbgN4krIHgZX1vTdOVuyHsEhkZ4J1EQXF,
+    DATABASE_URL=$DATABASE_URL,
+    JWT_SECRET=$JWT_SECRET,
     NODE_ENV=production,
     FRONTEND_URL=*,
+    API_SECRET_KEY=$API_SECRET_KEY,
     PRISMA_QUERY_ENGINE_LIBRARY=/var/task/libquery_engine-rhel-openssl-3.0.x.so.node
   }" \
   --query "LastUpdateStatus" \

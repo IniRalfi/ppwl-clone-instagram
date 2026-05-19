@@ -1,92 +1,94 @@
 // frontend/src/pages/HomePage.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PostCard } from '../components/post/PostCard'; 
+import { toast } from 'sonner';
 
-const DUMMY_POSTS = [
-  {
-    id: '1',
-    username: 'adella_codes',
-    avatarUrl: '', 
-    imageUrls: [
-      'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80', 
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80', 
-    ],
-    caption: 'Akhirnya berhasil install komponen Avatar dari ShadcnUI! Hari yang panjang tapi seru banget! 🚀💻',
-    likesCount: 1240,
-    timeAgo: '2 jam',
-    // 🌟 DATA STATISTIK UNTUK HOVER CARD ADELLA
-    postsCount: '42',
-    followers: '1,240',
-    following: '348',
-    bio: 'Frontend Developer | React & Tailwind'
-  },
-  {
-    id: '2',
-    username: 'rafli_tech',
-    avatarUrl: '', 
-    imageUrls: [
-      'https://images.unsplash.com/photo-1618477388954-7852f32655ec?auto=format&fit=crop&w=800&q=80' 
-    ],
-    caption: 'Lagi review kodingan tim frontend. Gila, rapi bener kodingannya Adella. Lanjut gas TAHAP 3! 🔥',
-    likesCount: 890,
-    timeAgo: '5 jam',
-    // 🌟 DATA STATISTIK UNTUK HOVER CARD RAFLI
-    postsCount: '156',
-    followers: '3,892',
-    following: '512',
-    bio: 'Backend Engineer | Node.js & Go'
-  },
-  {
-    id: '3',
-    username: 'uptbahasa_untan',
-    avatarUrl: '', 
-    imageUrls: [
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80' 
-    ],
-    caption: 'Selamat kepada para Mahasiswa Berprestasi Pilmapres 2026. Sukses selalu di kancah nasional! 🎓✨',
-    likesCount: 136,
-    timeAgo: '1w',
-    postsCount: '1,008',
-    followers: '2,967',
-    following: '79',
-    bio: 'UPA Bahasa Universitas Tanjungpura',
-    // 🌟 DATA COORDINAT TAG AKUN ORANG (Suaikan x dan y nya biar pas di atas kepala foto)
-    tags: [
-      { username: 'ozmar_zaidan', x: 35, y: 45 },
-      { username: 'naufal_issan', x: 65, y: 45 },
-      { username: 'elpan_pinoo', x: 35, y: 75 },
-      { username: 'adnadinna_nr', x: 65, y: 75 }
-    ]
-  }
-];
+// Tipe data sesuai dengan response dari backend
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+}
 
 const HomePage: React.FC = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
+        const json = await res.json();
+        
+        if (res.ok && json.data) {
+          setPosts(json.data);
+        } else {
+          toast.error("Gagal mengambil data postingan dari server.");
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        toast.error("Tidak dapat terhubung ke server backend.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
   return (
     <div className="min-h-screen bg-ig-background text-ig-text pt-6 pb-20 flex flex-col items-center">
       <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0">
         
-        {DUMMY_POSTS.map((post) => (
-          <PostCard
-            key={post.id}
-            id={post.id}
-            username={post.username}
-            avatarUrl={post.avatarUrl}
-            imageUrls={post.imageUrls} 
-            caption={post.caption}
-            likesCount={post.likesCount}
-            timeAgo={post.timeAgo}
-            postsCount={post.postsCount}
-            followers={post.followers}
-            following={post.following}
-            bio={post.bio}
-            tags={post.tags} // 🌟 PASTIKAN BARIS INI ADA!
-          />
-        ))}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20 text-ig-secondary-text">
+            Memuat postingan...
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center text-ig-secondary-text py-20">
+            Belum ada postingan.
+          </div>
+        ) : (
+          posts.map((post) => {
+            // Kalkulasi waktu lalu sederhana
+            const timeAgo = new Date(post.createdAt).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+            
+            return (
+              <PostCard
+                key={post.id}
+                id={post.id}
+                username={post.author.username}
+                avatarUrl={post.author.avatarUrl || ''}
+                imageUrls={post.imageUrl ? [post.imageUrl] : []} 
+                caption={post.content}
+                likesCount={post._count.likes}
+                timeAgo={timeAgo}
+                postsCount="0" // Bisa disesuaikan nanti dengan stats riil
+                followers="0"
+                following="0"
+                bio="User"
+              />
+            );
+          })
+        )}
         
-        <div className="text-center text-ig-secondary-text text-sm mt-6 pb-8">
-          ✓ Kamu sudah melihat semua postingan
-        </div>
+        {!isLoading && posts.length > 0 && (
+          <div className="text-center text-ig-secondary-text text-sm mt-6 pb-8">
+            ✓ Kamu sudah melihat semua postingan
+          </div>
+        )}
       </div>
     </div>
   );
