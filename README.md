@@ -1,4 +1,17 @@
+# Link Dokumen
+
 https://docs.google.com/document/d/1hV_PTNH-kDNz5YgDGbBiWD73-9hstmQboQxHAoMshhQ/edit?usp=sharing
+
+## URL Deployment
+
+| Environment | URL |
+|---|---|
+| Frontend (Production) | https://ppwl-a3.my.id |
+| Backend (AWS Lambda) | https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws |
+| Health Check | https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws/health |
+| Cek Data Users | https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws/data/users?key=rahasia |
+| Cek Data Posts | https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws/data/posts?key=rahasia |
+| Cek Data Comments | https://qfpvfoyqge5upnwcdlscwq3v2u0fxrzm.lambda-url.us-east-1.on.aws/data/comments?key=rahasia |
 
 # Clone Instagram — PPWL
 
