@@ -21,23 +21,24 @@
 
 @theme {
   /* =========================================
-     1. WARNA DASAR & BACKGROUND (Sudah ada)
+     1. WARNA DASAR & BACKGROUND (Dynamic Variables)
+     Warna aslinya didefinisikan di @layer base (:root & html.light)
   ========================================= */
-  --color-ig-background: rgb(12, 16, 20);
-  --color-ig-secondary-bg: rgb(37, 41, 46);
-  --color-ig-primary: rgb(0, 149, 246);
-  --color-ig-text: rgb(245, 245, 245);
-  --color-ig-secondary-text: rgb(168, 168, 168);
-  --color-ig-border: rgb(38, 38, 38);
+  --color-ig-background: var(--color-ig-background);
+  --color-ig-secondary-bg: var(--color-ig-secondary-bg);
+  --color-ig-primary: var(--color-ig-primary);
+  --color-ig-text: var(--color-ig-text);
+  --color-ig-secondary-text: var(--color-ig-secondary-text);
+  --color-ig-border: var(--color-ig-border);
 
   /* =========================================
-     2. WARNA FITUR SPESIFIK IG (BARU)
+     2. WARNA FITUR SPESIFIK IG (Dynamic)
   ========================================= */
   /* Direct Message (DM) Bubbles */
-  --color-ig-chat-in: rgb(37, 41, 46); /* ig-incoming-message-bubble */
-  --color-ig-chat-out: rgb(74, 93, 249); /* ig-outgoing-message-bubble */
+  --color-ig-chat-in: var(--color-ig-chat-in); /* ig-incoming-message-bubble */
+  --color-ig-chat-out: var(--color-ig-chat-out); /* ig-outgoing-message-bubble */
 
-  /* Badge & Notifikasi */
+  /* Badge & Notifikasi (Static) */
   --color-ig-badge: rgb(255, 48, 64); /* Merah notif angka */
   --color-ig-live: rgb(255, 1, 105); /* Badge LIVE merah muda */
   --color-ig-close-friends: rgb(28, 209, 79); /* Hijau Close Friends */
@@ -96,6 +97,34 @@
 
 @layer base {
   /* =========================================
+     CSS VARIABLES UNTUK THEMING (TAILWIND V4)
+  ========================================= */
+  :root {
+    --color-ig-background: rgb(12, 16, 20);
+    --color-ig-secondary-bg: rgb(37, 41, 46);
+    --color-ig-primary: rgb(0, 149, 246);
+    --color-ig-text: rgb(245, 245, 245);
+    --color-ig-secondary-text: rgb(168, 168, 168);
+    --color-ig-border: rgb(38, 38, 38);
+    --color-ig-chat-in: rgb(37, 41, 46);
+    --color-ig-chat-out: rgb(74, 93, 249);
+  }
+
+  /* =========================================
+     LIGHT MODE — Override saat class .light ada di <html>
+     Default adalah Dark Mode (warna di @theme di atas)
+  ========================================= */
+  html.light {
+    --color-ig-background: rgb(250, 250, 250);
+    --color-ig-secondary-bg: rgb(239, 239, 239);
+    --color-ig-text: rgb(0, 0, 0);
+    --color-ig-secondary-text: rgb(115, 115, 115);
+    --color-ig-border: rgb(219, 219, 219);
+    --color-ig-chat-in: rgb(239, 239, 239);
+    --color-ig-chat-out: rgb(0, 149, 246);
+  }
+
+  /* =========================================
      IMPORT FONT ASLI DARI META CDN
   ========================================= */
   @font-face {
@@ -120,20 +149,6 @@
       font-style: normal;
       font-weight: 700;
       src: url(https://www.facebook.com/rsrc.php/y8/r/WF8VhTuShVE.woff2) format("woff2");
-  }
-
-  /* =========================================
-     LIGHT MODE — Override saat class .light ada di <html>
-     Default adalah Dark Mode (warna di @theme di atas)
-  ========================================= */
-  html.light {
-    --color-ig-background: rgb(250, 250, 250);
-    --color-ig-secondary-bg: rgb(239, 239, 239);
-    --color-ig-text: rgb(0, 0, 0);
-    --color-ig-secondary-text: rgb(115, 115, 115);
-    --color-ig-border: rgb(219, 219, 219);
-    --color-ig-chat-in: rgb(239, 239, 239);
-    --color-ig-chat-out: rgb(0, 149, 246);
   }
 
   body {
