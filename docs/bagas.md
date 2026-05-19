@@ -11,10 +11,22 @@
 
 Kamu lagi mengerjakan **Clone Instagram** sebagai tugas capstone.
 
-- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · ShadCN UI · React Router DOM
-- **Monorepo:** Folder utama ada 3: `frontend/`, `backend/`, `shared/`
-- **Semua file kamu ada di:** `frontend/src/`
-- **Aplikasi sudah berjalan** di `http://localhost:5173` (jalankan `bun dev` dari root)
+- **Stack:** Bun · React + Vite · TypeScript · Tailwind CSS v4 · React Router DOM
+- **Kamu cukup fokus ke folder:** `frontend/src/`
+- **Backend & Database sudah siap di cloud** — kamu tidak perlu install database apapun.
+- **Cara jalankan:**
+  ```bash
+  # 1. Clone repo (kalau belum)
+  git clone https://github.com/IniRalfi/ppwl-clone-instagram.git
+  cd ppwl-clone-instagram/frontend
+
+  # 2. Install dependencies
+  bun install
+
+  # 3. Jalankan (cukup ini saja!)
+  bun dev
+  ```
+  Buka `http://localhost:5173` di browser. Selesai!
 
 ---
 
@@ -39,27 +51,23 @@ Proyek ini punya warna kustom. **Jangan gunakan warna Tailwind biasa** seperti `
 frontend/src/
 └── components/
     └── comment/
-        ├── CommentItem.tsx    ← Tampilan satu komentar (+ replies bersarang)
-        └── CommentForm.tsx    ← Form input tulis komentar (opsional, bisa dipakai ulang)
+        ├── CommentItem.tsx    ← Tampilan satu komentar (sudah ada, mungkin masih kosong)
+        └── CommentForm.tsx    ← Form input tulis komentar (buat baru)
 ```
 
 > ⚠️ **PENTING:** `pages/PostDetailPage.tsx` **sudah ada dan sudah mengimpor `CommentItem`**.
-> Kalau `CommentItem.tsx` masih kosong, halaman `/posts/p1` akan error (crash).
+> Kalau `CommentItem.tsx` masih kosong, halaman `/posts/:id` akan error (crash).
 > Tugas utamamu adalah **mengisi `CommentItem.tsx`** agar halaman itu bisa berjalan.
-
-> ℹ️ File-file yang sudah ada dan **JANGAN diedit**:
-> - `pages/PostDetailPage.tsx` — sudah lengkap dengan UI comment bar
-> - `services/comment.service.ts` — sudah lengkap dengan semua fungsi API
 
 ---
 
-## 🔗 Tipe Data yang Tersedia
+## 🔗 Tipe Data — Salin Langsung, Jangan Import dari Mana-mana
+
+Gunakan tipe data ini langsung di file kamu (salin ke dalam file yang membutuhkannya):
 
 ```typescript
-// Dari components/comment/ → path ke shared:
-// "../../../../shared/src/types/comment"  (4 level ke root)
-
-export interface Comment {
+// Salin ke dalam CommentItem.tsx dan CommentForm.tsx
+interface Comment {
   id: string;
   content: string;
   authorId: string;
@@ -71,37 +79,31 @@ export interface Comment {
   };
   postId: string;
   parentId: string | null;   // null = komentar utama, isi = ini reply
-  replies?: Comment[];       // Array reply (bisa nested)
+  replies?: Comment[];
   createdAt: string;
-}
-
-export interface CreateCommentDto {
-  content: string;
-  postId: string;
-  parentId?: string;  // Isi kalau ini reply
 }
 ```
 
 ---
 
-## 🌐 API & Service yang Sudah Tersedia
+## 🌐 API yang Sudah Siap Digunakan
 
-**Jangan buat ulang** — import dari `services/comment.service.ts`:
+Backend sudah jalan di cloud. **Tidak perlu install atau jalankan backend apapun.**
 
+**Endpoint yang digunakan:**
+```
+GET  {VITE_API_URL}/comments?postId=ID    → Ambil komentar suatu post
+POST {VITE_API_URL}/comments              → Kirim komentar baru
+```
+
+**Cara kirim komentar baru (body JSON):**
 ```typescript
-import {
-  getCommentsByPost,   // GET /posts/:postId/comments → Comment[]
-  createComment,       // POST /posts/:postId/comments → Comment
-  deleteComment,       // DELETE /comments/:commentId → void
-  countUserComments,   // Helper hitung komentar user (untuk limit 5)
-} from "../../services/comment.service";
-```
-
-**API Endpoints:**
-```
-GET  {VITE_API_URL}/posts/:postId/comments   → Ambil komentar suatu post
-POST {VITE_API_URL}/posts/:postId/comments   → Kirim komentar baru
-DELETE {VITE_API_URL}/comments/:commentId    → Hapus komentar sendiri
+// POST /comments
+{
+  postId: "id-postingan",
+  content: "isi komentar",
+  authorId: "id-user-yang-login"
+}
 ```
 
 ---
@@ -115,124 +117,128 @@ Ini komponen yang **sudah dipakai oleh `PostDetailPage.tsx`**. Kalau belum dibua
 **Props yang HARUS diterima** (sudah dipanggil di PostDetailPage seperti ini):
 ```tsx
 <CommentItem
-  comment={comment}          // Data komentar
-  currentUserId={user.id}    // ID user yang sedang login
-  onReplyClick={handleReplyClick}  // Fungsi dipanggil saat klik "Balas"
+  comment={comment}                         // Data komentar
+  currentUserId={user?.id || ""}            // ID user yang sedang login
+  onReplyClick={handleReplyClick}           // Fungsi dipanggil saat klik "Balas"
 />
 ```
 
-**Nama props & struktur:**
+**Struktur lengkap:**
 ```typescript
 // frontend/src/components/comment/CommentItem.tsx
-import type { Comment } from "../../../../shared/src/types/comment";
-import { formatRelativeTime } from "../../../../shared/src/utils/date";
+
+interface Comment {
+  id: string;
+  content: string;
+  authorId: string;
+  author: {
+    id: string;
+    username: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  postId: string;
+  parentId: string | null;
+  replies?: Comment[];
+  createdAt: string;
+}
 
 interface CommentItemProps {
   comment: Comment;
   currentUserId: string;
   onReplyClick: (parentId: string, username: string) => void;
-  depth?: number; // Level kedalaman reply (default: 0, max: 2)
+  isReply?: boolean;
 }
 
-export function CommentItem({
-  comment,
-  currentUserId,
-  onReplyClick,
-  depth = 0,
-}: CommentItemProps) {
+export function CommentItem({ comment, currentUserId, onReplyClick, isReply = false }: CommentItemProps) {
   const isOwn = comment.authorId === currentUserId;
-  const hasReplies = comment.replies && comment.replies.length > 0;
+
+  // Format waktu singkat (contoh: "5m", "2j", "3h")
+  const formatTime = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const minutes = Math.floor(diff / 60_000);
+    const hours = Math.floor(diff / 3_600_000);
+    const days = Math.floor(diff / 86_400_000);
+    if (minutes < 1) return "Baru";
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}j`;
+    return `${days}h`;
+  };
 
   return (
-    <div className={`py-2 ${depth > 0 ? "ml-8 border-l border-neutral-800 pl-3" : ""}`}>
-      {/* Baris utama: avatar + konten komentar */}
-      <div className="flex gap-3">
-        {/* Avatar bulat */}
-        <div className="w-8 h-8 rounded-full bg-ig-secondary-bg flex items-center justify-center text-ig-text text-xs font-semibold flex-shrink-0">
-          {comment.author.name.charAt(0).toUpperCase()}
-        </div>
-
-        {/* Konten */}
-        <div className="flex-1">
-          {/* Username + isi komentar */}
-          <p className="text-ig-text text-sm">
-            <span className="font-semibold mr-1">{comment.author.username}</span>
-            {comment.content}
-          </p>
-
-          {/* Waktu + tombol Balas */}
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-neutral-500 text-xs">
-              {formatRelativeTime(comment.createdAt)}
-            </span>
-
-            {/* Tombol Balas — hanya tampil sampai depth 1 (biar tidak terlalu dalam) */}
-            {depth < 2 && (
-              <button
-                onClick={() => onReplyClick(comment.id, comment.author.username)}
-                className="text-neutral-500 text-xs font-semibold hover:text-ig-text transition-colors"
-              >
-                Balas
-              </button>
-            )}
-
-            {/* Label komentar sendiri */}
-            {isOwn && (
-              <span className="text-neutral-600 text-xs">· Kamu</span>
-            )}
+    <div className={`flex gap-2.5 py-2 ${isReply ? "ml-9" : ""}`}>
+      {/* Avatar */}
+      <div className="flex-shrink-0">
+        {comment.author.avatarUrl ? (
+          <img src={comment.author.avatarUrl} className="w-8 h-8 rounded-full object-cover" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-white text-xs font-bold">
+            {comment.author.name.charAt(0).toUpperCase()}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Render replies secara rekursif */}
-      {hasReplies && (
-        <div className="mt-1">
-          {comment.replies!.map((reply) => (
-            <CommentItem
-              key={reply.id}
-              comment={reply}
-              currentUserId={currentUserId}
-              onReplyClick={onReplyClick}
-              depth={depth + 1}
-            />
-          ))}
+      {/* Konten */}
+      <div className="flex-1">
+        <p className="text-sm text-ig-text leading-relaxed">
+          <span className="font-semibold mr-1">{comment.author.username}</span>
+          {comment.content}
+        </p>
+
+        {/* Waktu + Tombol Balas */}
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-neutral-500 text-xs">{formatTime(comment.createdAt)}</span>
+          {!isReply && (
+            <button
+              onClick={() => onReplyClick(comment.id, comment.author.username)}
+              className="text-neutral-500 text-xs font-semibold hover:text-ig-text transition-colors"
+            >
+              Balas
+            </button>
+          )}
+          {isOwn && <span className="text-neutral-600 text-xs">· Kamu</span>}
         </div>
-      )}
+
+        {/* Render replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {comment.replies.map(reply => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                currentUserId={currentUserId}
+                onReplyClick={onReplyClick}
+                isReply={true}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 ```
 
-**Penjelasan logika penting:**
-- `depth` dipakai untuk indentasi — reply level 1 masuk ke dalam, level 2 lebih dalam lagi
-- `border-l pl-3` di kiri bikin garis vertikal khas reply di IG
-- `formatRelativeTime` menghasilkan output singkat: `"5m"`, `"2j"`, `"3h"` dll
-- Komponen rekursif: reply dari reply juga dirender dengan `CommentItem` lagi
-
 ---
 
 ### ✅ Langkah 2 — `CommentForm.tsx` (Standalone Input Form)
 
-Form input komentar yang **reusable** — bisa dipakai di halaman lain kalau diperlukan.
-
-> **Catatan:** `PostDetailPage.tsx` sudah punya input bar sendiri secara inline. `CommentForm.tsx`
-> ini dibuat sebagai komponen bersih yang bisa dipakai di tempat lain (misalnya di PostCard).
+Form input komentar yang *reusable* — bisa dipakai di halaman lain kalau diperlukan.
 
 **Spesifikasi:**
-- Batas **5 komentar** per user — jika sudah 5, input dinonaktifkan + muncul pesan merah
-- Ada mode "Balas @username" — input menunjukkan siapa yang sedang dibalas
 - Tombol Kirim hanya aktif kalau teks tidak kosong
+- Ada mode "Balas @username" — input menunjukkan siapa yang sedang dibalas
+- `isDisabled` true → input dinonaktifkan
 
-**Nama props & struktur:**
 ```typescript
 // frontend/src/components/comment/CommentForm.tsx
 import { useState } from "react";
 
 interface CommentFormProps {
-  onSubmit: (content: string) => Promise<void>;  // Fungsi submit dari parent
-  isDisabled?: boolean;         // True kalau sudah 5 komentar
-  replyTarget?: string | null;  // Username yang sedang dibalas (null = komentar baru)
-  onCancelReply?: () => void;   // Fungsi reset mode reply
+  onSubmit: (content: string) => Promise<void>;
+  isDisabled?: boolean;
+  replyTarget?: string | null;
+  onCancelReply?: () => void;
   placeholder?: string;
 }
 
@@ -267,20 +273,10 @@ export function CommentForm({
           <span className="text-xs text-neutral-400">
             Membalas <span className="font-semibold text-ig-text">@{replyTarget}</span>
           </span>
-          <button
-            onClick={onCancelReply}
-            className="text-xs text-neutral-400 hover:text-ig-text transition-colors"
-          >
+          <button onClick={onCancelReply} className="text-xs text-neutral-400 hover:text-ig-text">
             Batal
           </button>
         </div>
-      )}
-
-      {/* Pesan batas komentar */}
-      {isDisabled && (
-        <p className="text-ig-badge text-xs mb-2">
-          ⚠️ Batas 5 komentar sudah tercapai.
-        </p>
       )}
 
       {/* Input + Tombol Kirim */}
@@ -291,7 +287,7 @@ export function CommentForm({
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           disabled={isDisabled || isSubmitting}
-          placeholder={isDisabled ? "Tidak bisa menambah komentar lagi." : placeholder}
+          placeholder={placeholder}
           className="flex-1 bg-transparent text-ig-text text-sm outline-none placeholder:text-neutral-500 border-b border-neutral-700 pb-1 focus:border-neutral-400 transition-colors disabled:opacity-40"
         />
         <button
@@ -321,9 +317,8 @@ git checkout -b bagas/comment-system
 ### 2. Commit setiap selesai 1 langkah
 ```bash
 git add .
-git commit -m "feat(comment): add CommentItem component with nested replies"
-# Lanjut langkah 2:
-git commit -m "feat(comment): add reusable CommentForm component"
+git commit -m "feat(comment): add CommentItem component"
+git commit -m "feat(comment): add CommentForm component"
 ```
 
 ### 3. Push ke branch kamu
@@ -343,32 +338,17 @@ git push origin bagas/comment-system
 
 ---
 
-## ✅ Cara Test Komponen
+## ✅ Cara Test
 
-### Test CommentItem
-1. Jalankan `bun dev` dari root
-2. Login → navigasi ke `http://localhost:5173/posts/p1`
+1. Jalankan `bun dev` dari folder `frontend/`
+2. Login → navigasi ke halaman beranda → klik ikon komentar di postingan mana saja
 3. **Yang harus muncul:**
-   - Daftar komentar dummy (Andi, Budi, Citra, Deni)
-   - Komentar yang punya reply → reply tampil menjorok ke dalam dengan garis vertikal kiri
-   - Klik tombol "Balas" → input bar di bawah harus berubah jadi "Membalas @username"
-4. **Yang TIDAK harus ada dulu:** koneksi ke API nyata (dummy data sudah cukup)
+   - Daftar komentar dengan avatar, username, isi komentar, waktu
+   - Tombol "Balas" di setiap komentar
+   - Klik "Balas" → input bar berubah jadi "Membalas @username"
 
-### Test CommentForm
-1. Tambahkan sementara di `PostDetailPage.tsx` atau buat halaman test sementara:
-   ```tsx
-   import { CommentForm } from "../components/comment/CommentForm";
-   <CommentForm
-     onSubmit={async (text) => console.log("Submit:", text)}
-     replyTarget="andi_dev"
-     onCancelReply={() => console.log("Cancel")}
-   />
-   ```
-2. Ketik teks → tekan Enter atau klik "Kirim" → console harus print teksnya
-3. Coba `isDisabled={true}` → input harus nonaktif + muncul pesan merah
-
-### Kalau Ada Error di Terminal
-1. Copy seluruh pesan error
+### Kalau Ada Error
+1. Copy seluruh pesan error (teks merah di terminal)
 2. Paste ke AI bersama kode file yang error
 3. Ketik: _"Ini error di proyek React TypeScript Vite, tolong bantu perbaiki"_
 
@@ -376,14 +356,11 @@ git push origin bagas/comment-system
 
 ## ❓ FAQ
 
-**Q: Import `"../../../../shared/src/types/comment"` error?**
-A: Jalankan `bun install` dari folder **root** monorepo (bukan dari dalam `frontend/`). Pastikan kamu di level `ppwl-clone-instagram/` sebelum jalankan perintah itu.
+**Q: Harus install database atau backend dulu?**
+A: **TIDAK PERLU.** Backend dan database sudah jalan di cloud. Kamu cukup jalankan `bun dev` dari folder `frontend/`.
 
-**Q: Halaman `/posts/p1` masih error setelah saya buat `CommentItem.tsx`?**
-A: Pastikan kamu **export** fungsinya dengan benar: `export function CommentItem(...)` bukan `export default`. PostDetailPage menggunakan named import.
+**Q: Halaman `/posts/:id` masih error setelah saya buat `CommentItem.tsx`?**
+A: Pastikan kamu **export** fungsinya dengan benar: `export function CommentItem(...)` bukan `export default`.
 
-**Q: `formatRelativeTime` mengembalikan `"2j"` bukan `"2 jam lalu"` — apakah normal?**
-A: Ya, itu memang outputnya. Format singkat: `d` = detik, `m` = menit, `j` = jam, `h` = hari, `mg` = minggu.
-
-**Q: Komentar tidak bisa di-reply lebih dari 2 level — apakah normal?**
-A: Ya, itu disengaja! Props `depth` membatasi reply di level 2 (`depth < 2`). Ini sesuai desain — IG aslinya juga tidak unlimited depth.
+**Q: Import error "module not found"?**
+A: Pastikan tidak ada import dari `shared/` atau `backend/`. Tipe data sudah ditulis langsung di file ini — salin saja ke dalam file kamu.
