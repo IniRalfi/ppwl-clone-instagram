@@ -12,7 +12,7 @@ const navItems = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-ig-background border-t border-neutral-800 flex md:hidden items-center justify-around h-16 z-50 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-ig-background border-t border-ig-border flex md:hidden items-center justify-around h-[49px] z-50 px-1">
       {navItems.map(({ icon: Icon, to, label, wip }) =>
         wip ? (
           <button
@@ -23,9 +23,10 @@ export function BottomNav() {
                 duration: 2500,
               })
             }
-            className="flex-1 flex items-center justify-center h-full text-neutral-500"
+            className="flex-1 flex items-center justify-center h-full text-ig-secondary-text"
+            aria-label={label}
           >
-            <Icon className="w-6 h-6 flex-shrink-0" />
+            <Icon className="w-6 h-6" strokeWidth={1.5} />
           </button>
         ) : (
           <NavLink
@@ -33,11 +34,14 @@ export function BottomNav() {
             to={to}
             className={({ isActive }) =>
               `flex-1 flex items-center justify-center h-full transition-colors ${
-                isActive ? "text-ig-text" : "text-neutral-500"
+                isActive ? "text-ig-text" : "text-ig-secondary-text"
               }`
             }
+            aria-label={label}
           >
-            <Icon className="w-6 h-6 flex-shrink-0" />
+            {({ isActive }) => (
+              <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 1.5} />
+            )}
           </NavLink>
         )
       )}
