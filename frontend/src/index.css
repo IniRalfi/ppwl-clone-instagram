@@ -21,22 +21,18 @@
 
 @theme {
   /* =========================================
-     1. WARNA DASAR & BACKGROUND (Dynamic Variables)
-     Warna aslinya didefinisikan di @layer base (:root & html.light)
+     WARNA DASAR & BACKGROUND (Dynamic — baca dari :root)
   ========================================= */
-  --color-ig-background: var(--color-ig-background);
-  --color-ig-secondary-bg: var(--color-ig-secondary-bg);
-  --color-ig-primary: var(--color-ig-primary);
-  --color-ig-text: var(--color-ig-text);
+  --color-ig-background:     var(--color-ig-background);
+  --color-ig-secondary-bg:   var(--color-ig-secondary-bg);
+  --color-ig-elevated-bg:    var(--color-ig-elevated-bg);
+  --color-ig-primary:        var(--color-ig-primary);
+  --color-ig-text:           var(--color-ig-text);
   --color-ig-secondary-text: var(--color-ig-secondary-text);
-  --color-ig-border: var(--color-ig-border);
-
-  /* =========================================
-     2. WARNA FITUR SPESIFIK IG (Dynamic)
-  ========================================= */
-  /* Direct Message (DM) Bubbles */
-  --color-ig-chat-in: var(--color-ig-chat-in); /* ig-incoming-message-bubble */
-  --color-ig-chat-out: var(--color-ig-chat-out); /* ig-outgoing-message-bubble */
+  --color-ig-border:         var(--color-ig-border);
+  --color-ig-separator:      var(--color-ig-separator);
+  --color-ig-chat-in:        var(--color-ig-chat-in);
+  --color-ig-chat-out:       var(--color-ig-chat-out);
 
   /* Badge & Notifikasi (Static) */
   --color-ig-badge: rgb(255, 48, 64); /* Merah notif angka */
@@ -100,28 +96,39 @@
      CSS VARIABLES UNTUK THEMING (TAILWIND V4)
   ========================================= */
   :root {
-    --color-ig-background: rgb(12, 16, 20);
-    --color-ig-secondary-bg: rgb(37, 41, 46);
-    --color-ig-primary: rgb(0, 149, 246);
-    --color-ig-text: rgb(245, 245, 245);
-    --color-ig-secondary-text: rgb(168, 168, 168);
-    --color-ig-border: rgb(38, 38, 38);
-    --color-ig-chat-in: rgb(37, 41, 46);
-    --color-ig-chat-out: rgb(74, 93, 249);
+    /* ── DARK MODE — Palet Instagram Web Asli ─────────────────── */
+    --color-ig-background:      #0a0a0a;  /* Charcoal gelap, bukan hitam murni */
+    --color-ig-secondary-bg:    #1a1a1a;  /* Surface sedikit lebih terang (sidebar, modal) */
+    --color-ig-elevated-bg:     #262626;  /* Hover state, dropdown */
+    --color-ig-primary:         #0095f6;  /* Biru IG */
+    --color-ig-primary-hover:   #1877f2;
+    --color-ig-text:            #f5f5f5;  /* Putih lembut, bukan #fff murni */
+    --color-ig-secondary-text:  #a8a8a8;  /* Abu medium */
+    --color-ig-border:          rgba(255, 255, 255, 0.12); /* Border transparan */
+    --color-ig-separator:       rgba(255, 255, 255, 0.08);
+    --color-ig-chat-in:         #262626;
+    --color-ig-chat-out:        #3797f0;
+    /* Shadow untuk card di dark mode (sangat subtle) */
+    --shadow-card: none;
+    --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
   }
 
-  /* =========================================
-     LIGHT MODE — Override saat class .light ada di <html>
-     Default adalah Dark Mode (warna di @theme di atas)
-  ========================================= */
+  /* ── LIGHT MODE — Palet Instagram Web Asli ─────────────────── */
   html.light {
-    --color-ig-background: rgb(250, 250, 250);
-    --color-ig-secondary-bg: rgb(239, 239, 239);
-    --color-ig-text: rgb(0, 0, 0);
-    --color-ig-secondary-text: rgb(115, 115, 115);
-    --color-ig-border: rgb(219, 219, 219);
-    --color-ig-chat-in: rgb(239, 239, 239);
-    --color-ig-chat-out: rgb(0, 149, 246);
+    --color-ig-background:      #fafafa;  /* Background halaman utama */
+    --color-ig-secondary-bg:    #ffffff;  /* Card, post, sidebar */
+    --color-ig-elevated-bg:     #f0f0f0;  /* Hover, input */
+    --color-ig-primary:         #0095f6;
+    --color-ig-primary-hover:   #1877f2;
+    --color-ig-text:            #000000;
+    --color-ig-secondary-text:  #737373;
+    --color-ig-border:          #dbdbdb;
+    --color-ig-separator:       #efefef;
+    --color-ig-chat-in:         #efefef;
+    --color-ig-chat-out:        #0095f6;
+    /* Shadow memberikan depth di light mode */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 
   /* =========================================
@@ -153,6 +160,47 @@
 
   body {
     @apply font-sans bg-ig-background text-ig-text antialiased;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+
+  /* Scrollbar khas IG — tersembunyi */
+  ::-webkit-scrollbar { width: 0px; height: 0px; }
+}
+
+/* =========================================
+   UTILITY CLASSES KUSTOM
+========================================= */
+@layer utilities {
+  /* Shadow card mengikuti tema (light = ada shadow, dark = tidak ada) */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+}
+
+/* =========================================
+   GLOBAL COMPONENT STYLES
+   (Card feed di light mode perlu depth)
+========================================= */
+@layer components {
+  /* Light mode: PostCard punya border + subtle shadow */
+  html.light .post-card {
+    background-color: #ffffff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    margin-bottom: 12px;
+  }
+
+  /* Light mode: Sidebar punya shadow ke kanan */
+  html.light aside {
+    box-shadow: 1px 0 0 #dbdbdb;
+  }
+
+  /* Dark mode: PostCard cukup separator halus */
+  html:not(.light) .post-card {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 }

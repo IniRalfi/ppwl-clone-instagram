@@ -45,7 +45,7 @@ aws lambda update-function-configuration \
     DATABASE_URL=$DATABASE_URL,
     JWT_SECRET=$JWT_SECRET,
     NODE_ENV=production,
-    FRONTEND_URL=*,
+    FRONTEND_URL=https://www.ppwl-a3.my.id,
     API_SECRET_KEY=$API_SECRET_KEY,
     CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY,
