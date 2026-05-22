@@ -46,7 +46,6 @@ async function request<T>(
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
-    credentials: "include",
   });
 
   if (!res.ok) {
@@ -72,7 +71,6 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
     method: "POST",
     body: formData,
     headers,
-    credentials: "include",
   });
 
   if (!res.ok) {
