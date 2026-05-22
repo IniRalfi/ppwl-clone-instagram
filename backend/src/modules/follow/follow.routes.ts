@@ -1,24 +1,28 @@
 import { Elysia, t } from "elysia";
-import { prisma } from "@/config/prisma";
+import { db } from "@/db/client";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
 
   /** GET /follow/suggestions?userId=xxx — Ambil 5 user yang belum di-follow */
   .get(
     "/suggestions",
-    async ({ query, error }) => {
-      const { userId } = query;
-      if (!userId) return error(400, { message: "userId wajib diisi" });
+    async ({ query, set }) => {
+      const { userId } = query as { userId?: string };
+
+      if (!userId) {
+        set.status = 400;
+        return { message: "userId wajib diisi" };
+      }
 
       // Ambil daftar ID yang sudah di-follow oleh user ini
-      const alreadyFollowing = await prisma.follow.findMany({
+      const alreadyFollowing = await db.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
       });
-      const followingIds = alreadyFollowing.map((f) => f.followingId);
+      const followingIds = alreadyFollowing.map((f: { followingId: string }) => f.followingId);
 
       // Ambil 5 user selain diri sendiri & yang sudah di-follow
-      const suggestions = await prisma.user.findMany({
+      const suggestions = await db.user.findMany({
         where: {
           id: { notIn: [userId, ...followingIds] },
         },
@@ -34,24 +38,30 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
       });
 
       return { data: suggestions };
-    },
-    { query: t.Object({ userId: t.Optional(t.String()) }) }
+    }
   )
 
   /** POST /follow — Follow user */
   .post(
     "/",
-    async ({ body, error }) => {
-      const { followerId, followingId } = body;
-      if (followerId === followingId)
-        return error(400, { message: "Tidak bisa follow diri sendiri" });
+    async ({ body, set }) => {
+      const { followerId, followingId } = body as { followerId: string; followingId: string };
 
-      const existing = await prisma.follow.findUnique({
+      if (followerId === followingId) {
+        set.status = 400;
+        return { message: "Tidak bisa follow diri sendiri" };
+      }
+
+      const existing = await db.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },
       });
-      if (existing) return error(409, { message: "Sudah di-follow" });
 
-      await prisma.follow.create({ data: { followerId, followingId } });
+      if (existing) {
+        set.status = 409;
+        return { message: "Sudah di-follow" };
+      }
+
+      await db.follow.create({ data: { followerId, followingId } });
       return { message: "Berhasil follow" };
     },
     {
@@ -65,16 +75,22 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   /** DELETE /follow — Unfollow user */
   .delete(
     "/",
-    async ({ body, error }) => {
-      const { followerId, followingId } = body;
-      const existing = await prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId, followingId } },
-      });
-      if (!existing) return error(404, { message: "Belum di-follow" });
+    async ({ body, set }) => {
+      const { followerId, followingId } = body as { followerId: string; followingId: string };
 
-      await prisma.follow.delete({
+      const existing = await db.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },
       });
+
+      if (!existing) {
+        set.status = 404;
+        return { message: "Belum di-follow" };
+      }
+
+      await db.follow.delete({
+        where: { followerId_followingId: { followerId, followingId } },
+      });
+
       return { message: "Berhasil unfollow" };
     },
     {
