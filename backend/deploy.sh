@@ -47,6 +47,9 @@ aws lambda update-function-configuration \
     NODE_ENV=production,
     FRONTEND_URL=*,
     API_SECRET_KEY=$API_SECRET_KEY,
+    CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET,
     PRISMA_QUERY_ENGINE_LIBRARY=/var/task/libquery_engine-rhel-openssl-3.0.x.so.node
   }" \
   --query "LastUpdateStatus" \

@@ -6,6 +6,10 @@ out
 dist
 *.tgz
 
+# Deploy artifacts — hasil build Lambda, tidak perlu di-commit
+deploy/
+lambda-deploy.zip
+
 # code coverage
 coverage
 *.lcov

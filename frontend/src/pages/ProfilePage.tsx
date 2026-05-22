@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { Avatar } from "../components/common/Avatar";
+import { deletePost } from "../services/post.service";
+import { toast } from "sonner";
+import { Trash2, Loader2 } from "lucide-react";
 
 interface Post {
   id: string;
@@ -19,6 +22,8 @@ export default function ProfilePage() {
   const { user, logout } = useAuthStore();
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Track postingan mana yang sedang dalam proses hapus
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -35,6 +40,25 @@ export default function ProfilePage() {
       })
       .finally(() => setIsLoading(false));
   }, [user]);
+
+  // ── Handler hapus postingan ──
+  const handleDeletePost = async (postId: string) => {
+    if (!user) return;
+
+    const confirmed = window.confirm("Yakin ingin menghapus postingan ini?");
+    if (!confirmed) return;
+
+    setDeletingId(postId);
+    try {
+      await deletePost(postId, user.id);
+      setMyPosts((prev) => prev.filter((p) => p.id !== postId));
+      toast.success("Postingan berhasil dihapus.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Gagal menghapus postingan.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -117,35 +141,54 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-3 gap-[2px]">
             {myPosts.map((post) => (
-              <Link
+              <div
                 key={post.id}
-                to={`/posts/${post.id}`}
                 className="relative aspect-square overflow-hidden group"
               >
-                {post.imageUrl ? (
-                  <img
-                    src={post.imageUrl}
-                    alt={post.content}
-                    className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
-                    <span className="text-neutral-600 text-xs text-center px-2 line-clamp-3">
-                      {post.content}
+                {/* Thumbnail */}
+                <Link to={`/posts/${post.id}`} className="block w-full h-full">
+                  {post.imageUrl ? (
+                    <img
+                      src={post.imageUrl}
+                      alt={post.content}
+                      className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
+                      <span className="text-neutral-600 text-xs text-center px-2 line-clamp-3">
+                        {post.content}
+                      </span>
+                    </div>
+                  )}
+                </Link>
+
+                {/* Overlay Hover — stats + tombol hapus */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                  {/* Stats */}
+                  <div className="flex gap-4">
+                    <span className="text-white text-sm font-semibold">
+                      ❤️ {post._count?.likes ?? 0}
+                    </span>
+                    <span className="text-white text-sm font-semibold">
+                      💬 {post._count?.comments ?? 0}
                     </span>
                   </div>
-                )}
 
-                {/* Overlay Hover */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <span className="text-white text-sm font-semibold">
-                    ❤️ {post._count?.likes ?? 0}
-                  </span>
-                  <span className="text-white text-sm font-semibold">
-                    💬 {post._count?.comments ?? 0}
-                  </span>
+                  {/* Tombol hapus */}
+                  <button
+                    onClick={() => handleDeletePost(post.id)}
+                    disabled={deletingId === post.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors border-none cursor-pointer disabled:opacity-60"
+                  >
+                    {deletingId === post.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                    Hapus
+                  </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
