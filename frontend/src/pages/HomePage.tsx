@@ -98,6 +98,7 @@ const HomePage: React.FC = () => {
                 <PostCard
                   key={post.id}
                   id={post.id}
+                  authorId={post.author.id}
                   username={post.author.username}
                   avatarUrl={post.author.avatarUrl || ''}
                   imageUrls={post.imageUrl ? [post.imageUrl] : []}
