@@ -1,10 +1,11 @@
-// src/index.ts (diupdate)
+// src/index.ts
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { env } from "@/config/env";
 
 import { authRoutes } from "@/modules/auth/auth.routes";
 import { postRoutes } from "@/modules/post/post.routes";
+import { likeRoutes } from "@/modules/like/like.routes";
 import { userRoutes } from "@/modules/user/user.routes";
 import { commentRoutes } from "@/modules/comment/comment.routes";
 import { notificationRoutes } from "@/modules/notification/notification.routes";
@@ -16,6 +17,7 @@ export const app = new Elysia()
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   .use(authRoutes)
   .use(postRoutes)
+  .use(likeRoutes)
   .use(userRoutes)
   .use(commentRoutes)
   .use(notificationRoutes)

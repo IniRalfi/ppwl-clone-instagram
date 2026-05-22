@@ -4,6 +4,8 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Avatar } from "../common/Avatar";
 import { useNavigate } from 'react-router-dom';
+import { toggleLike } from '../../services/like.service';
+import { toast } from 'sonner';
 
 // 🌟 1. DEKLARASI TIPE DATA TAG AGAR BERJALAN AMAN DI TYPESCRIPT
 interface PostTag {
@@ -16,27 +18,34 @@ interface PostCardProps {
   id: string;
   username: string;
   avatarUrl: string;
-  imageUrls: string[]; 
+  imageUrls: string[];
   caption: string;
   likesCount: number;
+  commentsCount?: number;
   timeAgo: string;
   postsCount: string;
   followers: string;
   following: string;
   bio: string;
   tags?: PostTag[];
+  /** ID user yang sedang login (untuk toggle like) */
+  currentUserId?: string;
+  /** Apakah post ini sudah di-like oleh currentUser */
+  isLikedByMe?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
-  id, username, avatarUrl, imageUrls, caption, likesCount, timeAgo,
-  postsCount, followers, following, bio, tags = []
+  id, username, avatarUrl, imageUrls, caption, likesCount, commentsCount = 0, timeAgo,
+  postsCount, followers, following, bio, tags = [],
+  currentUserId, isLikedByMe = false,
 }) => {
   const navigate = useNavigate();
-  // 🌟 State utama untuk memantau on/off label tag melayang
   const [showTags, setShowTags] = useState(false);
-  
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  // Like state: pakai isLikedByMe dari props sebagai nilai awal
+  const [isLiked, setIsLiked] = useState(isLikedByMe);
+  const [currentLikeCount, setCurrentLikeCount] = useState(likesCount);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
@@ -49,15 +58,45 @@ export const PostCard: React.FC<PostCardProps> = ({
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
-  const maxLength = 60; 
+  const maxLength = 60;
   const shouldTruncate = caption.length > maxLength;
   const displayedCaption = isExpanded || !shouldTruncate ? caption : `${caption.substring(0, maxLength)}...`;
-  const currentLikes = isLiked ? likesCount + 1 : likesCount;
+
+  // Toggle like dengan optimistic update
+  const handleLikeToggle = async () => {
+    if (!currentUserId) {
+      toast.error("Login dulu untuk memberi like!");
+      return;
+    }
+    if (isLikeLoading) return;
+
+    // Optimistic update: ubah UI langsung sebelum request selesai
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setCurrentLikeCount((prev) => (newLiked ? prev + 1 : prev - 1));
+    setIsLikeLoading(true);
+
+    try {
+      const res = await toggleLike(id, currentUserId);
+      // Sinkronisasi dengan data server (angka pasti dari DB)
+      setIsLiked(res.liked);
+      setCurrentLikeCount(res.likeCount);
+    } catch {
+      // Rollback jika request gagal
+      setIsLiked(!newLiked);
+      setCurrentLikeCount((prev) => (newLiked ? prev - 1 : prev + 1));
+      toast.error("Gagal memberi like. Coba lagi.");
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
 
   const handleDoubleClick = () => {
-    setIsLiked(true);
+    if (currentUserId && !isLiked) {
+      handleLikeToggle();
+    }
     setShowHeartPop(true);
-    setTimeout(() => { setShowHeartPop(false); }, 1500); 
+    setTimeout(() => { setShowHeartPop(false); }, 1500);
   };
 
   const scrollToImage = (index: number) => {
@@ -249,18 +288,19 @@ export const PostCard: React.FC<PostCardProps> = ({
             
             {/* 1. TOMBOL LIKE */}
             <div className="flex items-center space-x-1.5">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setIsLiked(!isLiked)}
-                className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent ${
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLikeToggle}
+                disabled={isLikeLoading}
+                className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 ${
                   isLiked ? 'text-red-500 hover:text-red-600' : 'text-ig-text hover:text-ig-secondary-text'
                 }`}
               >
-                <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
+                <Heart className={`h-6 w-6 transition-all duration-150 ${isLiked ? 'fill-current scale-110' : ''}`} />
               </Button>
               <span className="text-sm font-semibold select-none text-ig-secondary-text">
-                {currentLikes > 1000 ? `${(currentLikes / 1000).toFixed(1)}K` : currentLikes}
+                {currentLikeCount > 1000 ? `${(currentLikeCount / 1000).toFixed(1)}K` : currentLikeCount}
               </span>
             </div>
 
@@ -269,7 +309,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Button onClick={() => navigate(`/posts/${id}`)} variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
                 <MessageCircle className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-ig-secondary-text">6</span>
+              <span className="text-sm font-semibold select-none text-ig-secondary-text">{commentsCount}</span>
             </div>
 
             {/* 3. TOMBOL SHARE (PESAWAT) */}
@@ -277,7 +317,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg]">
                 <Send className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-ig-secondary-text">19</span>
+              <span className="text-sm font-semibold select-none text-ig-secondary-text">0</span>
             </div>
 
           </div>
