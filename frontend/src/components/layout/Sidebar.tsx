@@ -5,11 +5,11 @@ import { useThemeStore } from "../../store/theme.store";
 import { toast } from "sonner";
 
 const navItems = [
-  { icon: Home,       label: "Beranda",    to: "/",             wip: false },
-  { icon: Search,     label: "Cari",       to: "/search",       wip: true  },
-  { icon: PlusSquare, label: "Buat Post",  to: "/create",       wip: false },
-  { icon: Heart,      label: "Notifikasi", to: "/notifications", wip: false },
-  { icon: User,       label: "Profil",     to: "/profile",      wip: false },
+  { icon: Home, label: "Beranda", to: "/", wip: false },
+  { icon: Search, label: "Cari", to: "/search", wip: true },
+  { icon: PlusSquare, label: "Buat Post", to: "/create", wip: false },
+  { icon: Heart, label: "Notifikasi", to: "/notifications", wip: false },
+  { icon: User, label: "Profil", to: "/profile", wip: false },
 ];
 
 export function Sidebar() {
@@ -21,12 +21,10 @@ export function Sidebar() {
       {/* Logo Instagram */}
       <div className="mb-6 px-3 h-10 flex items-center">
         <span className="text-ig-text font-bold text-xl font-['Instagram_Sans_Condensed'] hidden md:block tracking-wide">
-          Instagram
+          Instagaram
         </span>
         {/* Mini logo saat kolaps di tablet */}
-        <span className="text-ig-text font-bold text-2xl block md:hidden mx-auto">
-          ✦
-        </span>
+        <span className="text-ig-text font-bold text-2xl block md:hidden mx-auto">✦</span>
       </div>
 
       {/* Menu Navigasi */}
@@ -43,7 +41,10 @@ export function Sidebar() {
               }
               className="flex items-center gap-4 px-3 py-3 rounded-xl transition-colors hover:bg-ig-elevated-bg text-ig-secondary-text w-full text-left group"
             >
-              <Icon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.5} />
+              <Icon
+                className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110"
+                strokeWidth={1.5}
+              />
               <span className="hidden md:block text-[15px]">{label}</span>
             </button>
           ) : (
@@ -79,9 +80,15 @@ export function Sidebar() {
           className="flex items-center gap-4 px-3 py-3 rounded-xl hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-colors w-full text-left group"
         >
           {theme === "dark" ? (
-            <Sun className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.5} />
+            <Sun
+              className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110"
+              strokeWidth={1.5}
+            />
           ) : (
-            <Moon className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.5} />
+            <Moon
+              className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110"
+              strokeWidth={1.5}
+            />
           )}
           <span className="hidden md:block text-[15px]">Tampilan</span>
         </button>
@@ -90,7 +97,10 @@ export function Sidebar() {
           onClick={logout}
           className="flex items-center gap-4 px-3 py-3 rounded-xl hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-colors w-full text-left group"
         >
-          <LogOut className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.5} />
+          <LogOut
+            className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-110"
+            strokeWidth={1.5}
+          />
           <span className="hidden md:block text-[15px]">Keluar</span>
         </button>
       </div>

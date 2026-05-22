@@ -136,12 +136,20 @@ export const PostCard: React.FC<PostCardProps> = ({
     if (hoverFetchedRef.current) return;
     hoverFetchedRef.current = true;
     try {
-      const statsRes = await apiClient.get<{ followers: number; following: number }>(`/follow/stats/${authorId}`);
+      const params = currentUserId ? `?currentUserId=${currentUserId}` : '';
+      const statsRes = await apiClient.get<{
+        followers: number;
+        following: number;
+        isFollowing: boolean;
+      }>(`/follow/stats/${authorId}${params}`);
+
       setHoverStats({
         followers: statsRes.followers,
         following: statsRes.following,
         postsCount: parseInt(postsCount) || 0,
       });
+      // Set status follow dari DB — cegah 409 jika sudah follow sebelumnya
+      setIsHoverFollowed(statsRes.isFollowing);
     } catch {
       setHoverStats({
         followers: parseInt(followers) || 0,
@@ -149,7 +157,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         postsCount: parseInt(postsCount) || 0,
       });
     }
-  }, [authorId, followers, following, postsCount]);
+  }, [authorId, currentUserId, followers, following, postsCount]);
 
   // ── Follow dari hover card ──
   const handleHoverFollow = async () => {

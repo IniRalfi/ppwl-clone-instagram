@@ -3,15 +3,17 @@ import { db } from "@/db/client";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
 
-  /** GET /follow/stats/:userId — Jumlah followers & following */
-  .get("/stats/:userId", async ({ params: { userId }, set }) => {
+  /** GET /follow/stats/:userId?currentUserId=xxx — Jumlah followers & following + status follow */
+  .get("/stats/:userId", async ({ params: { userId }, query, set }) => {
+    const { currentUserId } = query as { currentUserId?: string };
+
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {
         _count: {
           select: {
-            followers: true,  // yang mem-follow user ini
-            following: true,  // user ini mem-follow siapa
+            followers: true,
+            following: true,
           },
         },
       },
@@ -22,9 +24,19 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
       return { message: "User tidak ditemukan" };
     }
 
+    // Cek apakah currentUser sudah follow userId ini
+    let isFollowing = false;
+    if (currentUserId && currentUserId !== userId) {
+      const followRecord = await db.follow.findUnique({
+        where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
+      });
+      isFollowing = !!followRecord;
+    }
+
     return {
       followers: user._count.followers,
       following: user._count.following,
+      isFollowing,
     };
   })
 
