@@ -3,6 +3,31 @@ import { db } from "@/db/client";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
 
+  /** GET /follow/stats/:userId — Jumlah followers & following */
+  .get("/stats/:userId", async ({ params: { userId }, set }) => {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: {
+            followers: true,  // yang mem-follow user ini
+            following: true,  // user ini mem-follow siapa
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      set.status = 404;
+      return { message: "User tidak ditemukan" };
+    }
+
+    return {
+      followers: user._count.followers,
+      following: user._count.following,
+    };
+  })
+
   /** GET /follow/suggestions?userId=xxx — Ambil 5 user yang belum di-follow */
   .get(
     "/suggestions",
