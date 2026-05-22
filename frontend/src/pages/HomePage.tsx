@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PostCard } from '../components/post/PostCard';
+import { SuggestedUsers } from '../components/common/SuggestedUsers';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/auth.store';
 import { apiClient } from '../services/api.client';
@@ -26,7 +27,6 @@ const HomePage: React.FC = () => {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // Map postId → { liked, likeCount } untuk tracking status like per post
   const [likeStatusMap, setLikeStatusMap] = useState<
     Record<string, { liked: boolean; likeCount: number }>
   >({});
@@ -40,7 +40,6 @@ const HomePage: React.FC = () => {
         if (res.ok && json.data) {
           setPosts(json.data);
 
-          // Setelah dapat list post, fetch status like tiap post secara paralel
           if (user?.id) {
             const statusRequests = (json.data as Post[]).map((post) =>
               apiClient
@@ -73,52 +72,64 @@ const HomePage: React.FC = () => {
   }, [user?.id]);
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col items-center">
-      <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0 pt-6 pb-20">
+    <div className="min-h-screen bg-ig-background text-ig-text">
+      {/* Layout dua kolom: Feed + Suggested Panel */}
+      <div className="max-w-[975px] mx-auto flex gap-8 px-4 pt-6 pb-20">
 
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20 text-ig-secondary-text">
-            Memuat postingan...
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="text-center text-ig-secondary-text py-20">
-            Belum ada postingan.
-          </div>
-        ) : (
-          posts.map((post) => {
-            const timeAgo = new Date(post.createdAt).toLocaleDateString('id-ID', {
-              month: 'short',
-              day: 'numeric',
-            });
-            const likeStatus = likeStatusMap[post.id];
+        {/* ── KOLOM KIRI: Feed Postingan ── */}
+        <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20 text-ig-secondary-text">
+              Memuat postingan...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center text-ig-secondary-text py-20">
+              Belum ada postingan.
+            </div>
+          ) : (
+            posts.map((post) => {
+              const timeAgo = new Date(post.createdAt).toLocaleDateString('id-ID', {
+                month: 'short',
+                day: 'numeric',
+              });
+              const likeStatus = likeStatusMap[post.id];
 
-            return (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                username={post.author.username}
-                avatarUrl={post.author.avatarUrl || ''}
-                imageUrls={post.imageUrl ? [post.imageUrl] : []}
-                caption={post.content}
-                likesCount={likeStatus?.likeCount ?? post._count.likes}
-                commentsCount={post._count.comments}
-                timeAgo={timeAgo}
-                postsCount="0"
-                followers="0"
-                following="0"
-                bio="User"
-                currentUserId={user?.id}
-                isLikedByMe={likeStatus?.liked ?? false}
-              />
-            );
-          })
-        )}
+              return (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  username={post.author.username}
+                  avatarUrl={post.author.avatarUrl || ''}
+                  imageUrls={post.imageUrl ? [post.imageUrl] : []}
+                  caption={post.content}
+                  likesCount={likeStatus?.likeCount ?? post._count.likes}
+                  commentsCount={post._count.comments}
+                  timeAgo={timeAgo}
+                  postsCount="0"
+                  followers="0"
+                  following="0"
+                  bio="User"
+                  currentUserId={user?.id}
+                  isLikedByMe={likeStatus?.liked ?? false}
+                />
+              );
+            })
+          )}
 
-        {!isLoading && posts.length > 0 && (
-          <div className="text-center text-ig-secondary-text text-sm mt-6 pb-8">
-            ✓ Kamu sudah melihat semua postingan
+          {!isLoading && posts.length > 0 && (
+            <div className="text-center text-ig-secondary-text text-sm mt-2 pb-8">
+              ✓ Kamu sudah melihat semua postingan
+            </div>
+          )}
+        </div>
+
+        {/* ── KOLOM KANAN: Suggested Users Panel (hanya desktop) ── */}
+        <aside className="hidden lg:block w-[319px] flex-shrink-0 pt-2">
+          <div className="sticky top-6">
+            <SuggestedUsers />
           </div>
-        )}
+        </aside>
+
       </div>
     </div>
   );

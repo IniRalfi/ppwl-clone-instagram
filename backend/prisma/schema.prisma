@@ -26,6 +26,10 @@ model User {
   likes         Like[]
   notifications Notification[] @relation("NotifReceiver")
 
+  // Relasi Follow
+  following     Follow[] @relation("Follower")   // user ini mem-follow siapa
+  followers     Follow[] @relation("Following")  // siapa yang mem-follow user ini
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -69,6 +73,17 @@ model Like {
   @@unique([userId, postId])
 }
 
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   // yang mem-follow
+  followingId String   // yang di-follow
+  follower    User     @relation("Follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
 model Notification {
   id         String  @id @default(cuid())
   type       String
@@ -80,3 +95,4 @@ model Notification {
 
   createdAt DateTime @default(now())
 }
+
