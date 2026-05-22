@@ -96,33 +96,39 @@
      CSS VARIABLES UNTUK THEMING (TAILWIND V4)
   ========================================= */
   :root {
-    /* ── DARK MODE — Palet Instagram Asli ─────────────────────── */
-    --color-ig-background:      #000000;  /* Hitam murni */
-    --color-ig-secondary-bg:    #121212;  /* Hitam abu untuk card/input */
-    --color-ig-elevated-bg:     #1c1c1c;  /* Sedikit lebih terang (hover, modal) */
+    /* ── DARK MODE — Palet Instagram Web Asli ─────────────────── */
+    --color-ig-background:      #0a0a0a;  /* Charcoal gelap, bukan hitam murni */
+    --color-ig-secondary-bg:    #1a1a1a;  /* Surface sedikit lebih terang (sidebar, modal) */
+    --color-ig-elevated-bg:     #262626;  /* Hover state, dropdown */
     --color-ig-primary:         #0095f6;  /* Biru IG */
-    --color-ig-primary-hover:   #1877f2;  /* Biru hover */
-    --color-ig-text:            #ffffff;  /* Putih bersih */
+    --color-ig-primary-hover:   #1877f2;
+    --color-ig-text:            #f5f5f5;  /* Putih lembut, bukan #fff murni */
     --color-ig-secondary-text:  #a8a8a8;  /* Abu medium */
-    --color-ig-border:          #262626;  /* Border gelap */
-    --color-ig-separator:       #1a1a1a;  /* Separator feed */
+    --color-ig-border:          rgba(255, 255, 255, 0.12); /* Border transparan */
+    --color-ig-separator:       rgba(255, 255, 255, 0.08);
     --color-ig-chat-in:         #262626;
     --color-ig-chat-out:        #3797f0;
+    /* Shadow untuk card di dark mode (sangat subtle) */
+    --shadow-card: none;
+    --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
   }
 
-  /* ── LIGHT MODE — Palet Instagram Asli ─────────────────────── */
+  /* ── LIGHT MODE — Palet Instagram Web Asli ─────────────────── */
   html.light {
-    --color-ig-background:      #fafafa;  /* Putih abu khas IG */
-    --color-ig-secondary-bg:    #ffffff;  /* Putih bersih untuk card */
-    --color-ig-elevated-bg:     #efefef;  /* Abu muda untuk hover */
-    --color-ig-primary:         #0095f6;  /* Biru IG tetap sama */
+    --color-ig-background:      #fafafa;  /* Background halaman utama */
+    --color-ig-secondary-bg:    #ffffff;  /* Card, post, sidebar */
+    --color-ig-elevated-bg:     #f0f0f0;  /* Hover, input */
+    --color-ig-primary:         #0095f6;
     --color-ig-primary-hover:   #1877f2;
-    --color-ig-text:            #000000;  /* Hitam murni */
-    --color-ig-secondary-text:  #737373;  /* Abu medium */
-    --color-ig-border:          #dbdbdb;  /* Border abu terang */
+    --color-ig-text:            #000000;
+    --color-ig-secondary-text:  #737373;
+    --color-ig-border:          #dbdbdb;
     --color-ig-separator:       #efefef;
     --color-ig-chat-in:         #efefef;
     --color-ig-chat-out:        #0095f6;
+    /* Shadow memberikan depth di light mode */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
 
   /* =========================================
@@ -157,9 +163,44 @@
     transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
 
-  /* Scrollbar tipis khas IG di dark mode */
-  ::-webkit-scrollbar {
-    width: 0px;
-    height: 0px;
+  /* Scrollbar khas IG — tersembunyi */
+  ::-webkit-scrollbar { width: 0px; height: 0px; }
+}
+
+/* =========================================
+   UTILITY CLASSES KUSTOM
+========================================= */
+@layer utilities {
+  /* Shadow card mengikuti tema (light = ada shadow, dark = tidak ada) */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+}
+
+/* =========================================
+   GLOBAL COMPONENT STYLES
+   (Card feed di light mode perlu depth)
+========================================= */
+@layer components {
+  /* Light mode: PostCard punya border + subtle shadow */
+  html.light .post-card {
+    background-color: #ffffff;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    margin-bottom: 12px;
+  }
+
+  /* Light mode: Sidebar punya shadow ke kanan */
+  html.light aside {
+    box-shadow: 1px 0 0 #dbdbdb;
+  }
+
+  /* Dark mode: PostCard cukup separator halus */
+  html:not(.light) .post-card {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 }

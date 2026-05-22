@@ -173,7 +173,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   );
 
   return (
-    <Card className="w-full border-none bg-ig-background text-ig-text rounded-none sm:rounded-lg overflow-hidden text-left relative">
+    <Card className="post-card w-full border-none bg-ig-background text-ig-text rounded-none sm:rounded-lg overflow-hidden text-left relative">
       
       {/* ================= HEADER POSTINGAN ================= */}
       <div className="flex items-center justify-between px-4 py-3 relative">
