@@ -7,6 +7,7 @@ export type User = {
   username: string;
   email: string;
   avatarUrl?: string;
+  bio?: string;
 };
 
 type AuthStore = {

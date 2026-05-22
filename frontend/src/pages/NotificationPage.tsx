@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Heart, MessageCircle, UserPlus } from "lucide-react";
-
-interface Notification {
-  id: string;
-  type: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-}
+import type { Notification } from "../../../shared/src/types/notification";
+import { formatRelativeTime } from "../../../shared/src/utils/date";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -18,15 +10,13 @@ export default function NotificationPage() {
     const fetchNotifications = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`);
-        const json = await res.json();
-        
-        if (res.ok && json.data) {
-          setNotifications(json.data);
-        } else {
-          toast.error("Gagal memuat notifikasi.");
+        if (!res.ok) {
+          throw new Error("Gagal mengambil data dari server");
         }
+        const json = await res.json();
+        setNotifications(json.data || []);
       } catch (error) {
-        toast.error("Kesalahan jaringan.");
+        console.error("Gagal memuat notifikasi:", error);
       } finally {
         setIsLoading(false);
       }
@@ -35,59 +25,58 @@ export default function NotificationPage() {
     fetchNotifications();
   }, []);
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "like":
-        return <Heart className="h-5 w-5 text-red-500 fill-current" />;
-      case "comment":
-        return <MessageCircle className="h-5 w-5 text-blue-500 fill-current" />;
-      case "follow":
-        return <UserPlus className="h-5 w-5 text-ig-primary" />;
-      default:
-        return <Heart className="h-5 w-5 text-ig-primary" />;
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <p className="text-ig-text text-sm animate-pulse">Memuat...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex justify-center pb-20 pt-6 px-4">
-      <div className="w-full max-w-[600px] flex flex-col">
-        <h1 className="text-2xl font-semibold mb-6">Notifikasi</h1>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20 text-ig-secondary-text">
-            Memuat notifikasi...
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center text-ig-secondary-text py-20">
-            Belum ada notifikasi.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {notifications.map((notif) => {
-              const timeAgo = new Date(notif.createdAt).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
-              
-              return (
-                <div 
-                  key={notif.id} 
-                  className={`flex items-start gap-4 p-4 rounded-xl border ${notif.isRead ? 'border-transparent bg-transparent' : 'border-ig-border bg-neutral-900'}`}
-                >
-                  <div className="mt-1">
-                    {getIcon(notif.type)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[14px] leading-tight">
-                      {notif.message}
-                    </p>
-                    <span className="text-[12px] text-ig-secondary-text mt-1 block">
-                      {timeAgo}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+    <div className="max-w-xl mx-auto px-4 pt-6">
+      <h1 className="text-ig-text text-xl font-bold mb-6 tracking-wide">Notifikasi</h1>
+      
+      {notifications.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-neutral-500 text-sm">Belum ada notifikasi.</p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-neutral-900">
+          {notifications.map((notif) => (
+            <NotificationItem key={notif.id} notif={notif} />
+          ))}
+        </ul>
+      )}
     </div>
+  );
+}
+
+function NotificationItem({ notif }: { notif: Notification }) {
+  // Ambil huruf pertama dari pesan atau default "U" sebagai fallback inisial avatar
+  const initial = notif.message ? notif.message.charAt(0).toUpperCase() : "U";
+
+  return (
+    <li className="flex items-center gap-4 py-3 hover:bg-ig-secondary-bg/20 px-2 rounded-lg transition-colors group">
+      {/* Avatar bulat dengan inisial */}
+      <div className="w-11 h-11 rounded-full bg-ig-secondary-bg border border-neutral-800 flex items-center justify-center text-ig-text text-sm font-semibold flex-shrink-0 shadow-sm">
+        {initial}
+      </div>
+      
+      {/* Pesan notifikasi & Waktu */}
+      <div className="flex-1 min-w-0">
+        <p className="text-ig-text text-sm leading-snug break-words">
+          {notif.message}
+          <span className="text-neutral-500 text-xs ml-2 inline-block">
+            {formatRelativeTime(notif.createdAt)}
+          </span>
+        </p>
+      </div>
+      
+      {/* Titik biru penanda belum dibaca */}
+      {!notif.isRead && (
+        <div className="w-2.5 h-2.5 rounded-full bg-ig-primary flex-shrink-0 animate-pulse" />
+      )}
+    </li>
   );
 }

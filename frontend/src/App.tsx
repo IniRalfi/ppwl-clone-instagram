@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import CreatePostPage from "./pages/CreatePostPage";
 import RegisterPage from "./pages/RegisterPage";
 import { PostDetailPage } from "./pages/PostDetailPage";
+import { MainLayout } from "./components/layout/MainLayout";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -22,12 +23,46 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protected routes */}
-      <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-      <Route path="/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-      <Route path="/create" element={<ProtectedRoute><CreatePostPage /></ProtectedRoute>} />
-      <Route path="/posts/:id" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
+      {/* Protected routes wrapped in MainLayout */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <HomePage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <NotificationPage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <ProfilePage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/create" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <CreatePostPage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/posts/:id" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <PostDetailPage />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

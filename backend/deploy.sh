@@ -45,8 +45,11 @@ aws lambda update-function-configuration \
     DATABASE_URL=$DATABASE_URL,
     JWT_SECRET=$JWT_SECRET,
     NODE_ENV=production,
-    FRONTEND_URL=*,
+    FRONTEND_URL=https://www.ppwl-a3.my.id,
     API_SECRET_KEY=$API_SECRET_KEY,
+    CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET,
     PRISMA_QUERY_ENGINE_LIBRARY=/var/task/libquery_engine-rhel-openssl-3.0.x.so.node
   }" \
   --query "LastUpdateStatus" \

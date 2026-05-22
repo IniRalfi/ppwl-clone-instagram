@@ -30,7 +30,7 @@ export class ApiError extends Error {
   }
 }
 
-// Fungsi fetch utama yang sudah include auth header dan error handling
+// Fungsi fetch utama untuk JSON request
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -46,17 +46,37 @@ async function request<T>(
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
-    credentials: "include",
   });
 
-  // Kalau response bukan ok (4xx/5xx), lempar error
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
   }
 
-  // Kalau response 204 No Content, kembalikan undefined
   if (res.status === 204) return undefined as T;
+
+  return res.json() as Promise<T>;
+}
+
+// Fungsi fetch khusus untuk FormData (upload file)
+// Tidak perlu set Content-Type — browser yang atur boundary-nya
+async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken();
+
+  const headers: HeadersInit = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    body: formData,
+    headers,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: res.statusText }));
+    throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
+  }
 
   return res.json() as Promise<T>;
 }
@@ -68,5 +88,12 @@ export const apiClient = {
     request<T>(path, { method: "POST", body: JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "DELETE",
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    }),
+  // Untuk upload file (multipart/form-data)
+  postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData),
 };
+

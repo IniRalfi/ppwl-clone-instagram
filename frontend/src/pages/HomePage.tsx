@@ -1,109 +1,136 @@
-import React from 'react';
-import { PostCard } from '../components/post/PostCard'; 
+import React, { useEffect, useState } from 'react';
+import { PostCard } from '../components/post/PostCard';
+import { SuggestedUsers } from '../components/common/SuggestedUsers';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/auth.store';
-import { useNavigate } from 'react-router-dom';
-import { ThemeToggle } from '../components/common/ThemeToggle';
-import { usePosts } from "../hooks/usePosts";
-import { PlusSquare } from "lucide-react";
+import { apiClient } from '../services/api.client';
+
+// Tipe data sesuai dengan response dari backend
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+}
 
 const HomePage: React.FC = () => {
-  const { posts, isLoading, error } = usePosts();
+  const { user } = useAuthStore();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [likeStatusMap, setLikeStatusMap] = useState<
+    Record<string, { liked: boolean; likeCount: number }>
+  >({});
 
-  const logout = useAuthStore((state) => state.logout);
-  const navigate = useNavigate();
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
+        const json = await res.json();
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Berhasil log out.");
-    navigate("/login");
-  };
+        if (res.ok && json.data) {
+          setPosts(json.data);
 
-  if (error) {
-    return (
-      <div className="text-red-500 text-center mt-10">
-        {error}
-      </div>
-    );
-  }
+          if (user?.id) {
+            const statusRequests = (json.data as Post[]).map((post) =>
+              apiClient
+                .get<{ liked: boolean; likeCount: number }>(
+                  `/likes/${post.id}/status?userId=${user.id}`
+                )
+                .then((status) => ({ postId: post.id, ...status }))
+                .catch(() => ({ postId: post.id, liked: false, likeCount: post._count.likes }))
+            );
+
+            const statuses = await Promise.all(statusRequests);
+            const map: Record<string, { liked: boolean; likeCount: number }> = {};
+            statuses.forEach(({ postId, liked, likeCount }) => {
+              map[postId] = { liked, likeCount };
+            });
+            setLikeStatusMap(map);
+          }
+        } else {
+          toast.error("Gagal mengambil data postingan dari server.");
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        toast.error("Tidak dapat terhubung ke server backend.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [user?.id]);
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col items-center">
-      
-      {/* 🔝 NAVBAR */}
-      <div className="w-full h-14 border-b border-neutral-800 bg-ig-background flex items-center justify-center sticky top-0 z-50">
-        <div className="w-full max-w-[550px] px-4 flex justify-between items-center">
-          
-          {/* Logo / Title */}
-          <h1 className="text-xl font-bold">Clone Instagram</h1>
+    <div className="min-h-screen bg-ig-background text-ig-text">
+      {/* Layout dua kolom: Feed + Suggested Panel */}
+      <div className="max-w-[975px] mx-auto flex gap-8 px-4 pt-6 pb-20">
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            
-            <ThemeToggle />
+        {/* ── KOLOM KIRI: Feed Postingan ── */}
+        <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20 text-ig-secondary-text">
+              Memuat postingan...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center text-ig-secondary-text py-20">
+              Belum ada postingan.
+            </div>
+          ) : (
+            posts.map((post) => {
+              const timeAgo = new Date(post.createdAt).toLocaleDateString('id-ID', {
+                month: 'short',
+                day: 'numeric',
+              });
+              const likeStatus = likeStatusMap[post.id];
 
-            {/* ➕ CREATE POST */}
-            <button
-              onClick={() => navigate("/create")}
-              className="text-ig-text hover:text-ig-primary transition"
-            >
-              <PlusSquare className="w-6 h-6" />
-            </button>
+              return (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  authorId={post.author.id}
+                  username={post.author.username}
+                  avatarUrl={post.author.avatarUrl || ''}
+                  imageUrls={post.imageUrl ? [post.imageUrl] : []}
+                  caption={post.content}
+                  likesCount={likeStatus?.likeCount ?? post._count.likes}
+                  commentsCount={post._count.comments}
+                  timeAgo={timeAgo}
+                  postsCount="0"
+                  followers="0"
+                  following="0"
+                  bio="User"
+                  currentUserId={user?.id}
+                  isLikedByMe={likeStatus?.liked ?? false}
+                />
+              );
+            })
+          )}
 
-            {/* LOGOUT */}
-            <button 
-              onClick={handleLogout}
-              className="text-sm font-semibold text-red-500 hover:text-red-400 transition"
-            >
-              Log out
-            </button>
-          </div>
+          {!isLoading && posts.length > 0 && (
+            <div className="text-center text-ig-secondary-text text-sm mt-2 pb-8">
+              ✓ Kamu sudah melihat semua postingan
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* 📸 FEED */}
-      <div className="w-full max-w-[550px] flex flex-col gap-5 px-3 sm:px-0 pt-6 pb-20">
-        
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20 text-neutral-400">
-            Memuat postingan...
+        {/* ── KOLOM KANAN: Suggested Users Panel (hanya desktop) ── */}
+        <aside className="hidden lg:block w-[319px] flex-shrink-0 pt-2">
+          <div className="sticky top-6">
+            <SuggestedUsers />
           </div>
-        ) : posts.length === 0 ? (
-          <div className="text-center text-neutral-400 py-20">
-            Belum ada postingan.
-          </div>
-        ) : (
-          posts.map((post) => {
-            const timeAgo = new Date(post.createdAt).toLocaleDateString('id-ID', {
-              month: 'short',
-              day: 'numeric',
-            });
+        </aside>
 
-            return (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                username={post.author.username}
-                avatarUrl={post.author.avatarUrl || ''}
-                imageUrls={post.imageUrl ? [post.imageUrl] : []}
-                caption={post.content}
-                likesCount={post._count?.likes ?? 0}
-                timeAgo={timeAgo}
-                postsCount="0"
-                followers="0"
-                following="0"
-                bio="User"
-              />
-            );
-          })
-        )}
-
-        {/* Footer */}
-        {!isLoading && posts.length > 0 && (
-          <div className="text-center text-neutral-500 text-sm mt-6 pb-8">
-            ✓ Kamu sudah melihat semua postingan
-          </div>
-        )}
       </div>
     </div>
   );

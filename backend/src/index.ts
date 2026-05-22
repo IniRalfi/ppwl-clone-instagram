@@ -1,14 +1,16 @@
-// src/index.ts (diupdate)
+// src/index.ts
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { env } from "@/config/env";
 
 import { authRoutes } from "@/modules/auth/auth.routes";
 import { postRoutes } from "@/modules/post/post.routes";
+import { likeRoutes } from "@/modules/like/like.routes";
 import { userRoutes } from "@/modules/user/user.routes";
 import { commentRoutes } from "@/modules/comment/comment.routes";
 import { notificationRoutes } from "@/modules/notification/notification.routes";
 import { dataRoutes } from "@/modules/data/data.route";
+import { followRoutes } from "@/modules/follow/follow.routes";
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
@@ -16,10 +18,12 @@ export const app = new Elysia()
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   .use(authRoutes)
   .use(postRoutes)
+  .use(likeRoutes)
   .use(userRoutes)
   .use(commentRoutes)
   .use(notificationRoutes)
-  .use(dataRoutes);
+  .use(dataRoutes)
+  .use(followRoutes);
 
 export type App = typeof app;
 export default app;

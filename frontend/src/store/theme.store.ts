@@ -33,6 +33,12 @@ export const useThemeStore = create<ThemeStore>()(
         set({ theme });
       },
     }),
-    { name: "ig-theme" }
+    {
+      name: "ig-theme",
+      // Setelah state di-rehydrate dari localStorage, langsung terapkan ke DOM
+      onRehydrateStorage: () => (state) => {
+        if (state) applyTheme(state.theme);
+      },
+    }
   )
 );
