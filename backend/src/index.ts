@@ -11,10 +11,15 @@ import { commentRoutes } from "@/modules/comment/comment.routes";
 import { notificationRoutes } from "@/modules/notification/notification.routes";
 import { dataRoutes } from "@/modules/data/data.route";
 import { followRoutes } from "@/modules/follow/follow.routes";
+import { storyRoutes } from "@/modules/story/story.routes";
+import { swagger } from "@elysiajs/swagger";
+
+const isProd = process.env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
   .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
+  .use(isProd ? (a) => a : swagger({ path: "/swagger" }))
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   .use(authRoutes)
   .use(postRoutes)
@@ -23,7 +28,8 @@ export const app = new Elysia()
   .use(commentRoutes)
   .use(notificationRoutes)
   .use(dataRoutes)
-  .use(followRoutes);
+  .use(followRoutes)
+  .use(storyRoutes);
 
 export type App = typeof app;
 export default app;

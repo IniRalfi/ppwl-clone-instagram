@@ -25,6 +25,7 @@ model User {
   comments      Comment[]
   likes         Like[]
   notifications Notification[] @relation("NotifReceiver")
+  stories       Story[]
 
   // Relasi Follow
   following     Follow[] @relation("Follower")   // user ini mem-follow siapa
@@ -94,5 +95,14 @@ model Notification {
   receiver   User    @relation("NotifReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
 

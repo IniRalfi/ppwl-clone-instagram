@@ -33,8 +33,18 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     try {
       const { email, password } = body as any;
 
-      const user = await db.user.findUnique({
-        where: { email },
+      if (!email || !password) {
+        set.status = 400;
+        return { message: "Email/Username dan Password wajib diisi" };
+      }
+
+      const user = await db.user.findFirst({
+        where: {
+          OR: [
+            { email: email },
+            { username: email }
+          ]
+        },
       });
 
       if (
@@ -43,7 +53,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         !(await Bun.password.verify(password, user.passwordHash))
       ) {
         set.status = 401;
-        return { message: "Email atau password salah" };
+        return { message: "Email/Username atau password salah" };
       }
       const accessToken = await jwt.sign({ id: user.id });
       return {
