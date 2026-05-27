@@ -38,11 +38,14 @@ export default function MonitoringPage() {
   const [data, setData] = useState<MonitorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [simulateDown, setSimulateDown] = useState(false);
 
-  const fetchStatus = async () => {
+  const fetchStatus = async (isSimulated = simulateDown) => {
     try {
       setRefreshing(true);
-      const res = await apiClient.get<MonitorData>("/monitoring");
+      const res = await apiClient.get<MonitorData>(
+        `/monitoring${isSimulated ? "?simulate_down=true" : ""}`
+      );
       setData(res);
     } catch (error) {
       console.error("Gagal memuat status monitoring:", error);
@@ -55,9 +58,9 @@ export default function MonitoringPage() {
   useEffect(() => {
     fetchStatus();
     // Auto refresh setiap 30 detik
-    const interval = setInterval(fetchStatus, 30000);
+    const interval = setInterval(() => fetchStatus(simulateDown), 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [simulateDown]);
 
   if (loading) {
     return (
@@ -108,14 +111,30 @@ export default function MonitoringPage() {
             Terakhir diperbarui: {data ? new Date(data.timestamp).toLocaleTimeString() : "-"} (Otomatis setiap 30 detik)
           </p>
         </div>
-        <button
-          onClick={fetchStatus}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ig-elevated-bg hover:bg-ig-border border border-ig-border text-[14px] font-medium transition-all active:scale-95 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const nextVal = !simulateDown;
+              setSimulateDown(nextVal);
+              fetchStatus(nextVal);
+            }}
+            className={`px-4 py-2 rounded-xl text-[14px] font-semibold border transition-all active:scale-95 ${
+              simulateDown
+                ? "bg-rose-500/10 border-rose-500 text-rose-500 hover:bg-rose-500/20"
+                : "bg-ig-elevated-bg border-ig-border text-ig-secondary-text hover:text-ig-text hover:bg-ig-border"
+            }`}
+          >
+            {simulateDown ? "⚠️ Hentikan Simulasi" : "💥 Simulasi Outage"}
+          </button>
+          <button
+            onClick={() => fetchStatus(simulateDown)}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-ig-elevated-bg hover:bg-ig-border border border-ig-border text-[14px] font-medium transition-all active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Overview Score */}

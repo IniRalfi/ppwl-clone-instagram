@@ -4,7 +4,9 @@ import { env } from "@/config/env";
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
-  .get("/", async ({ set }) => {
+  .get("/", async ({ query, set }) => {
+    const simulateDown = (query as any)?.simulate_down === "true";
+
     const status: any = {
       timestamp: new Date().toISOString(),
       databases: {
@@ -36,6 +38,18 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
       },
       systemScore: 0,
     };
+
+    if (simulateDown) {
+      status.databases.primary.error = "Simulated Connection Timeout (ETIMEDOUT)";
+      status.databases.secondary.status = secondaryPrisma ? "offline" : "not_configured";
+      if (secondaryPrisma) {
+        status.databases.secondary.error = "Simulated Connection Refused (ECONNREFUSED)";
+      }
+      status.storage.s3.error = "Simulated AWS S3 Outage (503 Service Unavailable)";
+      status.storage.cloudinary.error = "Simulated Rate Limit Exceeded (429 Too Many Requests)";
+      status.systemScore = 0;
+      return status;
+    }
 
     let healthyServices = 0;
     let totalServices = 3; // Primary DB, S3, Cloudinary (Neon is optional)
