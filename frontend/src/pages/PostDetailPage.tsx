@@ -21,6 +21,34 @@ interface Post {
   isLikedByMe?: boolean;
 }
 
+function buildCommentTree(flatComments: Comment[]): Comment[] {
+  const commentMap: { [key: string]: Comment } = {};
+  
+  // Inisialisasi map dengan array replies kosong
+  flatComments.forEach((c) => {
+    commentMap[c.id] = { ...c, replies: [] };
+  });
+
+  const roots: Comment[] = [];
+
+  flatComments.forEach((c) => {
+    const mappedComment = commentMap[c.id];
+    if (c.parentId) {
+      const parent = commentMap[c.parentId];
+      if (parent) {
+        parent.replies = parent.replies || [];
+        parent.replies.push(mappedComment);
+      } else {
+        roots.push(mappedComment);
+      }
+    } else {
+      roots.push(mappedComment);
+    }
+  });
+
+  return roots;
+}
+
 export function PostDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -185,7 +213,7 @@ export function PostDetailPage() {
             </div>
 
             {/* List komentar riil */}
-            {comments.filter((c) => c.parentId === null).map((comment) => (
+            {buildCommentTree(comments).map((comment) => (
               <CommentItem
                 key={comment.id}
                 comment={comment}
