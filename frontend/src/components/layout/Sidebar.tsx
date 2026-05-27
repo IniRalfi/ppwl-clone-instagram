@@ -1,4 +1,4 @@
-import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun, Activity } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { useThemeStore } from "../../store/theme.store";
@@ -10,6 +10,7 @@ const navItems = [
   { icon: PlusSquare, label: "Buat Post", to: "/create", wip: false },
   { icon: Heart, label: "Notifikasi", to: "/notifications", wip: false },
   { icon: User, label: "Profil", to: "/profile", wip: false },
+  { icon: Activity, label: "Monitoring", to: "/monitoring", wip: false },
 ];
 
 export function Sidebar() {
