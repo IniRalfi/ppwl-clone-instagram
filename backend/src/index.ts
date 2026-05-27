@@ -20,7 +20,15 @@ const isProd = process.env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
-  .use(cors({ origin: env.FRONTEND_URL, credentials: true }))
+  .use(cors({
+    origin: (request) => {
+      const origin = request.headers.get("origin");
+      if (!origin) return true;
+      const allowed = [env.FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"];
+      return allowed.includes(origin);
+    },
+    credentials: true
+  }))
   .use(isProd ? (a) => a : swagger({ path: "/swagger" }))
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
   .use(authRoutes)
