@@ -15,7 +15,15 @@ const navItems = [
 
 export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
   const { theme, toggleTheme } = useThemeStore();
+
+  const isAdmin =
+    user?.username === "rafli_pratama" ||
+    user?.email === "rflipratm@gmail.com" ||
+    user?.username?.includes("admin");
+
+  const visibleItems = navItems.filter((item) => item.to !== "/monitoring" || isAdmin);
 
   return (
     <aside className="flex flex-col h-screen w-[72px] md:w-[244px] bg-ig-background border-r border-ig-border px-3 py-6 transition-all duration-300">
@@ -30,7 +38,7 @@ export function Sidebar() {
 
       {/* Menu Navigasi */}
       <nav className="flex flex-col gap-0.5 flex-1">
-        {navItems.map(({ icon: Icon, label, to, wip }) =>
+        {visibleItems.map(({ icon: Icon, label, to, wip }) =>
           wip ? (
             <button
               key={to}

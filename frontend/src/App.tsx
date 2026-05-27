@@ -18,6 +18,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((state) => state.user);
+  const isAdmin =
+    user?.username === "rafli_pratama" ||
+    user?.email === "rflipratm@gmail.com" ||
+    user?.username?.includes("admin");
+
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export function App() {
   return (
     <Routes>
@@ -85,9 +96,11 @@ export function App() {
         path="/monitoring"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <MonitoringPage />
-            </MainLayout>
+            <AdminRoute>
+              <MainLayout>
+                <MonitoringPage />
+              </MainLayout>
+            </AdminRoute>
           </ProtectedRoute>
         }
       />
