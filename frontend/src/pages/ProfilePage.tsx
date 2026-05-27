@@ -12,6 +12,7 @@ import {
   dummyFollowing,
   type FollowUser,
 } from "../lib/mockData";
+import { ProfileGridSkeleton } from "../components/ui/Skeleton";
 
 // ─────────────────────────────────────────────
 // Tipe
@@ -478,9 +479,7 @@ export default function ProfilePage() {
       {/* ── Grid Postingan ── */}
       <div className="py-4">
         {isLoading ? (
-          <p className="text-ig-secondary-text text-sm text-center py-8">
-            Memuat postingan...
-          </p>
+          <ProfileGridSkeleton />
         ) : myPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
             <span className="text-4xl">📷</span>

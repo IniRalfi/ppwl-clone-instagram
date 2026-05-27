@@ -350,7 +350,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
             {/* Comment */}
             <div className="flex items-center space-x-1.5 text-ig-text">
-              <Button onClick={() => navigate(`/posts/${id}`)} variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center">
+              <Button onClick={() => navigate(`/posts/${id}`)} variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150">
                 <MessageCircle className="h-6 w-6" />
               </Button>
               <span className="text-sm font-semibold select-none text-ig-secondary-text">{commentsCount}</span>
@@ -358,7 +358,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
             {/* Share */}
             <div className="flex items-center space-x-1.5 text-ig-text">
-              <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg]">
+              <Button variant="ghost" size="icon" className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg] transition-transform active:scale-75 hover:scale-110 duration-150">
                 <Send className="h-6 w-6" />
               </Button>
               <span className="text-sm font-semibold select-none text-ig-secondary-text">0</span>
@@ -367,11 +367,11 @@ export const PostCard: React.FC<PostCardProps> = ({
 
           {/* Bookmark */}
           <Button variant="ghost" size="icon" onClick={() => setIsBookmarked(!isBookmarked)}
-            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent ${
+            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 ${
               isBookmarked ? 'text-ig-text' : 'text-ig-text hover:text-ig-secondary-text'
             }`}
           >
-            <Bookmark className={`h-6 w-6 ${isBookmarked ? 'fill-current' : ''}`} />
+            <Bookmark className={`h-6 w-6 transition-all duration-150 ${isBookmarked ? 'fill-current scale-110' : ''}`} />
           </Button>
         </div>
 

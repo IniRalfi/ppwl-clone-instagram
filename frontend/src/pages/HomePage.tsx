@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../store/auth.store';
 import { apiClient } from '../services/api.client';
 
+import { PostSkeleton } from '../components/ui/Skeleton';
+
 // Tipe data sesuai dengan response dari backend
 interface Post {
   id: string;
@@ -64,8 +66,10 @@ const HomePage: React.FC = () => {
         {/* ── KOLOM KIRI: Feed Postingan ── */}
         <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
           {isLoading ? (
-            <div className="flex justify-center items-center py-20 text-ig-secondary-text">
-              Memuat postingan...
+            <div className="flex flex-col gap-6">
+              <PostSkeleton />
+              <PostSkeleton />
+              <PostSkeleton />
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center text-ig-secondary-text py-20">
