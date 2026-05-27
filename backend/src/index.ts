@@ -13,6 +13,7 @@ import { dataRoutes } from "@/modules/data/data.route";
 import { followRoutes } from "@/modules/follow/follow.routes";
 import { storyRoutes } from "@/modules/story/story.routes";
 import { messageRoutes } from "@/modules/message/message.routes";
+import { monitoringRoutes } from "@/modules/monitoring/monitoring.routes";
 import { swagger } from "@elysiajs/swagger";
 
 const isProd = process.env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -31,7 +32,8 @@ export const app = new Elysia()
   .use(dataRoutes)
   .use(followRoutes)
   .use(storyRoutes)
-  .use(messageRoutes);
+  .use(messageRoutes)
+  .use(monitoringRoutes);
 
 export type App = typeof app;
 export default app;
