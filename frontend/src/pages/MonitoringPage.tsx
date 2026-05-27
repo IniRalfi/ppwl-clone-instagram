@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Server, Database, Cloud, ShieldAlert, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Database, Cloud, ShieldAlert, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { apiClient } from "../services/api.client";
 
 interface MonitorData {
@@ -8,12 +8,6 @@ interface MonitorData {
     primary: {
       name: string;
       status: "online" | "offline";
-      latencyMs: number;
-      error: string | null;
-    };
-    secondary: {
-      name: string;
-      status: "online" | "offline" | "not_configured";
       latencyMs: number;
       error: string | null;
     };
@@ -57,7 +51,6 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     fetchStatus();
-    // Auto refresh setiap 30 detik
     const interval = setInterval(() => fetchStatus(simulateDown), 30000);
     return () => clearInterval(interval);
   }, [simulateDown]);
@@ -144,22 +137,22 @@ export default function MonitoringPage() {
           <div className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center mb-1 ${getScoreColor(data?.systemScore ?? 0)}`}>
             <span className="text-3xl font-extrabold">{data?.systemScore}%</span>
           </div>
-          <span className="text-xs text-ig-secondary-text">Semua sistem dalam kondisi prima</span>
+          <span className="text-xs text-ig-secondary-text">Kesehatan sistem keseluruhan</span>
         </div>
 
         <div className="md:col-span-2 bg-ig-elevated-bg rounded-2xl border border-ig-border p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-lg font-semibold mb-2">Dual-Engine Active-Active Failover</h2>
+            <h2 className="text-lg font-semibold mb-2">Production Infrastructure</h2>
             <p className="text-[14px] text-ig-secondary-text leading-relaxed">
-              Arsitektur database kamu secara otomatis mengarahkan kueri baca (*Read*) ke database dengan respon tercepat (Supabase / Neon) dan mereplikasi penulisan (*Write*) ke kedua mesin secara bersamaan untuk mencegah kehilangan data.
+              Semua infrastruktur pendukung aplikasi Instagram Clone kamu berjalan di atas platform cloud modern. Dashboard ini memantau waktu respon database serverless Neon secara langsung, serta memantau integrasi penyimpanan media berbasis AWS S3 & Cloudinary.
             </p>
           </div>
           <div className="flex gap-4 mt-4 pt-4 border-t border-ig-border text-xs text-ig-secondary-text">
             <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Read: Race Mode
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> DB Engine: Neon PostgreSQL
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Write: Sync-All Mode
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Media: AWS S3 + Cloudinary
             </div>
           </div>
         </div>
@@ -172,7 +165,7 @@ export default function MonitoringPage() {
           <h2 className="text-[15px] font-bold text-ig-secondary-text uppercase tracking-wider mb-3 flex items-center gap-2">
             <Database className="w-4 h-4" /> Database Engines
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
             {/* Primary DB */}
             <div className="bg-ig-elevated-bg rounded-2xl border border-ig-border p-5 flex flex-col justify-between h-40">
               <div className="flex items-start justify-between">
@@ -191,28 +184,6 @@ export default function MonitoringPage() {
               {data?.databases.primary.error && (
                 <div className="mt-2 text-xs text-rose-500 bg-rose-500/5 p-2 rounded-lg border border-rose-500/10 truncate">
                   Error: {data.databases.primary.error}
-                </div>
-              )}
-            </div>
-
-            {/* Secondary DB (Neon) */}
-            <div className="bg-ig-elevated-bg rounded-2xl border border-ig-border p-5 flex flex-col justify-between h-40">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-[15px]">{data?.databases.secondary.name}</h3>
-                  <span className="text-xs text-ig-secondary-text">Backup Engine</span>
-                </div>
-                {getStatusBadge(data?.databases.secondary.status ?? "not_configured")}
-              </div>
-              <div className="flex items-end justify-between pt-4">
-                <span className="text-xs text-ig-secondary-text">Latensi Kueri</span>
-                <span className="text-lg font-bold">
-                  {data?.databases.secondary.latencyMs !== -1 ? `${data?.databases.secondary.latencyMs} ms` : "N/A"}
-                </span>
-              </div>
-              {data?.databases.secondary.error && (
-                <div className="mt-2 text-xs text-rose-500 bg-rose-500/5 p-2 rounded-lg border border-rose-500/10 truncate">
-                  Error: {data.databases.secondary.error}
                 </div>
               )}
             </div>

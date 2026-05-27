@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { primaryPrisma, secondaryPrisma } from "@/db/client";
+import { db } from "@/db/client";
 import { env } from "@/config/env";
 import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
@@ -11,14 +11,8 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
       timestamp: new Date().toISOString(),
       databases: {
         primary: {
-          name: process.env.DATABASE_URL_SUPABASE ? "Supabase (Primary)" : "PostgreSQL (Primary)",
+          name: "Neon PostgreSQL (Production)",
           status: "offline",
-          latencyMs: -1,
-          error: null,
-        },
-        secondary: {
-          name: "Neon (Secondary/Backup)",
-          status: "not_configured",
           latencyMs: -1,
           error: null,
         },
@@ -41,10 +35,6 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
 
     if (simulateDown) {
       status.databases.primary.error = "Simulated Connection Timeout (ETIMEDOUT)";
-      status.databases.secondary.status = secondaryPrisma ? "offline" : "not_configured";
-      if (secondaryPrisma) {
-        status.databases.secondary.error = "Simulated Connection Refused (ECONNREFUSED)";
-      }
       status.storage.s3.error = "Simulated AWS S3 Outage (503 Service Unavailable)";
       status.storage.cloudinary.error = "Simulated Rate Limit Exceeded (429 Too Many Requests)";
       status.systemScore = 0;
@@ -52,12 +42,12 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
     }
 
     let healthyServices = 0;
-    let totalServices = 3; // Primary DB, S3, Cloudinary (Neon is optional)
+    const totalServices = 3; // Neon DB, S3, Cloudinary
 
-    // 1. Test Primary Database
+    // 1. Test Database (Neon)
     try {
       const start = performance.now();
-      await primaryPrisma.$queryRaw`SELECT 1`;
+      await db.$queryRaw`SELECT 1`;
       status.databases.primary.latencyMs = Math.round(performance.now() - start);
       status.databases.primary.status = "online";
       healthyServices++;
@@ -65,25 +55,9 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
       status.databases.primary.error = err.message || "Connection failed";
     }
 
-    // 2. Test Secondary Database (Neon) - Jika dikonfigurasi
-    if (secondaryPrisma) {
-      totalServices++;
-      try {
-        const start = performance.now();
-        await secondaryPrisma.$queryRaw`SELECT 1`;
-        status.databases.secondary.latencyMs = Math.round(performance.now() - start);
-        status.databases.secondary.status = "online";
-        healthyServices++;
-      } catch (err: any) {
-        status.databases.secondary.status = "offline";
-        status.databases.secondary.error = err.message || "Connection failed";
-      }
-    }
-
-    // 3. Test AWS S3 Bucket
+    // 2. Test AWS S3 Bucket
     try {
       const s3Client = new S3Client({ region: env.AWS_S3_REGION });
-      // Kirim kueri ringan list objects dengan limit 1 untuk memverifikasi bucket S3 online
       const command = new ListObjectsV2Command({
         Bucket: env.AWS_S3_BUCKET,
         MaxKeys: 1,
@@ -95,7 +69,7 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
       status.storage.s3.error = err.message || "Access denied / S3 Down";
     }
 
-    // 4. Test Cloudinary Configuration Credentials
+    // 3. Test Cloudinary Configuration Credentials
     if (env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET) {
       status.storage.cloudinary.status = "online";
       healthyServices++;
