@@ -196,7 +196,7 @@ export default function CreatePostPage() {
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-full h-full object-contain md:object-cover"
+                className="w-full h-auto max-h-[550px] object-contain select-none"
               />
             )}
             {/* Tombol hapus gambar */}
