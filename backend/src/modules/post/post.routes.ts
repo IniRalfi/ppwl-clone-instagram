@@ -1,11 +1,10 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
 import {
-  uploadImageToCloudinary,
-  deleteImageFromCloudinary,
   MAX_FILE_SIZE_BYTES,
   ALLOWED_MIME_TYPES,
 } from "@/config/cloudinary";
+import { uploadMedia, deleteMedia } from "@/config/s3";
 import { authPlugin } from "@/plugins/auth.plugin";
 
 // Pilih field author yang aman untuk di-return ke frontend
@@ -199,10 +198,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
           };
         }
 
-        // Upload ke Cloudinary
+        // Upload menggunakan S3 Media Service (S3 + Cloudinary Fallback)
         const arrayBuffer = await imageFile.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        imageUrl = await uploadImageToCloudinary(buffer, imageFile.type);
+        imageUrl = await uploadMedia(buffer, imageFile.type);
       }
 
       // Update postCount di User terlebih dahulu agar data ter-update ter-return di query post.create
@@ -257,9 +256,9 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         return { message: "Kamu tidak memiliki akses untuk menghapus postingan ini" };
       }
 
-      // Hapus gambar dari Cloudinary terlebih dahulu (jika ada)
+      // Hapus gambar menggunakan S3 Media Service
       if (post.imageUrl) {
-        await deleteImageFromCloudinary(post.imageUrl);
+        await deleteMedia(post.imageUrl);
       }
 
       // Hapus dari database (cascade akan hapus likes & comments terkait)

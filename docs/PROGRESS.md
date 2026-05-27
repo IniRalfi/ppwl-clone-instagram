@@ -10,7 +10,7 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
 | :--- | :--- | :---: | :---: |
 | 🟢 **Bug Fix** | Menyelesaikan 20 Bug di `bug_report.md` | Sedang | **SELESAI** (100%) |
 | 🔵 **Phase 2** | Integrasi Backend & DB untuk Fitur Tim | Tinggi | **SELESAI** (100%) |
-| 🟡 **Infrastruktur**| Optimasi AWS, S3 Bucket CDN, & DB Production | Tinggi | Belum Mulai |
+| 🟡 **Infrastruktur**| Optimasi AWS, S3 Bucket CDN, & DB Production | Tinggi | **DALAM PROSES** (50%) |
 | 🟣 **Frontend** | Poles UX, Animasi, & Detail Styling | Rendah | Belum Mulai |
 
 ---
@@ -45,8 +45,8 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
   - [x] Buat rute `POST /messages` (Kirim pesan baru ke user lain).
 
 ### 🟡 Fase 3: Infrastruktur & AWS CDN
-- [ ] Buat S3 Bucket di AWS dan konfigurasi SDK S3 di backend.
-- [ ] Buat fallback service: Gunakan S3 sebagai CDN utama, dan jika gagal otomatis fallback menggunakan Cloudinary.
+- [x] Buat S3 Bucket di AWS dan konfigurasi SDK S3 di backend.
+- [x] Buat fallback service: Gunakan S3 sebagai CDN utama, dan jika gagal otomatis fallback menggunakan Cloudinary.
 - [ ] Migrasi database production dari PostgreSQL lokal/Lama ke **Turso** (SQLite over Edge) atau **Supabase** (PostgreSQL Serverless) untuk menghilangkan latency cold-start koneksi DB di AWS Lambda.
 - [ ] Buat skrip otomatisasi cron backup berkala database ke storage S3.
 

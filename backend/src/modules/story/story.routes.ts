@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
 import {
-  uploadImageToCloudinary,
   MAX_FILE_SIZE_BYTES,
   ALLOWED_MIME_TYPES,
 } from "@/config/cloudinary";
+import { uploadMedia } from "@/config/s3";
 import { authPlugin } from "@/plugins/auth.plugin";
 
 export const storyRoutes = new Elysia({ prefix: "/stories" })
@@ -132,9 +132,9 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
         return { message: "Ukuran gambar maksimal 5 MB" };
       }
 
-      // Convert File ke Buffer untuk upload ke Cloudinary
+      // Convert File ke Buffer untuk upload menggunakan S3 Media Service
       const buffer = Buffer.from(await imageFile.arrayBuffer());
-      const imageUrl = await uploadImageToCloudinary(buffer, imageFile.type);
+      const imageUrl = await uploadMedia(buffer, imageFile.type);
 
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Kadaluwarsa dalam 24 jam

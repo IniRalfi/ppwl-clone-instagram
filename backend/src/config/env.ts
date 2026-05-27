@@ -14,4 +14,7 @@ export const env = {
   CLOUDINARY_CLOUD_NAME: required("CLOUDINARY_CLOUD_NAME"),
   CLOUDINARY_API_KEY: required("CLOUDINARY_API_KEY"),
   CLOUDINARY_API_SECRET: required("CLOUDINARY_API_SECRET"),
+  // AWS S3 (Opsional untuk fallback dan upload media)
+  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET ?? "ppwl-instagram-fe-team-3",
+  AWS_S3_REGION: process.env.AWS_S3_REGION ?? "us-east-1",
 };
