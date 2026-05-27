@@ -17,6 +17,7 @@ type AuthStore = {
 
   setAuth: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (updatedFields: Partial<User>) => void;
 };
 
 export const useAuthStore = create<AuthStore>()(
@@ -39,6 +40,11 @@ export const useAuthStore = create<AuthStore>()(
           token: null,
           isAuthenticated: false,
         }),
+
+      updateUser: (updatedFields) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updatedFields } : null,
+        })),
     }),
     {
       name: "auth-storage",

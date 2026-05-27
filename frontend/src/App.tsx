@@ -60,7 +60,7 @@ export function App() {
       />
 
       <Route
-        path="/profile"
+        path="/profile/:username?"
         element={
           <ProtectedRoute>
             <MainLayout>
@@ -101,6 +101,17 @@ export function App() {
                 <MonitoringPage />
               </MainLayout>
             </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/explore"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ExplorePage />
+            </MainLayout>
           </ProtectedRoute>
         }
       />

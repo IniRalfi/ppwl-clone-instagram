@@ -28,6 +28,27 @@ export const userRoutes = new Elysia({ prefix: "/users" })
     return { data: users };
   })
 
+  .get("/username/:username", async ({ params: { username }, set }) => {
+    const user = await db.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        createdAt: true,
+      }
+    });
+
+    if (!user) {
+      set.status = 404;
+      return { message: "User tidak ditemukan" };
+    }
+
+    return { data: user };
+  })
+
   .use(authPlugin)
   .put("/profile", async ({ body, getCurrentUser, set }) => {
     try {

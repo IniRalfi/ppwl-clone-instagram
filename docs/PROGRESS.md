@@ -28,6 +28,7 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
   - [x] Buat rute `GET /stories` (Mengambil & mengelompokkan active stories per user).
 - [x] **Yasmin (Explore & Live Search):**
   - [x] Tambahkan filter parameter query `?search=...` di `GET /users` (pencarian case-insensitive pada kolom `name` dan `username`).
+  - [x] Integrasikan halaman `ExplorePage` dengan live API `/users?search=` dan grid postingan riil `/posts` dari database.
 - [x] **Bagas (Bookmark / Saved Post):**
   - [x] Tambahkan model `Bookmark` / `SavedPost` di `schema.prisma`.
   - [x] Jalankan `prisma db push`.
@@ -37,6 +38,7 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
   - [x] Buat rute `GET /follow/followers/:userId` (Mengambil daftar lengkap user pengikut).
   - [x] Buat rute `GET /follow/following/:userId` (Mengambil daftar lengkap user yang diikuti).
   - [x] Buat rute `PUT /users/profile` (Update profil: `name`, `bio`, dan `avatarUrl`).
+  - [x] Buat rute dinamis `/profile/:username?` untuk melihat profil pengguna lain secara interaktif dengan tombol follow/following.
 - [x] **Salsabila (Direct Message Chat):**
   - [x] Tambahkan model `Message` dan `ChatRoom` di `schema.prisma` untuk menyimpan chat.
   - [x] Jalankan `prisma db push`.
@@ -47,10 +49,11 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
 ### 🟡 Fase 3: Infrastruktur & AWS CDN
 - [x] Buat S3 Bucket di AWS dan konfigurasi SDK S3 di backend.
 - [x] Buat fallback service: Gunakan S3 sebagai CDN utama, dan jika gagal otomatis fallback menggunakan Cloudinary.
-- [x] Migrasi database production dari PostgreSQL lokal/Lama ke **Supabase** & **Neon** dengan Active-Active Failover (menghilangkan cold-start database & auto-sleep).
+- [x] Sederhanakan database production ke satu instance Neon PostgreSQL utama yang solid dan cepat (membersihkan konfigurasi dual database active-active).
 - [x] Buat halaman Live Service Monitoring Dashboard di frontend untuk memantau status kesehatan database, S3, dan Cloudinary secara real-time.
 - [ ] Buat skrip otomatisasi cron backup berkala database ke storage S3.
 
 ### 🟣 Fase 4: Poles Frontend & UX
 - [x] Implementasikan loading skeleton di feed utama dan profil saat fetching data.
 - [x] Tambahkan animasi mikro transisi hover pada tombol interaksi postingan.
+- [x] Terapkan debounce pencarian 300ms dan debounce hover stats 250ms untuk mencegah overloading koneksi database.
