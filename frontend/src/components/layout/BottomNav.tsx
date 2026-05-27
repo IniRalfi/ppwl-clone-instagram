@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 const navItems = [
   { icon: Home,       to: "/",             label: "Beranda",    wip: false },
-  { icon: Search,     to: "/search",       label: "Cari",       wip: true  },
+  { icon: Search,     to: "/explore",       label: "Cari",       wip: false  },
   { icon: PlusSquare, to: "/create",       label: "Buat Post",  wip: false },
   { icon: Heart,      to: "/notifications", label: "Notifikasi", wip: false },
   { icon: User,       to: "/profile",      label: "Profil",     wip: false },
