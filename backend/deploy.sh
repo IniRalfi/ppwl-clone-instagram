@@ -43,6 +43,8 @@ aws lambda update-function-configuration \
   --function-name "$FUNCTION" \
   --environment "Variables={
     DATABASE_URL=$DATABASE_URL,
+    DATABASE_URL_NEON=$DATABASE_URL_NEON,
+    DATABASE_URL_SUPABASE=$DATABASE_URL_SUPABASE,
     JWT_SECRET=$JWT_SECRET,
     NODE_ENV=production,
     FRONTEND_URL=https://www.ppwl-a3.my.id,
