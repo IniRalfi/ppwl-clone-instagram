@@ -45,20 +45,67 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
               select: { userId: true },
             }
           : false,
+        bookmarks: currentUserId
+          ? {
+              where: { userId: currentUserId },
+              select: { userId: true },
+            }
+          : false,
         _count: { select: { likes: true, comments: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
     const mappedPosts = posts.map((post) => {
-      const { likes, ...rest } = post as any;
+      const { likes, bookmarks, ...rest } = post as any;
       return {
         ...rest,
         isLikedByMe: likes && likes.length > 0,
+        isBookmarkedByMe: bookmarks && bookmarks.length > 0,
       };
     });
 
     return { data: mappedPosts };
+  })
+
+  // ─────────────────────────────────────────────
+  // GET /posts/saved — Mengambil postingan yang di-bookmark oleh user aktif
+  // ─────────────────────────────────────────────
+  .get("/saved", async ({ getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
+      const userId = user.id;
+
+      const savedBookmarked = await db.bookmark.findMany({
+        where: { userId },
+        include: {
+          post: {
+            include: {
+              author: { select: AUTHOR_SELECT },
+              _count: { select: { likes: true, comments: true } }
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const mappedPosts = savedBookmarked.map((b) => {
+        return {
+          ...b.post,
+          isBookmarkedByMe: true,
+        };
+      });
+
+      return { data: mappedPosts };
+    } catch (error) {
+      console.error("❌ Gagal mengambil saved posts:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
+    }
   })
 
   // ─────────────────────────────────────────────
@@ -82,6 +129,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
               select: { userId: true },
             }
           : false,
+        bookmarks: currentUserId
+          ? {
+              where: { userId: currentUserId },
+              select: { userId: true },
+            }
+          : false,
         _count: { select: { likes: true, comments: true } },
       },
     });
@@ -91,10 +144,11 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       return { message: "Post tidak ditemukan" };
     }
 
-    const { likes, ...rest } = post as any;
+    const { likes, bookmarks, ...rest } = post as any;
     const mappedPost = {
       ...rest,
       isLikedByMe: likes && likes.length > 0,
+      isBookmarkedByMe: bookmarks && bookmarks.length > 0,
     };
 
     return { data: mappedPost };
@@ -222,5 +276,49 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       console.error("❌ Gagal menghapus post:", error);
       set.status = 500;
       return { message: "Terjadi kesalahan server saat menghapus postingan" };
+    }
+  })
+
+  // ─────────────────────────────────────────────
+  // POST /posts/:id/bookmark — Toggle simpan postingan
+  // ─────────────────────────────────────────────
+  .post("/:id/bookmark", async ({ params: { id }, getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
+      const userId = user.id;
+
+      const post = await db.post.findUnique({ where: { id } });
+      if (!post) {
+        set.status = 404;
+        return { message: "Postingan tidak ditemukan" };
+      }
+
+      const existingBookmark = await db.bookmark.findUnique({
+        where: {
+          userId_postId: { userId, postId: id }
+        }
+      });
+
+      if (existingBookmark) {
+        await db.bookmark.delete({
+          where: {
+            userId_postId: { userId, postId: id }
+          }
+        });
+        return { message: "Batal menyimpan postingan", bookmarked: false };
+      } else {
+        await db.bookmark.create({
+          data: { userId, postId: id }
+        });
+        return { message: "Postingan berhasil disimpan", bookmarked: true };
+      }
+    } catch (error) {
+      console.error("❌ Gagal toggle bookmark:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
     }
   });

@@ -26,6 +26,10 @@ model User {
   likes         Like[]
   notifications Notification[] @relation("NotifReceiver")
   stories       Story[]
+  bookmarks     Bookmark[]
+  messagesSent     Message[]
+  chatRoomsAsUser1 ChatRoom[] @relation("User1")
+  chatRoomsAsUser2 ChatRoom[] @relation("User2")
 
   // Relasi Follow
   following     Follow[] @relation("Follower")   // user ini mem-follow siapa
@@ -44,6 +48,7 @@ model Post {
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments Comment[]
   likes    Like[]
+  bookmarks Bookmark[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,5 +109,39 @@ model Story {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   expiresAt DateTime
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  user1     User     @relation("User1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User     @relation("User2", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
 }
 

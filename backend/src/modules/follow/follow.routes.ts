@@ -43,6 +43,62 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
     };
   })
 
+  /** GET /follow/followers/:userId — Ambil daftar followers dari userId */
+  .get("/followers/:userId", async ({ params: { userId }, set }) => {
+    try {
+      const followersList = await db.follow.findMany({
+        where: { followingId: userId },
+        include: {
+          follower: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              avatarUrl: true,
+              bio: true,
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const mapped = followersList.map(f => f.follower);
+      return { data: mapped };
+    } catch (error) {
+      console.error("❌ Gagal mengambil followers:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
+    }
+  })
+
+  /** GET /follow/following/:userId — Ambil daftar following dari userId */
+  .get("/following/:userId", async ({ params: { userId }, set }) => {
+    try {
+      const followingList = await db.follow.findMany({
+        where: { followerId: userId },
+        include: {
+          following: {
+            select: {
+              id: true,
+              username: true,
+              name: true,
+              avatarUrl: true,
+              bio: true,
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const mapped = followingList.map(f => f.following);
+      return { data: mapped };
+    } catch (error) {
+      console.error("❌ Gagal mengambil following:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
+    }
+  })
+
   /** GET /follow/suggestions?userId=xxx — Ambil 5 user yang belum di-follow */
   .get(
     "/suggestions",
