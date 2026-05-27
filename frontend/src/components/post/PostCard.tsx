@@ -92,7 +92,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     { id: string; imageUrl: string | null; content: string }[]
   >([]);
   const [isHoverStatsLoading, setIsHoverStatsLoading] = useState(false);
-  const hoverFetchedRef = useRef(false);
   const hoverTimeoutRef = useRef<any>(null);
 
   const maxLength = 60;
@@ -176,8 +175,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   // ── Hover card: fetch stats saat pertama hover ──
   const handleHoverEnter = useCallback(async () => {
-    if (hoverFetchedRef.current) return;
-    hoverFetchedRef.current = true;
+    if (hoverStats || isHoverStatsLoading) return;
     setIsHoverStatsLoading(true);
     try {
       const params = currentUserId ? `?currentUserId=${currentUserId}` : "";
@@ -212,7 +210,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     } finally {
       setIsHoverStatsLoading(false);
     }
-  }, [authorId, currentUserId, followers, following, postsCount]);
+  }, [authorId, currentUserId, followers, following, postsCount, hoverStats, isHoverStatsLoading]);
 
   // Debounce hover trigger to avoid connection pool flooding
   const handleMouseEnter = () => {
