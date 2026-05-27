@@ -9,6 +9,7 @@ import CreatePostPage from "./pages/CreatePostPage";
 import RegisterPage from "./pages/RegisterPage";
 import { PostDetailPage } from "./pages/PostDetailPage";
 import { MainLayout } from "./components/layout/MainLayout";
+import ExplorePage from "./pages/ExplorePage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -64,6 +65,16 @@ export function App() {
         </ProtectedRoute>
       } />
 
+      <Route
+  path="/explore"
+  element={
+    <ProtectedRoute>
+      <MainLayout>
+        <ExplorePage />
+      </MainLayout>
+    </ProtectedRoute>
+  }
+/>
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
