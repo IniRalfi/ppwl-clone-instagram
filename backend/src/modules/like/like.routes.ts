@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
 import { authPlugin } from "@/plugins/auth.plugin";
+import { localCache } from "@/utils/cache";
 
 export const likeRoutes = new Elysia({ prefix: "/likes" })
   .use(authPlugin)
@@ -35,6 +36,7 @@ export const likeRoutes = new Elysia({ prefix: "/likes" })
           where: { userId_postId: { userId, postId } },
         });
 
+        localCache.deletePattern("posts:");
         const likeCount = await db.like.count({ where: { postId } });
         return { message: "Unlike berhasil", liked: false, likeCount };
       } else {
@@ -43,6 +45,7 @@ export const likeRoutes = new Elysia({ prefix: "/likes" })
           data: { userId, postId },
         });
 
+        localCache.deletePattern("posts:");
         const likeCount = await db.like.count({ where: { postId } });
         return { message: "Like berhasil", liked: true, likeCount };
       }

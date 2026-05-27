@@ -6,6 +6,7 @@ import {
 } from "@/config/cloudinary";
 import { uploadMedia, deleteMedia } from "@/config/s3";
 import { authPlugin } from "@/plugins/auth.plugin";
+import { localCache } from "@/utils/cache";
 
 // Pilih field author yang aman untuk di-return ke frontend
 const AUTHOR_SELECT = {
@@ -34,6 +35,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     const currentUserId = user?.id;
     const { authorId, limit } = query as { authorId?: string; limit?: string };
     const take = limit ? parseInt(limit, 10) : undefined;
+
+    const cacheKey = `posts:feed:${authorId || "all"}:limit:${limit || "none"}:user:${currentUserId || "guest"}`;
+    const cached = localCache.get<any>(cacheKey);
+    if (cached) {
+      return { data: cached, _cached: true };
+    }
 
     const posts = await db.post.findMany({
       where: authorId ? { authorId } : undefined,
@@ -65,6 +72,8 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         isBookmarkedByMe: bookmarks && bookmarks.length > 0,
       };
     });
+
+    localCache.set(cacheKey, mappedPosts, 15000); // cache 15 detik
 
     return { data: mappedPosts };
   })
@@ -116,6 +125,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     const user = await getCurrentUser();
     const currentUserId = user?.id;
 
+    const cacheKey = `posts:single:${id}:user:${currentUserId || "guest"}`;
+    const cached = localCache.get<any>(cacheKey);
+    if (cached) {
+      return { data: cached, _cached: true };
+    }
+
     const post = await db.post.findUnique({
       where: { id },
       include: {
@@ -151,6 +166,8 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       isLikedByMe: likes && likes.length > 0,
       isBookmarkedByMe: bookmarks && bookmarks.length > 0,
     };
+
+    localCache.set(cacheKey, mappedPost, 10000); // cache 10 detik
 
     return { data: mappedPost };
   })
@@ -225,6 +242,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         },
       });
 
+      localCache.deletePattern("posts:");
       return { message: "Postingan berhasil dibuat", data: post };
     } catch (error) {
       console.error("❌ Gagal membuat post:", error);
@@ -272,6 +290,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         data: { postCount: { decrement: 1 } },
       });
 
+      localCache.deletePattern("posts:");
       return { message: "Postingan berhasil dihapus" };
     } catch (error) {
       console.error("❌ Gagal menghapus post:", error);
@@ -310,11 +329,13 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
             userId_postId: { userId, postId: id }
           }
         });
+        localCache.deletePattern("posts:");
         return { message: "Batal menyimpan postingan", bookmarked: false };
       } else {
         await db.bookmark.create({
           data: { userId, postId: id }
         });
+        localCache.deletePattern("posts:");
         return { message: "Postingan berhasil disimpan", bookmarked: true };
       }
     } catch (error) {

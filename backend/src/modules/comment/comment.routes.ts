@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
 import { authPlugin } from "@/plugins/auth.plugin";
+import { localCache } from "@/utils/cache";
 
 export const commentRoutes = new Elysia({ prefix: "/comments" })
   .use(authPlugin)
@@ -56,6 +57,8 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
           }
         }
       });
+
+      localCache.deletePattern("posts:");
 
       // Update commentCount di User
       await db.user.update({

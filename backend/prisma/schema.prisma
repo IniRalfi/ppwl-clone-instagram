@@ -52,6 +52,8 @@ model Post {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([authorId])
 }
 
 model Comment {
@@ -66,6 +68,10 @@ model Comment {
   replies  Comment[] @relation("CommentReplies")
 
   createdAt DateTime @default(now())
+
+  @@index([authorId])
+  @@index([postId])
+  @@index([parentId])
 }
 
 model Like {
@@ -77,6 +83,7 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model Follow {
@@ -88,6 +95,7 @@ model Follow {
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model Notification {
@@ -100,6 +108,8 @@ model Notification {
   receiver   User    @relation("NotifReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+
+  @@index([receiverId])
 }
 
 model Story {
@@ -109,6 +119,8 @@ model Story {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   expiresAt DateTime
+
+  @@index([userId])
 }
 
 model Bookmark {
@@ -120,6 +132,7 @@ model Bookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model ChatRoom {
@@ -133,6 +146,7 @@ model ChatRoom {
   updatedAt DateTime @updatedAt
 
   @@unique([user1Id, user2Id])
+  @@index([user2Id])
 }
 
 model Message {
@@ -143,5 +157,7 @@ model Message {
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   text      String
   createdAt DateTime @default(now())
-}
 
+  @@index([roomId])
+  @@index([senderId])
+}

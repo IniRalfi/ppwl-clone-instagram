@@ -1,3 +1,5 @@
+import { useAuthStore } from "../store/auth.store";
+
 // Base URL backend — sesuaikan dengan environment variable Vite
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -49,6 +51,9 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      useAuthStore.getState().logout();
+    }
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
   }
@@ -74,6 +79,9 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      useAuthStore.getState().logout();
+    }
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
   }
