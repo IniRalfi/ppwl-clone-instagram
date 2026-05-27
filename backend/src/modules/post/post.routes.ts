@@ -32,10 +32,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   .get("/", async ({ query, getCurrentUser }) => {
     const user = await getCurrentUser();
     const currentUserId = user?.id;
-    const { authorId } = query as { authorId?: string };
+    const { authorId, limit } = query as { authorId?: string; limit?: string };
+    const take = limit ? parseInt(limit, 10) : undefined;
 
     const posts = await db.post.findMany({
       where: authorId ? { authorId } : undefined,
+      take,
       include: {
         author: { select: AUTHOR_SELECT },
         likes: currentUserId

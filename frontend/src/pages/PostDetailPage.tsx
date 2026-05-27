@@ -4,6 +4,7 @@ import { CommentItem } from "../components/comment/CommentItem";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../store/auth.store";
+import { apiClient } from "../services/api.client";
 
 interface Post {
   id: string;
@@ -43,9 +44,8 @@ export function PostDetailPage() {
   useEffect(() => {
     const fetchPostData = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/posts/${id}`);
-        const json = await res.json();
-        if (res.ok && json.data) {
+        const json = await apiClient.get<{ data: Post }>(`/posts/${id}`);
+        if (json && json.data) {
           setPost(json.data);
           setComments(json.data.comments || []);
         } else {
@@ -79,23 +79,18 @@ export function PostDetailPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId: id,
-          content: inputValue.trim(),
-          parentId: replyTarget?.parentId ?? null,
-          authorId: currentUser.id,
-        }),
+      const json = await apiClient.post<{ data: any }>("/comments", {
+        postId: id,
+        content: inputValue.trim(),
+        parentId: replyTarget?.parentId ?? null,
+        authorId: currentUser.id,
       });
 
-      if (res.ok) {
-        // Optimistic UI update or refresh post
-        const resPost = await fetch(`${import.meta.env.VITE_API_URL}/posts/${id}`);
-        const json = await resPost.json();
-        if (resPost.ok && json.data) {
-          setComments(json.data.comments || []);
+      if (json) {
+        // Refresh post comments
+        const resPost = await apiClient.get<{ data: Post }>(`/posts/${id}`);
+        if (resPost && resPost.data) {
+          setComments(resPost.data.comments || []);
         }
         
         setInputValue("");
@@ -105,7 +100,7 @@ export function PostDetailPage() {
         toast.error("Gagal mengirim komentar.");
       }
     } catch {
-      toast.error("Kesalahan jaringan.");
+      toast.error("Kesalahan jaringan atau sesi telah berakhir.");
     } finally {
       setIsSubmitting(false);
     }

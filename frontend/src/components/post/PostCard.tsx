@@ -64,6 +64,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   } | null>(null);
   const [isHoverFollowed, setIsHoverFollowed] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [hoverPosts, setHoverPosts] = useState<{ id: string; imageUrl: string | null; content: string }[]>([]);
   const hoverFetchedRef = useRef(false);
 
   const maxLength = 60;
@@ -137,19 +138,28 @@ export const PostCard: React.FC<PostCardProps> = ({
     hoverFetchedRef.current = true;
     try {
       const params = currentUserId ? `?currentUserId=${currentUserId}` : '';
-      const statsRes = await apiClient.get<{
-        followers: number;
-        following: number;
-        isFollowing: boolean;
-      }>(`/follow/stats/${authorId}${params}`);
+      
+      const [statsRes, postsRes] = await Promise.all([
+        apiClient.get<{
+          followers: number;
+          following: number;
+          isFollowing: boolean;
+        }>(`/follow/stats/${authorId}${params}`),
+        apiClient.get<{
+          data: { id: string; imageUrl: string | null; content: string }[];
+        }>(`/posts?authorId=${authorId}&limit=3`)
+      ]);
 
       setHoverStats({
         followers: statsRes.followers,
         following: statsRes.following,
         postsCount,
       });
-      // Set status follow dari DB — cegah 409 jika sudah follow sebelumnya
       setIsHoverFollowed(statsRes.isFollowing);
+      
+      if (postsRes && postsRes.data) {
+        setHoverPosts(postsRes.data);
+      }
     } catch {
       setHoverStats({
         followers,
@@ -234,6 +244,34 @@ export const PostCard: React.FC<PostCardProps> = ({
           )}
         </button>
       )}
+
+      {/* 3 postingan terakhir (seperti IG asli) */}
+      {hoverPosts.length > 0 && (
+        <div className="grid grid-cols-3 gap-1 mt-4 pt-3 border-t border-ig-border">
+          {hoverPosts.map((hp) => (
+            <div
+              key={hp.id}
+              className="aspect-square bg-neutral-800 rounded-xs overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/posts/${hp.id}`);
+              }}
+            >
+              {hp.imageUrl ? (
+                <img
+                  src={hp.imageUrl}
+                  alt="Thumbnail"
+                  className="w-full h-full object-cover hover:opacity-80 transition-opacity"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[9px] text-ig-secondary-text p-1 text-center truncate">
+                  {hp.content}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -244,7 +282,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       <div className="flex items-center justify-between px-4 py-3 relative">
         <div className="flex items-center space-x-3">
           <Avatar avatarUrl={avatarUrl} name={username} size="sm" className="border border-ig-border" />
-          <div className="flex items-baseline space-x-2 relative group">
+          <div className="flex items-baseline space-x-2 relative group" onMouseEnter={handleHoverEnter}>
             <span className="font-semibold text-[15px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
               {username}
             </span>
@@ -378,7 +416,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         {/* Caption */}
         <div className="text-[14px] leading-relaxed pt-1 border-t border-ig-border relative">
           <div>
-            <span className="inline-block relative group mr-2">
+            <span className="inline-block relative group mr-2" onMouseEnter={handleHoverEnter}>
               <span className="font-semibold cursor-pointer text-ig-text hover:underline">{username}</span>
               {renderHoverCard(true)}
             </span>

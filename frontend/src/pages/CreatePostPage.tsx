@@ -5,6 +5,7 @@ import { createPost } from "../services/post.service";
 import { toast } from "sonner";
 import { ImageIcon, VideoIcon, X, ArrowLeft, Loader2 } from "lucide-react";
 import { Avatar } from "../components/common/Avatar";
+import { compressImage } from "../lib/image";
 
 /** Ukuran maksimal file yang diizinkan (sesuai backend: 5 MB) */
 const MAX_FILE_SIZE_MB = 5;
@@ -36,7 +37,7 @@ export default function CreatePostPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Validasi dan proses file yang dipilih ──
-  const processFile = useCallback((file: File) => {
+  const processFile = useCallback(async (file: File) => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       toast.error("Format tidak didukung. Gunakan JPEG, PNG, WebP, atau GIF.");
       return;
@@ -45,8 +46,16 @@ export default function CreatePostPage() {
       toast.error(`Ukuran gambar maksimal ${MAX_FILE_SIZE_MB} MB.`);
       return;
     }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+
+    try {
+      const optimizedFile = await compressImage(file);
+      setImageFile(optimizedFile);
+      setImagePreview(URL.createObjectURL(optimizedFile));
+    } catch (err) {
+      console.warn("⚠️ Gagal mengompres gambar, menggunakan file asli:", err);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
     // Langsung pindah ke step caption setelah pilih gambar
     setStep("caption");
   }, []);
