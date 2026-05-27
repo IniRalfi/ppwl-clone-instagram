@@ -36,7 +36,7 @@ export function PostSkeleton() {
       </div>
 
       {/* Main post image placeholder */}
-      <Skeleton className="w-full aspect-square rounded-lg" />
+      <Skeleton className="w-full aspect-[4/5] rounded-sm" />
 
       {/* Action Bar (Love, Comment, Share, Bookmark) */}
       <div className="flex justify-between items-center py-2 px-1">

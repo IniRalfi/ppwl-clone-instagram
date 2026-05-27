@@ -385,7 +385,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <span className="font-semibold text-[15px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
+            <span className="font-semibold text-[14px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
               {username}
             </span>
             <span className="text-xs text-ig-secondary-text">• {timeAgo}</span>
@@ -403,7 +403,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
       {/* ── CAROUSEL GAMBAR ── */}
       <div
-        className="relative w-full overflow-hidden bg-black flex items-center justify-center aspect-square sm:aspect-auto"
+        className="relative w-full overflow-hidden bg-black flex items-center justify-center aspect-[4/5]"
         onDoubleClick={handleDoubleClick}
         onClick={() => setShowTags(!showTags)}
       >
@@ -414,7 +414,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           onMouseUp={handleMouseLeaveOrUp}
           onMouseLeave={handleMouseLeaveOrUp}
           onMouseMove={handleMouseMove}
-          className={`w-full flex overflow-x-auto scrollbar-none select-none ${
+          className={`w-full h-full flex overflow-x-auto scrollbar-none select-none ${
             isDragging ? "scroll-auto" : "snap-x snap-mandatory scroll-smooth"
           } ${imageUrls.length > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
           style={{ scrollbarWidth: "none" }}
@@ -422,12 +422,12 @@ export const PostCard: React.FC<PostCardProps> = ({
           {imageUrls.map((url, index) => (
             <div
               key={index}
-              className="w-full flex-shrink-0 snap-center flex items-center justify-center pointer-events-none relative"
+              className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center pointer-events-none relative"
             >
               <img
                 src={url}
                 alt={`Postingan ke-${index + 1}`}
-                className="w-full h-auto max-h-[550px] object-contain select-none"
+                className="w-full h-full object-cover select-none"
                 draggable="false"
               />
               {index === 0 &&
@@ -573,14 +573,14 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
 
         {/* Caption */}
-        <div className="text-[14px] leading-relaxed pt-1 border-t border-ig-border relative">
+        <div className="text-[13.5px] leading-relaxed pt-1 border-t border-ig-border relative">
           <div>
             <span
               className="inline-block relative group mr-2"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
-              <span className="font-semibold cursor-pointer text-ig-text hover:underline">
+              <span className="font-semibold cursor-pointer text-ig-text hover:underline text-[13.5px]">
                 {username}
               </span>
               {renderHoverCard(true)}

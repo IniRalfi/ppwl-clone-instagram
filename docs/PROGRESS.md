@@ -57,3 +57,11 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
 - [x] Implementasikan loading skeleton di feed utama dan profil saat fetching data.
 - [x] Tambahkan animasi mikro transisi hover pada tombol interaksi postingan.
 - [x] Terapkan debounce pencarian 300ms dan debounce hover stats 250ms untuk mencegah overloading koneksi database.
+
+### 🟤 Fase 5: Caching & Penyelarasan UI Asli
+- [x] Buat utilitas MemoryCache dengan TTL & Invalidasi Pola (*Pattern Invalidation*).
+- [x] Pasang caching pada endpoint list postingan (`GET /posts`) dan detail postingan (`GET /posts/:id`).
+- [x] Terapkan automatic cache invalidation saat posting, edit, hapus, like/unlike, bookmark, dan komentar.
+- [x] Implementasikan global interceptor untuk auto-logout pada respon 401 Unauthorized (mengatasi ketidaksinkronan sesi setelah server restart).
+- [x] Selaraskan sidebar: perbaiki typo nama `Instagram` dan ubah ukuran font navigasi menjadi `14px` standard IG.
+- [x] Selaraskan layout postingan: terapkan aspek rasio 4:5 dengan `object-cover` untuk feed card dan sesuaikan skeleton loading.
