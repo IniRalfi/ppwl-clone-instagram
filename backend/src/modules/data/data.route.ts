@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
+import { runDatabaseBackup } from "@/scripts/backup";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
   // Middleware khusus untuk grup /data
@@ -28,6 +29,16 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
       set.status = 401;
       return { message: "Unauthorized: Access denied without valid API Key" };
     }
+  })
+
+  // Trigger backup manual ke S3
+  .post("/backup", async ({ set }) => {
+    const res = await runDatabaseBackup();
+    if (!res.success) {
+      set.status = 500;
+      return { success: false, message: "Gagal membuat backup", error: res.error };
+    }
+    return { success: true, message: "Backup database berhasil dibuat dan diunggah ke S3", data: res };
   })
 
   // Rute-rute /data (mengembalikan semua data untuk keperluan inspeksi DB)

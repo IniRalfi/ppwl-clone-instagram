@@ -117,3 +117,18 @@ export async function deleteMedia(imageUrl: string): Promise<void> {
     await deleteImageFromCloudinary(imageUrl);
   }
 }
+
+/**
+ * Mengunggah file backup database (.json.gz) ke folder backups/ di S3.
+ */
+export async function uploadBackupToS3(buffer: Buffer, filename: string): Promise<string> {
+  const key = `backups/${filename}`;
+  const command = new PutObjectCommand({
+    Bucket: env.AWS_S3_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: "application/gzip",
+  });
+  await s3Client.send(command);
+  return `https://${env.AWS_S3_BUCKET}.s3.${env.AWS_S3_REGION}.amazonaws.com/${key}`;
+}

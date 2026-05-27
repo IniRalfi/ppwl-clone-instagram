@@ -51,7 +51,7 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
 - [x] Buat fallback service: Gunakan S3 sebagai CDN utama, dan jika gagal otomatis fallback menggunakan Cloudinary.
 - [x] Sederhanakan database production ke satu instance Neon PostgreSQL utama yang solid dan cepat (membersihkan konfigurasi dual database active-active).
 - [x] Buat halaman Live Service Monitoring Dashboard di frontend untuk memantau status kesehatan database, S3, dan Cloudinary secara real-time.
-- [ ] Buat skrip otomatisasi cron backup berkala database ke storage S3.
+- [x] Buat skrip otomatisasi cron backup berkala database ke storage S3.
 
 ### 🟣 Fase 4: Poles Frontend & UX
 - [x] Implementasikan loading skeleton di feed utama dan profil saat fetching data.

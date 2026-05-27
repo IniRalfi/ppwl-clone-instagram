@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Database, Cloud, ShieldAlert, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Database, Cloud, ShieldAlert, CheckCircle2, AlertCircle, RefreshCw, Save, Download, HelpCircle } from "lucide-react";
 import { apiClient } from "../services/api.client";
+import { toast } from "sonner";
 
 interface MonitorData {
   timestamp: string;
@@ -28,11 +29,22 @@ interface MonitorData {
   systemScore: number;
 }
 
+interface BackupResult {
+  success: boolean;
+  filename?: string;
+  url?: string;
+  message?: string;
+}
+
 export default function MonitoringPage() {
   const [data, setData] = useState<MonitorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [simulateDown, setSimulateDown] = useState(false);
+
+  // Backup state
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupResult, setBackupResult] = useState<BackupResult | null>(null);
 
   const fetchStatus = async (isSimulated = simulateDown) => {
     try {
@@ -46,6 +58,43 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleTriggerBackup = async () => {
+    setIsBackingUp(true);
+    setBackupResult(null);
+    try {
+      const res = await apiClient.post<{
+        success: boolean;
+        message: string;
+        data: { filename: string; url: string };
+      }>("/data/backup", {});
+      
+      if (res && res.success) {
+        setBackupResult({
+          success: true,
+          filename: res.data.filename,
+          url: res.data.url,
+          message: res.message,
+        });
+        toast.success("Backup database berhasil dibuat dan diunggah ke S3!");
+      } else {
+        setBackupResult({
+          success: false,
+          message: "Gagal membuat backup.",
+        });
+        toast.error("Gagal membuat backup database.");
+      }
+    } catch (err: any) {
+      console.error("Gagal backup:", err);
+      setBackupResult({
+        success: false,
+        message: err?.message || "Terjadi kesalahan koneksi.",
+      });
+      toast.error(err?.message || "Gagal membuat backup database.");
+    } finally {
+      setIsBackingUp(false);
     }
   };
 
@@ -241,6 +290,81 @@ export default function MonitoringPage() {
             </div>
           </div>
         </div>
+
+        {/* Database Backups & Safety Section */}
+        <div>
+          <h2 className="text-[15px] font-bold text-ig-secondary-text uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Save className="w-4 h-4" /> Database Backups & Safety
+          </h2>
+          <div className="bg-ig-elevated-bg rounded-2xl border border-ig-border p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex-1">
+                <h3 className="font-semibold text-[16px] mb-1">Automated & Manual S3 Backups</h3>
+                <p className="text-[13.5px] text-ig-secondary-text leading-relaxed">
+                  Sistem melakukan backup terkompresi otomatis (`.json.gz`) ke penyimpanan AWS S3 setiap hari tepat pada jam 00:00 tengah malam. Kamu juga bisa melakukan backup secara instan dan aman kapan saja menggunakan tombol di sebelah kanan.
+                </p>
+              </div>
+              <div className="shrink-0 flex flex-col items-center">
+                <button
+                  onClick={handleTriggerBackup}
+                  disabled={isBackingUp}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-ig-primary hover:bg-blue-600 disabled:bg-blue-600/40 text-white text-[14px] font-semibold transition-all active:scale-95 disabled:cursor-not-allowed"
+                >
+                  {isBackingUp ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" /> Trigger Manual Backup
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Menampilkan hasil backup terakhir */}
+            {backupResult && (
+              <div className={`mt-5 p-4 rounded-xl border flex flex-col gap-2 ${
+                backupResult.success 
+                  ? "bg-emerald-500/5 border-emerald-500/20 text-ig-text" 
+                  : "bg-rose-500/5 border-rose-500/20 text-rose-500"
+              }`}>
+                {backupResult.success ? (
+                  <>
+                    <div className="flex items-center gap-2 text-emerald-500 font-semibold text-sm">
+                      <CheckCircle2 className="w-4.5 h-4.5" />
+                      Backup berhasil dibuat dan disimpan di Cloud S3!
+                    </div>
+                    <div className="text-xs text-ig-secondary-text mt-1">
+                      <span className="font-semibold text-ig-text">Nama File: </span>
+                      <code className="bg-black/40 px-1.5 py-0.5 rounded font-mono text-[11px] text-emerald-400">
+                        {backupResult.filename}
+                      </code>
+                    </div>
+                    <div className="mt-2">
+                      <a
+                        href={backupResult.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-ig-primary font-bold hover:underline cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Unduh File Backup (.json.gz)
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 text-rose-500 font-semibold text-sm">
+                    <ShieldAlert className="w-4.5 h-4.5" />
+                    Error: {backupResult.message}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
