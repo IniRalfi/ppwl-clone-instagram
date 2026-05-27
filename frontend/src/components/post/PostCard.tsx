@@ -25,9 +25,9 @@ interface PostCardProps {
   likesCount: number;
   commentsCount?: number;
   timeAgo: string;
-  postsCount: string;
-  followers: string;
-  following: string;
+  postsCount: number;
+  followers: number;
+  following: number;
   bio: string;
   tags?: PostTag[];
   currentUserId?: string;
@@ -146,15 +146,15 @@ export const PostCard: React.FC<PostCardProps> = ({
       setHoverStats({
         followers: statsRes.followers,
         following: statsRes.following,
-        postsCount: parseInt(postsCount) || 0,
+        postsCount,
       });
       // Set status follow dari DB — cegah 409 jika sudah follow sebelumnya
       setIsHoverFollowed(statsRes.isFollowing);
     } catch {
       setHoverStats({
-        followers: parseInt(followers) || 0,
-        following: parseInt(following) || 0,
-        postsCount: parseInt(postsCount) || 0,
+        followers,
+        following,
+        postsCount,
       });
     }
   }, [authorId, currentUserId, followers, following, postsCount]);
@@ -169,7 +169,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       setHoverStats((prev) => prev ? { ...prev, followers: prev.followers + 1 } : prev);
       toast.success(`Kamu mengikuti @${username} 🎉`);
     } catch {
-      setIsHoverFollowed(true);
+      toast.error("Gagal mengikuti pengguna. Coba lagi.");
     } finally {
       setIsFollowLoading(false);
     }
@@ -283,7 +283,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                   key={tIdx}
                   className="absolute bg-ig-background/90 text-white text-xs font-medium px-2.5 py-1.5 rounded-md shadow-lg pointer-events-auto border border-ig-border animate-in fade-in zoom-in-95 duration-150"
                   style={{ left: `${tag.x}%`, top: `${tag.y}%`, transform: 'translate(-50%, 0)' }}
-                  onClick={(e) => { e.stopPropagation(); alert(`Menuju profil ${tag.username}`); }}
+                  onClick={(e) => { e.stopPropagation(); toast.info(`Membuka profil @${tag.username}...`); }}
                 >
                   <span className="cursor-pointer hover:underline">{tag.username}</span>
                 </div>

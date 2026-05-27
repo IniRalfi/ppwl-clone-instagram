@@ -6,11 +6,11 @@ import loginHero from "../assets/login.webp";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { useGoogleLogin } from "@react-oauth/google";
 
-export default function LoginPage() {
+export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: boolean }) {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

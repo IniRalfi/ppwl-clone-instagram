@@ -1,20 +1,21 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
+import { authPlugin } from "@/plugins/auth.plugin";
 
 export const likeRoutes = new Elysia({ prefix: "/likes" })
+  .use(authPlugin)
 
   // ─────────────────────────────────────────────
   // POST /likes/:postId — Toggle like/unlike
-  // Body JSON: { userId: string }
   // ─────────────────────────────────────────────
-  .post("/:postId", async ({ params: { postId }, body, set }) => {
+  .post("/:postId", async ({ params: { postId }, getCurrentUser, set }) => {
     try {
-      const { userId } = body as { userId: string };
-
-      if (!userId) {
-        set.status = 400;
-        return { message: "userId wajib diisi" };
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
       }
+      const userId = user.id;
 
       // Pastikan post ada
       const post = await db.post.findUnique({ where: { id: postId } });
@@ -53,25 +54,29 @@ export const likeRoutes = new Elysia({ prefix: "/likes" })
   })
 
   // ─────────────────────────────────────────────
-  // GET /likes/:postId/status?userId=xxx
+  // GET /likes/:postId/status
   // Cek apakah user sudah like postingan ini
   // ─────────────────────────────────────────────
-  .get("/:postId/status", async ({ params: { postId }, query, set }) => {
-    const { userId } = query as { userId?: string };
+  .get("/:postId/status", async ({ params: { postId }, getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      const userId = user?.id;
 
-    if (!userId) {
-      set.status = 400;
-      return { message: "userId wajib diisi sebagai query param" };
+      const existingLike = userId
+        ? await db.like.findUnique({
+            where: { userId_postId: { userId, postId } },
+          })
+        : null;
+
+      const likeCount = await db.like.count({ where: { postId } });
+
+      return {
+        liked: !!existingLike,
+        likeCount,
+      };
+    } catch (error) {
+      console.error("❌ Gagal get like status:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
     }
-
-    const existingLike = await db.like.findUnique({
-      where: { userId_postId: { userId, postId } },
-    });
-
-    const likeCount = await db.like.count({ where: { postId } });
-
-    return {
-      liked: !!existingLike,
-      likeCount,
-    };
   });

@@ -5,11 +5,26 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../store/auth.store";
 
+interface Post {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string | null;
+  };
+  comments?: Comment[];
+  isLikedByMe?: boolean;
+}
+
 export function PostDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [comments, setComments] = useState<any[]>([]);
-  const [post, setPost] = useState<any>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [post, setPost] = useState<Post | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

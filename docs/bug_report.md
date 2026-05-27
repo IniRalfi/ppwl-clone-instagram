@@ -6,7 +6,8 @@
 
 ## 🔴 CRITICAL — Keamanan & Data
 
-### BUG-01 · Password Disimpan Plain Text
+### BUG-01 · Password Disimpan Plain Text (Done)
+
 **File:** `backend/src/modules/auth/auth.routes.ts` — Baris 14 & 36
 
 ```ts
@@ -20,6 +21,7 @@ if (!user || user.passwordHash !== password) // ← Perbandingan langsung string
 **Masalah:** Password user tersimpan sebagai plain text di database. Jika database bocor, semua password langsung terbaca. Ini **vulnerability paling serius** di seluruh project.
 
 **Solusi:** Gunakan `bcrypt` atau `argon2`:
+
 ```ts
 import { hash, verify } from "@node-rs/argon2"; // tersedia di Bun
 passwordHash: await hash(password)
@@ -29,10 +31,12 @@ if (!user || !(await verify(user.passwordHash, password)))
 
 ---
 
-### BUG-02 · Tidak Ada Autentikasi di Endpoint Sensitif
+### BUG-02 · Tidak Ada Autentikasi di Endpoint Sensitif (Done)
+
 **File:** `backend/src/modules/like/like.routes.ts`, `post.routes.ts`, `comment.routes.ts`, `follow.routes.ts`
 
 **Masalah:** Semua endpoint menerima `userId` dari **body/query request** tanpa verifikasi JWT. Siapapun bisa mengirim request dengan `userId` orang lain untuk:
+
 - Like/unlike post atas nama orang lain
 - Hapus postingan milik orang lain (cukup tebak `userId`)
 - Follow/unfollow atas nama siapapun
@@ -41,7 +45,8 @@ if (!user || !(await verify(user.passwordHash, password)))
 
 ---
 
-### BUG-03 · Token JWT Dummy Tidak Pernah Divalidasi
+### BUG-03 · Token JWT Dummy Tidak Pernah Divalidasi (Done)
+
 **File:** `backend/src/modules/auth/auth.routes.ts` — Baris 51 & 109
 
 ```ts
@@ -54,7 +59,8 @@ accessToken: "dummy_jwt_token_nanti_diganti_dengan_elysia_jwt", // ← Hardcoded
 
 ## 🟠 HIGH — Bug Fungsional
 
-### BUG-04 · N+1 Query Problem yang Sangat Parah di HomePage
+### BUG-04 · N+1 Query Problem yang Sangat Parah di HomePage (Done)
+
 **File:** `frontend/src/pages/HomePage.tsx` — Baris 44–51
 
 ```ts
@@ -71,13 +77,14 @@ const statuses = await Promise.all(statusRequests);
 
 ---
 
-### BUG-05 · ProfilePage Fetch Semua Post Lalu Filter di Frontend
+### BUG-05 · ProfilePage Fetch Semua Post Lalu Filter di Frontend (Done)
+
 **File:** `frontend/src/pages/ProfilePage.tsx` — Baris 38–46
 
 ```ts
 fetch(`${import.meta.env.VITE_API_URL}/posts`) // Ambil SEMUA post
-  .then(res => res.json())
-  .then(json => {
+  .then((res) => res.json())
+  .then((json) => {
     const filtered = json.data.filter(
       (post: Post) => post.authorId === user.id // Filter di frontend
     );
@@ -88,21 +95,23 @@ fetch(`${import.meta.env.VITE_API_URL}/posts`) // Ambil SEMUA post
 
 ---
 
-### BUG-06 · `postsCount` di `PostCard` Selalu Hardcoded "0"
+### BUG-06 · `postsCount` di `PostCard` Selalu Hardcoded "0" (Done)
+
 **File:** `frontend/src/pages/HomePage.tsx` — Baris 109–111
 
 ```tsx
-postsCount="0"    // ← Hardcoded!
-followers="0"     // ← Hardcoded!
-following="0"     // ← Hardcoded!
-bio="User"        // ← Hardcoded!
+postsCount = "0"; // ← Hardcoded!
+followers = "0"; // ← Hardcoded!
+following = "0"; // ← Hardcoded!
+bio = "User"; // ← Hardcoded!
 ```
 
 **Masalah:** Hover card di setiap PostCard menampilkan stats yang salah (postsCount, bio selalu default) saat data dari API belum selesai dimuat. Meski ada `handleHoverEnter` yang akan fetch ulang, nilai awal yang salah ini bisa terlihat sesaat.
 
 ---
 
-### BUG-07 · `postCount` di Schema Tidak Pernah Di-update
+### BUG-07 · `postCount` di Schema Tidak Pernah Di-update (Done)
+
 **File:** `backend/prisma/schema.prisma` — Baris 21–22
 
 ```prisma
@@ -114,7 +123,8 @@ commentCount Int     @default(0)
 
 ---
 
-### BUG-08 · Error Handling Follow Salah di `PostCard`
+### BUG-08 · Error Handling Follow Salah di `PostCard` (Done)
+
 **File:** `frontend/src/components/post/PostCard.tsx` — Baris 171–173
 
 ```ts
@@ -126,6 +136,7 @@ commentCount Int     @default(0)
 **Masalah:** Saat request follow **gagal** (misalnya network error), tombol Follow langsung berubah menjadi "Following" seolah-olah berhasil. User tidak tahu bahwa follow-nya gagal.
 
 **Solusi:**
+
 ```ts
 } catch {
   toast.error("Gagal follow. Coba lagi.");
@@ -135,7 +146,8 @@ commentCount Int     @default(0)
 
 ---
 
-### BUG-09 · `GET /likes/:postId/status` Tidak Ada Try-Catch
+### BUG-09 · `GET /likes/:postId/status` Tidak Ada Try-Catch (Done)
+
 **File:** `backend/src/modules/like/like.routes.ts` — Baris 59–77
 
 ```ts
@@ -151,7 +163,8 @@ commentCount Int     @default(0)
 
 ---
 
-### BUG-10 · Notifikasi Komentar Selalu Muncul Meski Konten Pendek
+### BUG-10 · Notifikasi Komentar Selalu Muncul Meski Konten Pendek (Done)
+
 **File:** `backend/src/modules/comment/comment.routes.ts` — Baris 53
 
 ```ts
@@ -163,6 +176,7 @@ message: `...mengomentari postinganmu: "${content.substring(0, 20)}..."`,
 **Masalah:** Jika komentar hanya "Keren!", notifikasi akan berbunyi: `"mengomentari postinganmu: "Keren!"..."` — ada `...` yang tidak perlu di akhir.
 
 **Solusi:**
+
 ```ts
 message: `...mengomentari: "${content.length > 20 ? content.substring(0, 20) + '...' : content}"`,
 ```
@@ -171,7 +185,8 @@ message: `...mengomentari: "${content.length > 20 ? content.substring(0, 20) + '
 
 ## 🟡 MEDIUM — UX & Konsistensi
 
-### BUG-11 · Pencampuran `fetch()` Langsung dan `apiClient` di Frontend
+### BUG-11 · Pencampuran `fetch()` Langsung and `apiClient` di Frontend (Done)
+
 **File:** `HomePage.tsx` (baris 37), `ProfilePage.tsx` (baris 38), `PostDetailPage.tsx` (baris 31, 67, 80)
 
 ```ts
@@ -179,14 +194,15 @@ message: `...mengomentari: "${content.length > 20 ? content.substring(0, 20) + '
 const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
 
 // Cara 2 — pakai apiClient (ada token, ada error handling)
-const res = await apiClient.get('/posts');
+const res = await apiClient.get("/posts");
 ```
 
 **Masalah:** Inkonsisten. Request yang pakai `fetch` langsung tidak mengirimkan `Authorization` header, berbeda dengan `apiClient`. Ketika nanti auth diimplementasi dengan benar, semua `fetch` langsung ini akan gagal.
 
 ---
 
-### BUG-12 · `GET /notifications` Tidak Filter Berdasarkan User
+### BUG-12 · `GET /notifications` Tidak Filter Berdasarkan User (Done)
+
 **File:** `backend/src/modules/notification/notification.routes.ts` — Baris 7
 
 ```ts
@@ -198,7 +214,8 @@ const notifications = await db.notification.findMany({ ... });
 
 ---
 
-### BUG-13 · `GET /users` Mengembalikan Email Semua User
+### BUG-13 · `GET /users` Mengembalikan Email Semua User (Done)
+
 **File:** `backend/src/modules/user/user.routes.ts` — Baris 10
 
 ```ts
@@ -215,7 +232,8 @@ const users = await db.user.findMany({
 
 ---
 
-### BUG-14 · Memory Leak — Object URL Tidak Selalu Di-revoke
+### BUG-14 · Memory Leak — Object URL Tidak Selalu Di-revoke (Done)
+
 **File:** `frontend/src/pages/CreatePostPage.tsx` — Baris 40
 
 ```ts
@@ -226,22 +244,27 @@ setImagePreview(URL.createObjectURL(file)); // Buat Object URL
 **Masalah:** `URL.revokeObjectURL` hanya dipanggil di `handleRemoveImage`. Jika user langsung submit tanpa hapus dulu, atau navigasi ke halaman lain, Object URL tidak pernah di-revoke → memory leak.
 
 **Solusi:** Tambahkan `useEffect` cleanup:
+
 ```ts
 useEffect(() => {
-  return () => { if (imagePreview) URL.revokeObjectURL(imagePreview); };
+  return () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  };
 }, [imagePreview]);
 ```
 
 ---
 
-### BUG-15 · `RegisterPage` Kosong / Belum Diimplementasi
+### BUG-15 · `RegisterPage` Kosong / Belum Diimplementasi (Done)
+
 **File:** `frontend/src/pages/RegisterPage.tsx`
 
 **Masalah:** File ini berukuran hanya 216 bytes — hampir pasti placeholder kosong. Ada route `/register` di `App.tsx` tapi halaman registrasinya tidak ada UI-nya.
 
 ---
 
-### BUG-16 · `comment.routes.ts` Tidak Validasi Input
+### BUG-16 · `comment.routes.ts` Tidak Validasi Input (Done)
+
 **File:** `backend/src/modules/comment/comment.routes.ts` — Baris 26
 
 ```ts
@@ -253,7 +276,8 @@ const { postId, content, parentId, authorId } = body;
 
 ---
 
-### BUG-17 · `PostDetailPage` Menggunakan `any` sebagai Tipe Data
+### BUG-17 · `PostDetailPage` Menggunakan `any` sebagai Tipe Data (Done)
+
 **File:** `frontend/src/pages/PostDetailPage.tsx` — Baris 11–12
 
 ```ts
@@ -267,7 +291,8 @@ const [post, setPost] = useState<any>(null);
 
 ## 🟢 LOW — Kode Bersih & Konsistensi
 
-### BUG-18 · `SuggestedUsers` — Error pada Follow Diabaikan Sepenuhnya
+### BUG-18 · `SuggestedUsers` — Error pada Follow Diabaikan Sepenuhnya (Done)
+
 **File:** `frontend/src/components/common/SuggestedUsers.tsx` — Baris 41–43
 
 ```ts
@@ -281,7 +306,8 @@ const [post, setPost] = useState<any>(null);
 
 ---
 
-### BUG-19 · Tag Click di PostCard Masih Menggunakan `alert()`
+### BUG-19 · Tag Click di PostCard Masih Menggunakan `alert()` (Done)
+
 **File:** `frontend/src/components/post/PostCard.tsx` — Baris 286
 
 ```ts
@@ -292,7 +318,8 @@ onClick={(e) => { e.stopPropagation(); alert(`Menuju profil ${tag.username}`); }
 
 ---
 
-### BUG-20 · `postsCount` Prop di `PostCard` Bertipe `string` Seharusnya `number`
+### BUG-20 · `postsCount` Prop di `PostCard` Bertipe `string` Seharusnya `number` (Done)
+
 **File:** `frontend/src/components/post/PostCard.tsx` — Baris 28
 
 ```ts
@@ -300,8 +327,9 @@ postsCount: string; // ← Tipe string, padahal berisi angka
 ```
 
 Dan digunakan dengan:
+
 ```ts
-postsCount: parseInt(postsCount) || 0 // ← Harus di-parse dulu
+postsCount: parseInt(postsCount) || 0; // ← Harus di-parse dulu
 ```
 
 **Masalah:** Design prop yang tidak konsisten. Seharusnya bertipe `number` dari awal.
@@ -310,13 +338,13 @@ postsCount: parseInt(postsCount) || 0 // ← Harus di-parse dulu
 
 ## 📊 Ringkasan
 
-| Tingkat | Jumlah |
-|---------|--------|
-| 🔴 Critical | 3 |
-| 🟠 High | 7 |
-| 🟡 Medium | 6 |
-| 🟢 Low | 4 |
-| **Total** | **20** |
+| Tingkat     | Jumlah |
+| ----------- | ------ |
+| 🔴 Critical | 3      |
+| 🟠 High     | 7      |
+| 🟡 Medium   | 6      |
+| 🟢 Low      | 4      |
+| **Total**   | **20** |
 
 ## 🎯 Rekomendasi Prioritas Fix
 

@@ -336,15 +336,15 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
 
-    fetch(`${import.meta.env.VITE_API_URL}/posts`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.data) {
-          const filtered = json.data.filter(
-            (post: Post) => post.authorId === user.id
-          );
-          setMyPosts(filtered);
+    // Fetch postingan milik user
+    apiClient.get<{ data: Post[] }>(`/posts?authorId=${user.id}`)
+      .then((res) => {
+        if (res.data) {
+          setMyPosts(res.data);
         }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat post:", err);
       })
       .finally(() => setIsLoading(false));
 

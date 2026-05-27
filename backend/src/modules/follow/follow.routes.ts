@@ -1,13 +1,16 @@
 import { Elysia, t } from "elysia";
 import { db } from "@/db/client";
+import { authPlugin } from "@/plugins/auth.plugin";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
+  .use(authPlugin)
 
   /** GET /follow/stats/:userId?currentUserId=xxx — Jumlah followers & following + status follow */
-  .get("/stats/:userId", async ({ params: { userId }, query, set }) => {
-    const { currentUserId } = query as { currentUserId?: string };
+  .get("/stats/:userId", async ({ params: { userId }, query, getCurrentUser, set }) => {
+    const user = await getCurrentUser();
+    const currentUserId = user?.id || (query as { currentUserId?: string }).currentUserId;
 
-    const user = await db.user.findUnique({
+    const dbUser = await db.user.findUnique({
       where: { id: userId },
       select: {
         _count: {
@@ -19,7 +22,7 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
       },
     });
 
-    if (!user) {
+    if (!dbUser) {
       set.status = 404;
       return { message: "User tidak ditemukan" };
     }
@@ -34,8 +37,8 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
     }
 
     return {
-      followers: user._count.followers,
-      following: user._count.following,
+      followers: dbUser._count.followers,
+      following: dbUser._count.following,
       isFollowing,
     };
   })
@@ -43,8 +46,9 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   /** GET /follow/suggestions?userId=xxx — Ambil 5 user yang belum di-follow */
   .get(
     "/suggestions",
-    async ({ query, set }) => {
-      const { userId } = query as { userId?: string };
+    async ({ query, getCurrentUser, set }) => {
+      const user = await getCurrentUser();
+      const userId = user?.id || (query as { userId?: string }).userId;
 
       if (!userId) {
         set.status = 400;
@@ -81,8 +85,18 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   /** POST /follow — Follow user */
   .post(
     "/",
-    async ({ body, set }) => {
+    async ({ body, getCurrentUser, set }) => {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
       const { followerId, followingId } = body as { followerId: string; followingId: string };
+
+      if (followerId !== user.id) {
+        set.status = 403;
+        return { message: "Forbidden: You cannot follow on behalf of another user" };
+      }
 
       if (followerId === followingId) {
         set.status = 400;
@@ -112,8 +126,18 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   /** DELETE /follow — Unfollow user */
   .delete(
     "/",
-    async ({ body, set }) => {
+    async ({ body, getCurrentUser, set }) => {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
       const { followerId, followingId } = body as { followerId: string; followingId: string };
+
+      if (followerId !== user.id) {
+        set.status = 403;
+        return { message: "Forbidden: You cannot unfollow on behalf of another user" };
+      }
 
       const existing = await db.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },

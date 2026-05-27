@@ -11,11 +11,18 @@ interface Post {
   content: string;
   imageUrl: string | null;
   createdAt: string;
+  isLikedByMe?: boolean;
   author: {
     id: string;
     name: string;
     username: string;
     avatarUrl: string | null;
+    bio?: string | null;
+    postCount?: number;
+    _count?: {
+      followers: number;
+      following: number;
+    };
   };
   _count: {
     likes: number;
@@ -27,36 +34,14 @@ const HomePage: React.FC = () => {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [likeStatusMap, setLikeStatusMap] = useState<
-    Record<string, { liked: boolean; likeCount: number }>
-  >({});
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/posts`);
-        const json = await res.json();
+        const res = await apiClient.get<{ data: Post[] }>('/posts');
 
-        if (res.ok && json.data) {
-          setPosts(json.data);
-
-          if (user?.id) {
-            const statusRequests = (json.data as Post[]).map((post) =>
-              apiClient
-                .get<{ liked: boolean; likeCount: number }>(
-                  `/likes/${post.id}/status?userId=${user.id}`
-                )
-                .then((status) => ({ postId: post.id, ...status }))
-                .catch(() => ({ postId: post.id, liked: false, likeCount: post._count.likes }))
-            );
-
-            const statuses = await Promise.all(statusRequests);
-            const map: Record<string, { liked: boolean; likeCount: number }> = {};
-            statuses.forEach(({ postId, liked, likeCount }) => {
-              map[postId] = { liked, likeCount };
-            });
-            setLikeStatusMap(map);
-          }
+        if (res && res.data) {
+          setPosts(res.data);
         } else {
           toast.error("Gagal mengambil data postingan dari server.");
         }
@@ -69,7 +54,7 @@ const HomePage: React.FC = () => {
     };
 
     fetchPosts();
-  }, [user?.id]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-ig-background text-ig-text">
@@ -92,7 +77,6 @@ const HomePage: React.FC = () => {
                 month: 'short',
                 day: 'numeric',
               });
-              const likeStatus = likeStatusMap[post.id];
 
               return (
                 <PostCard
@@ -103,15 +87,15 @@ const HomePage: React.FC = () => {
                   avatarUrl={post.author.avatarUrl || ''}
                   imageUrls={post.imageUrl ? [post.imageUrl] : []}
                   caption={post.content}
-                  likesCount={likeStatus?.likeCount ?? post._count.likes}
+                  likesCount={post._count.likes}
                   commentsCount={post._count.comments}
                   timeAgo={timeAgo}
-                  postsCount="0"
-                  followers="0"
-                  following="0"
-                  bio="User"
+                  postsCount={post.author.postCount ?? 0}
+                  followers={post.author._count?.followers ?? 0}
+                  following={post.author._count?.following ?? 0}
+                  bio={post.author.bio || 'User'}
                   currentUserId={user?.id}
-                  isLikedByMe={likeStatus?.liked ?? false}
+                  isLikedByMe={post.isLikedByMe ?? false}
                 />
               );
             })

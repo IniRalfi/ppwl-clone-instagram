@@ -3,6 +3,7 @@ import { useAuthStore } from "../../store/auth.store";
 import { apiClient } from "../../services/api.client";
 import { Avatar } from "./Avatar";
 import { UserPlus, Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface SuggestedUser {
   id: string;
@@ -38,9 +39,9 @@ export function SuggestedUsers() {
         followingId: targetId,
       });
       setFollowedIds((prev) => new Set(prev).add(targetId));
+      toast.success("Berhasil mengikuti pengguna! 🎉");
     } catch {
-      // sudah di-follow atau error — tetap tampilkan checkmark
-      setFollowedIds((prev) => new Set(prev).add(targetId));
+      toast.error("Gagal mengikuti pengguna. Coba lagi.");
     } finally {
       setLoadingId(null);
     }

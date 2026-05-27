@@ -7,7 +7,6 @@ export const userRoutes = new Elysia({ prefix: "/users" })
     const users = await db.user.findMany({
       select: {
         id: true,
-        email: true,
         username: true,
         name: true,
         avatarUrl: true,

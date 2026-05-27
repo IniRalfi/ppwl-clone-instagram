@@ -6,6 +6,7 @@ import {
   MAX_FILE_SIZE_BYTES,
   ALLOWED_MIME_TYPES,
 } from "@/config/cloudinary";
+import { authPlugin } from "@/plugins/auth.plugin";
 
 // Pilih field author yang aman untuk di-return ke frontend
 const AUTHOR_SELECT = {
@@ -13,29 +14,60 @@ const AUTHOR_SELECT = {
   name: true,
   username: true,
   avatarUrl: true,
+  bio: true,
+  postCount: true,
+  _count: {
+    select: {
+      followers: true,
+      following: true,
+    }
+  }
 } as const;
 
 export const postRoutes = new Elysia({ prefix: "/posts" })
+  .use(authPlugin)
 
   // ─────────────────────────────────────────────
   // GET /posts — Ambil semua postingan (feed)
   // ─────────────────────────────────────────────
-  .get("/", async () => {
+  .get("/", async ({ query, getCurrentUser }) => {
+    const user = await getCurrentUser();
+    const currentUserId = user?.id;
+    const { authorId } = query as { authorId?: string };
+
     const posts = await db.post.findMany({
+      where: authorId ? { authorId } : undefined,
       include: {
         author: { select: AUTHOR_SELECT },
+        likes: currentUserId
+          ? {
+              where: { userId: currentUserId },
+              select: { userId: true },
+            }
+          : false,
         _count: { select: { likes: true, comments: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return { data: posts };
+    const mappedPosts = posts.map((post) => {
+      const { likes, ...rest } = post as any;
+      return {
+        ...rest,
+        isLikedByMe: likes && likes.length > 0,
+      };
+    });
+
+    return { data: mappedPosts };
   })
 
   // ─────────────────────────────────────────────
   // GET /posts/:id — Ambil 1 postingan + komentar
   // ─────────────────────────────────────────────
-  .get("/:id", async ({ params: { id }, set }) => {
+  .get("/:id", async ({ params: { id }, getCurrentUser, set }) => {
+    const user = await getCurrentUser();
+    const currentUserId = user?.id;
+
     const post = await db.post.findUnique({
       where: { id },
       include: {
@@ -44,6 +76,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
           include: { author: { select: { id: true, username: true, name: true, avatarUrl: true } } },
           orderBy: { createdAt: "asc" },
         },
+        likes: currentUserId
+          ? {
+              where: { userId: currentUserId },
+              select: { userId: true },
+            }
+          : false,
         _count: { select: { likes: true, comments: true } },
       },
     });
@@ -53,34 +91,38 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       return { message: "Post tidak ditemukan" };
     }
 
-    return { data: post };
+    const { likes, ...rest } = post as any;
+    const mappedPost = {
+      ...rest,
+      isLikedByMe: likes && likes.length > 0,
+    };
+
+    return { data: mappedPost };
   })
 
   // ─────────────────────────────────────────────
   // POST /posts — Buat postingan baru
   // Body: multipart/form-data
-  //   - userId: string (wajib)
   //   - content: string (wajib)
   //   - image?: File (opsional, maks 5 MB)
   // ─────────────────────────────────────────────
-  .post("/", async ({ body, set }) => {
+  .post("/", async ({ body, getCurrentUser, set }) => {
     try {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
+      const userId = user.id;
+
       const formData = body as Record<string, any>;
-      const userId = formData.userId as string;
       const content = formData.content as string;
       const imageFile = formData.image as File | undefined;
 
       // Validasi field wajib
-      if (!userId || !content?.trim()) {
+      if (!content?.trim()) {
         set.status = 400;
-        return { message: "userId dan content wajib diisi" };
-      }
-
-      // Pastikan user ada
-      const user = await db.user.findUnique({ where: { id: userId } });
-      if (!user) {
-        set.status = 404;
-        return { message: "User tidak ditemukan" };
+        return { message: "content wajib diisi" };
       }
 
       let imageUrl: string | null = null;
@@ -109,6 +151,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         imageUrl = await uploadImageToCloudinary(buffer, imageFile.type);
       }
 
+      // Update postCount di User terlebih dahulu agar data ter-update ter-return di query post.create
+      await db.user.update({
+        where: { id: userId },
+        data: { postCount: { increment: 1 } },
+      });
+
       // Simpan ke database
       const post = await db.post.create({
         data: {
@@ -132,16 +180,15 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
 
   // ─────────────────────────────────────────────
   // DELETE /posts/:id — Hapus postingan
-  // Body JSON: { userId: string }
   // ─────────────────────────────────────────────
-  .delete("/:id", async ({ params: { id }, body, set }) => {
+  .delete("/:id", async ({ params: { id }, getCurrentUser, set }) => {
     try {
-      const { userId } = body as { userId: string };
-
-      if (!userId) {
-        set.status = 400;
-        return { message: "userId wajib diisi" };
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
       }
+      const userId = user.id;
 
       // Cek postingan ada dan milik user ini
       const post = await db.post.findUnique({ where: { id } });
@@ -163,6 +210,12 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
 
       // Hapus dari database (cascade akan hapus likes & comments terkait)
       await db.post.delete({ where: { id } });
+
+      // Update postCount di User
+      await db.user.update({
+        where: { id: userId },
+        data: { postCount: { decrement: 1 } },
+      });
 
       return { message: "Postingan berhasil dihapus" };
     } catch (error) {
