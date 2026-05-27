@@ -4,8 +4,8 @@ import { SuggestedUsers } from '../components/common/SuggestedUsers';
 import { toast } from 'sonner';
 import { useAuthStore } from '../store/auth.store';
 import { apiClient } from '../services/api.client';
+import { StoriesRow } from "../components/story/StoriesRow";
 
-// Tipe data sesuai dengan response dari backend
 interface Post {
   id: string;
   content: string;
@@ -27,7 +27,7 @@ const HomePage: React.FC = () => {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [likeStatusMap, setLikeStatusMap] = useState<
+  const [likeStatusMap, setLikeStatusMap] = useState <
     Record<string, { liked: boolean; likeCount: number }>
   >({});
 
@@ -47,7 +47,11 @@ const HomePage: React.FC = () => {
                   `/likes/${post.id}/status?userId=${user.id}`
                 )
                 .then((status) => ({ postId: post.id, ...status }))
-                .catch(() => ({ postId: post.id, liked: false, likeCount: post._count.likes }))
+                .catch(() => ({
+                  postId: post.id,
+                  liked: false,
+                  likeCount: post._count.likes,
+                }))
             );
 
             const statuses = await Promise.all(statusRequests);
@@ -73,11 +77,15 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-ig-background text-ig-text">
-      {/* Layout dua kolom: Feed + Suggested Panel */}
       <div className="max-w-[975px] mx-auto flex gap-8 px-4 pt-6 pb-20">
 
-        {/* ── KOLOM KIRI: Feed Postingan ── */}
+        {/* ── KOLOM KIRI: Stories + Feed Postingan ── */}
         <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
+
+          {/* ← STORIES ROW DITAMBAHKAN DI SINI */}
+          <StoriesRow />
+
+          {/* Feed postingan */}
           {isLoading ? (
             <div className="flex justify-center items-center py-20 text-ig-secondary-text">
               Memuat postingan...
@@ -124,7 +132,7 @@ const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* ── KOLOM KANAN: Suggested Users Panel (hanya desktop) ── */}
+        {/* ── KOLOM KANAN: Suggested Users (hanya desktop) ── */}
         <aside className="hidden lg:block w-[319px] flex-shrink-0 pt-2">
           <div className="sticky top-6">
             <SuggestedUsers />
