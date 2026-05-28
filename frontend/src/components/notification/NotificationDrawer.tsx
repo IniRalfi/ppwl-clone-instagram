@@ -166,9 +166,9 @@ export function NotificationDrawer() {
   return (
     <div
       ref={drawerRef}
-      className={`fixed top-0 z-40 h-screen w-[397px] bg-ig-background border-r border-ig-border shadow-2xl hidden md:flex flex-col transition-all duration-300 ease-in-out select-none ${
+      className={`fixed top-0 z-[60] h-screen w-[360px] bg-ig-background border-r border-ig-border shadow-2xl hidden md:flex flex-col transition-all duration-300 ease-in-out select-none ${
         isOpen
-          ? "left-[72px] opacity-100 translate-x-0"
+          ? "left-0 opacity-100 translate-x-0"
           : "-translate-x-full opacity-0 pointer-events-none"
       }`}
     >
@@ -177,7 +177,7 @@ export function NotificationDrawer() {
         <h1 className="text-ig-text text-xl font-bold tracking-tight">Notifikasi</h1>
         <button
           onClick={() => setIsOpen(false)}
-          className="text-ig-text hover:opacity-60 transition-opacity cursor-pointer md:hidden"
+          className="text-ig-text hover:opacity-60 transition-opacity cursor-pointer flex items-center justify-center p-1 rounded-full hover:bg-ig-elevated-bg"
         >
           <X size={20} />
         </button>
