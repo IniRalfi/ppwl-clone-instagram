@@ -34,7 +34,7 @@ Berikut adalah to-do list untuk fase pengembangan baru:
   - [x] Refactoring **Notification Module** (`notification.routes.ts`, `notification.service.ts`).
   - [x] Refactoring **Message Module** (`message.routes.ts`, `message.schema.ts`, `message.service.ts`).
 - [x] Penggunaan middleware terpusat untuk error handling dan parsing data yang seragam (`error.plugin.ts`).
-- [ ] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
+- [x] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
 
 ### 🎨 Fase 6: Peningkatan Keindahan UI (Instagram Pixel-Perfect)
 - [ ] Penyelarasan styling halaman (jarak padding, ukuran font, border, warna latar charcoal Instagram) agar identik dengan aplikasi Instagram asli.

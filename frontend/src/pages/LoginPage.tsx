@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import loginHero from "../assets/login.webp";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { useGoogleLogin } from "@react-oauth/google";
+import { loginUser, registerUser, loginWithGoogle } from "../services/auth.service";
 
 export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: boolean }) {
   const navigate = useNavigate();
@@ -21,35 +22,21 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
     e.preventDefault();
     setIsLoading(true);
 
-    const endpoint = isLogin ? "/auth/login" : "/auth/register";
-    const body = isLogin ? { email, password } : { email, password, name, username };
-
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Terjadi kesalahan.");
-        return;
-      }
-
       if (isLogin) {
-        setAuth(data.data.user, data.data.accessToken);
-        toast.success(`Selamat datang, ${data.data.user.name}! 👋`);
+        const res = await loginUser(email, password);
+        setAuth(res.data.user, res.data.accessToken);
+        toast.success(`Selamat datang, ${res.data.user.name}! 👋`);
         navigate("/");
       } else {
+        await registerUser({ email, password, name, username });
         toast.success("Akun berhasil dibuat! Silakan masuk.");
         setIsLogin(true);
         setEmail("");
         setPassword("");
       }
-    } catch {
-      toast.error("Tidak dapat terhubung ke server.");
+    } catch (error: any) {
+      toast.error(error.message || "Terjadi kesalahan.");
     } finally {
       setIsLoading(false);
     }
@@ -59,23 +46,12 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
-        // Kirim token Google ke backend
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: tokenResponse.access_token }),
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          setAuth(data.data.user, data.data.accessToken);
-          toast.success(`Selamat datang, ${data.data.user.name}! 👋`);
-          navigate("/");
-        } else {
-          toast.error(data.message || "Gagal login dengan Google.");
-        }
-      } catch (err) {
-        toast.error("Kesalahan jaringan saat Google Login.");
+        const res = await loginWithGoogle(tokenResponse.access_token);
+        setAuth(res.data.user, res.data.accessToken);
+        toast.success(`Selamat datang, ${res.data.user.name}! 👋`);
+        navigate("/");
+      } catch (err: any) {
+        toast.error(err.message || "Gagal login dengan Google.");
       } finally {
         setIsLoading(false);
       }

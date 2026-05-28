@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Notification } from "../../../shared/src/types/notification";
 import { formatRelativeTime } from "../../../shared/src/utils/date";
+import { getNotifications } from "../services/notification.service";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -9,12 +10,8 @@ export default function NotificationPage() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`);
-        if (!res.ok) {
-          throw new Error("Gagal mengambil data dari server");
-        }
-        const json = await res.json();
-        setNotifications(json.data || []);
+        const data = await getNotifications();
+        setNotifications(data);
       } catch (error) {
         console.error("Gagal memuat notifikasi:", error);
       } finally {
