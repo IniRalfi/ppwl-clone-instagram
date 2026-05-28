@@ -1,77 +1,33 @@
 # 📈 Progress Tracker — PPWL Instagram Clone
 
-Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infrastruktur, dan perbaikan bug secara terstruktur.
+Dokumen ini melacak target aktif dan rencana pengembangan aplikasi yang akan datang. Seluruh pencapaian rilis sebelumnya telah diarsipkan di [CHANGELOG.md](file:///home/rafli/Programming/PPWL/ppwl-clone-instagram/docs/CHANGELOG.md).
 
 ---
 
-## 🛠️ Ringkasan Status Utama
+## 🛠️ Status Pengembangan Saat Ini
 
-| Kategori | Target Pekerjaan | Estimasi Kompleksitas | Status |
-| :--- | :--- | :---: | :---: |
-| 🟢 **Bug Fix** | Menyelesaikan 20 Bug di `bug_report.md` | Sedang | **SELESAI** (100%) |
-| 🔵 **Phase 2** | Integrasi Backend & DB untuk Fitur Tim | Tinggi | **SELESAI** (100%) |
-| 🟡 **Infrastruktur**| Optimasi AWS, S3 Bucket CDN, & DB Production | Tinggi | **SELESAI** (90%) |
-| 🟣 **Frontend** | Poles UX, Animasi, & Detail Styling | Rendah | **SELESAI** (100%) |
+Semua target dari Fase 1 hingga Fase 6 saat ini telah **SELESAI** diintegrasikan secara penuh.
+
+| Kategori | Target Pekerjaan | Status |
+| :--- | :--- | :---: |
+| 🟢 **Fase 1** | Bug Fixes (20 Items) | **SELESAI** |
+| 🔵 **Fase 2** | Integrasi Tim (Explore, Profil, Stories, Saved) | **SELESAI** |
+| 🟡 **Fase 3** | Caching, AWS CDN & Monitoring Dashboard | **SELESAI** |
+| 🔴 **Fase 4** | Integrasi Real-Time & Resolusi Merge Tim | **SELESAI** |
 
 ---
 
-## 📋 Detail To-Do List Pekerjaan
+## 🚀 Rencana Pengembangan Berikutnya (Backlog & Future Roadmap)
 
-### 🟢 Fase 1: Perbaikan Bug (Done)
-- [x] BUG-01 s.d. BUG-20: Selesai di-commit secara rapi dan berhasil dikompilasi.
+Berikut adalah to-do list untuk fitur-fitur tambahan berikutnya:
 
-### 🔵 Fase 2: Integrasi Backend Tim (Sedang Berjalan)
-- [x] **Adella (Stories):**
-  - [x] Tambah model `Story` di `schema.prisma`.
-  - [x] Jalankan `prisma db push`.
-  - [x] Buat rute `POST /stories` (Upload gambar & simpan masa aktif 24 jam).
-  - [x] Buat rute `GET /stories` (Mengambil & mengelompokkan active stories per user).
-- [x] **Yasmin (Explore & Live Search):**
-  - [x] Tambahkan filter parameter query `?search=...` di `GET /users` (pencarian case-insensitive pada kolom `name` dan `username`).
-  - [x] Integrasikan halaman `ExplorePage` dengan live API `/users?search=` dan grid postingan riil `/posts` dari database.
-- [x] **Bagas (Bookmark / Saved Post):**
-  - [x] Tambahkan model `Bookmark` / `SavedPost` di `schema.prisma`.
-  - [x] Jalankan `prisma db push`.
-  - [x] Buat rute `POST /posts/:id/bookmark` (Toggle simpan/batal simpan postingan).
-  - [x] Buat rute `GET /posts/saved` (Mengambil semua postingan yang di-bookmark oleh user aktif).
-- [x] **Olivia (Edit Profile & Followers List):**
-  - [x] Buat rute `GET /follow/followers/:userId` (Mengambil daftar lengkap user pengikut).
-  - [x] Buat rute `GET /follow/following/:userId` (Mengambil daftar lengkap user yang diikuti).
-  - [x] Buat rute `PUT /users/profile` (Update profil: `name`, `bio`, dan `avatarUrl`).
-  - [x] Buat rute dinamis `/profile/:username?` untuk melihat profil pengguna lain secara interaktif dengan tombol follow/following.
-- [x] **Salsabila (Direct Message Chat):**
-  - [x] Tambahkan model `Message` dan `ChatRoom` di `schema.prisma` untuk menyimpan chat.
-  - [x] Jalankan `prisma db push`.
-  - [x] Buat rute `GET /messages/rooms` (Mengambil daftar obrolan aktif beserta info pesan terakhir).
-  - [x] Buat rute `GET /messages/:roomId` (Mengambil riwayat obrolan lengkap).
-  - [x] Buat rute `POST /messages` (Kirim pesan baru ke user lain).
+### ✉️ Integrasi DM Chat (Salsabila)
+- [ ] Mengintegrasikan Direct Message chat di frontend dengan API backend secara real-time (menggunakan WebSocket atau SSE untuk latensi rendah).
+- [ ] Membuat halaman obrolan `/messages` dengan tampilan daftar chat room aktif dan histori obrolan lengkap.
 
-### 🟡 Fase 3: Infrastruktur & AWS CDN
-- [x] Buat S3 Bucket di AWS dan konfigurasi SDK S3 di backend.
-- [x] Buat fallback service: Gunakan S3 sebagai CDN utama, dan jika gagal otomatis fallback menggunakan Cloudinary.
-- [x] Sederhanakan database production ke satu instance Neon PostgreSQL utama yang solid dan cepat (membersihkan konfigurasi dual database active-active).
-- [x] Buat halaman Live Service Monitoring Dashboard di frontend untuk memantau status kesehatan database, S3, dan Cloudinary secara real-time.
-- [x] Buat skrip otomatisasi cron backup berkala database ke storage S3.
+### 🎥 Pengunggahan Video & Reels
+- [ ] Menambahkan dukungan unggah file video (`.mp4`) dengan kompresi otomatis di backend.
+- [ ] Membuat feed Reels khusus dengan layout scroll vertikal otomatis.
 
-### 🟣 Fase 4: Poles Frontend & UX
-- [x] Implementasikan loading skeleton di feed utama dan profil saat fetching data.
-- [x] Tambahkan animasi mikro transisi hover pada tombol interaksi postingan.
-- [x] Terapkan debounce pencarian 300ms dan debounce hover stats 250ms untuk mencegah overloading koneksi database.
-
-### 🟤 Fase 5: Caching & Penyelarasan UI Asli
-- [x] Buat utilitas MemoryCache dengan TTL & Invalidasi Pola (*Pattern Invalidation*).
-- [x] Pasang caching pada endpoint list postingan (`GET /posts`) dan detail postingan (`GET /posts/:id`).
-- [x] Terapkan automatic cache invalidation saat posting, edit, hapus, like/unlike, bookmark, dan komentar.
-- [x] Implementasikan global interceptor untuk auto-logout pada respon 401 Unauthorized (mengatasi ketidaksinkronan sesi setelah server restart).
-- [x] Selaraskan sidebar: perbaiki typo nama `Instagram` dan ubah ukuran font navigasi menjadi `14px` standard IG.
-- [x] Selaraskan layout postingan: terapkan aspek rasio 4:5 dengan `object-cover` untuk feed card dan sesuaikan skeleton loading.
-
-### 🔴 Fase 6: Integrasi Kerja Tim (Adella & Bagas)
-- [x] **Adella (Stories UI & Horizontal Flow):**
-  - [x] Menyatukan component StoriesRow horizontal ke halaman feed utama (HomePage).
-  - [x] Menyediakan StoryViewer modal dengan timer progress bar otomatis selama 5 detik per cerita.
-  - [x] Menambahkan navigasi keyboard (Escape, ArrowRight, ArrowLeft) pada penampil cerita.
-- [x] **Bagas (Saved Posts Tab & Database Integration):**
-  - [x] Menambahkan tab "Disimpan" di halaman profil (`ProfilePage`) dengan dynamic fetching dari API `/posts/saved`.
-  - [x] Mengintegrasikan tombol bookmark di `PostCard` secara penuh dengan database (`POST /posts/:id/bookmark`) beserta state loading.
-  - [x] Membatasi visibilitas tab "Disimpan" agar hanya tampil pada profil milik user yang sedang login (sesuai standar Instagram asli).
+### 🔔 Notifikasi Real-Time
+- [ ] Mengintegrasikan push notifications untuk aktivitas Like, Comment, Follow, dan pesan masuk.
