@@ -93,12 +93,12 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
         {currentIndex > 0 && (
           <div 
             onClick={goPrev}
-            className="absolute -left-48 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95"
+            className="absolute -left-56 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95 z-10"
           >
             <img
               src={group.stories[currentIndex - 1].imageUrl}
               alt="Preview sebelumnya"
-              className="w-[120px] h-[213px] object-cover rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
+              className="w-[160px] h-[284px] object-contain bg-black rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
             />
             <span className="text-xs text-white/70 font-semibold tracking-wide uppercase">Sebelumnya</span>
           </div>
@@ -108,7 +108,7 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
         {currentIndex > 0 && (
           <button
             onClick={goPrev}
-            className="absolute -left-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
+            className="absolute -left-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer z-20"
             aria-label="Story sebelumnya"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -116,7 +116,7 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
         )}
 
         {/* ── CENTRAL CONTAINER: Story Aktif (9:16 Aspect Ratio) ── */}
-        <div className="relative w-full max-w-[400px] aspect-[9/16] bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between">
+        <div className="relative h-[85vh] max-h-[820px] aspect-[9/16] w-auto bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between z-10">
           
           {/* Progress Bar & Header Wrapper */}
           <div className="absolute top-0 left-0 w-full z-10 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-3 pb-6">
@@ -161,11 +161,11 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
             </div>
           </div>
 
-          {/* GAMBAR UTAMA STORY */}
+          {/* GAMBAR UTAMA STORY (Object Contain agar tidak dipotong/stretch) */}
           <img
             src={currentStory.imageUrl}
             alt={`Story slide ${currentIndex + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-black select-none"
           />
 
           {/* Area tap layar untuk navigasi sentuh (Mobile) */}
@@ -186,7 +186,7 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
         {/* ── TOMBOL NAVIGASI KANAN (Chevron) ── */}
         <button
           onClick={goNext}
-          className="absolute -right-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
+          className="absolute -right-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer z-20"
           aria-label="Story berikutnya"
         >
           <ChevronRight className="w-6 h-6" />
@@ -196,12 +196,12 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
         {currentIndex < totalSlides - 1 && (
           <div 
             onClick={goNext}
-            className="absolute -right-48 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95"
+            className="absolute -right-56 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95 z-10"
           >
             <img
               src={group.stories[currentIndex + 1].imageUrl}
               alt="Preview berikutnya"
-              className="w-[120px] h-[213px] object-cover rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
+              className="w-[160px] h-[284px] object-contain bg-black rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
             />
             <span className="text-xs text-white/70 font-semibold tracking-wide uppercase">Berikutnya</span>
           </div>

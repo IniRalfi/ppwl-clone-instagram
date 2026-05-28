@@ -26,7 +26,7 @@ export function Sidebar() {
   const visibleItems = navItems.filter((item) => item.to !== "/monitoring" || isAdmin);
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-[72px] hover:w-[244px] bg-ig-background/95 backdrop-blur-md border-r border-ig-border px-3 py-6 transition-all duration-300 ease-in-out z-50 group/sidebar shadow-sm hover:shadow-[5px_0_25px_rgba(0,0,0,0.15)] flex flex-col">
+    <aside className="left-sidebar fixed top-0 left-0 h-screen w-[72px] hover:w-[244px] bg-ig-background/95 backdrop-blur-md border-r border-ig-border px-3 py-6 transition-all duration-300 ease-in-out z-50 group/sidebar shadow-sm hover:shadow-[5px_0_25px_rgba(0,0,0,0.15)] flex flex-col">
       {/* Logo Instafy */}
       <div className="mb-8 px-3 h-10 flex items-center justify-start overflow-hidden">
         <img
@@ -39,8 +39,11 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* Menu Navigasi */}
-      <nav className="flex flex-col gap-1.5 flex-1">
+      {/* Spacer untuk mendorong menu navigasi agar mulai dari tengah */}
+      <div className="flex-grow" />
+
+      {/* Menu Navigasi (Mulai dari tengah) */}
+      <nav className="flex flex-col gap-1.5 justify-center">
         {visibleItems.map(({ icon: Icon, label, to, wip }) =>
           wip ? (
             <button
@@ -88,6 +91,9 @@ export function Sidebar() {
           )
         )}
       </nav>
+
+      {/* Spacer bawah untuk keseimbangan menu tengah */}
+      <div className="flex-grow" />
 
       {/* Bagian Bawah: Tema + Logout */}
       <div className="flex flex-col gap-1 pt-3 border-t border-ig-separator">

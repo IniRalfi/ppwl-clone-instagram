@@ -160,14 +160,12 @@
 
   body {
     @apply font-sans text-ig-text antialiased;
-    background: radial-gradient(circle at 50% 0%, #151515 0%, #020202 100%);
-    background-attachment: fixed;
-    transition: color 0.25s ease, border-color 0.25s ease;
+    background-color: #000000;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   }
 
   html.light body {
-    background: radial-gradient(circle at 50% 0%, #ffffff 0%, #e8ecef 100%);
-    background-attachment: fixed;
+    background-color: #ffffff;
   }
 
   /* Scrollbar khas IG — tersembunyi */
@@ -202,7 +200,7 @@
   }
 
   /* Light mode: Sidebar punya shadow ke kanan */
-  html.light aside {
+  html.light aside.left-sidebar {
     box-shadow: 1px 0 0 #dbdbdb;
   }
 

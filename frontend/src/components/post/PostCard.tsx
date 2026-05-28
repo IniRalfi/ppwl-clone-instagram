@@ -453,7 +453,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               <img
                 src={url}
                 alt={`Postingan ke-${index + 1}`}
-                className="w-full h-full object-cover select-none"
+                className="w-full h-full object-contain bg-black select-none"
                 draggable="false"
               />
               {index === 0 &&
@@ -532,22 +532,31 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Like */}
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-1.5 text-ig-text">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLikeToggle}
                 disabled={isLikeLoading}
-                className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 cursor-pointer ${
+                className={`h-8 w-8 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 cursor-pointer ${
                   isLiked
                     ? "text-red-500 hover:text-red-600"
                     : "text-ig-text hover:text-ig-secondary-text"
                 }`}
               >
-                <Heart
-                  className={`h-6 w-6 transition-all duration-150 ${isLiked ? "fill-current scale-110 animate-bounce" : ""}`}
-                />
+                {isLiked ? (
+                  <svg aria-label="Unlike" fill="#FF3040" height="24" viewBox="0 0 24 24" width="24">
+                    <path d="M21.35 9.122c0-3.072-2.65-4.959-5.197-7.222-2.512-2.243-3.865-3.469-4.303-3.752a.48.48 0 0 0-.51 0C10.9 1.433 9.547 2.66 7.035 4.9c-2.545 2.263-5.197 4.15-5.197 7.222 0 3.072 2.65 4.959 5.197 7.222 2.512 2.243 3.865 3.469 4.303 3.752.19.123.418.19.65.19s.46-.067.65-.19c.438-.283 1.791-1.509 4.303-3.752 2.545-2.263 5.197-4.15 5.197-7.222z"></path>
+                  </svg>
+                ) : (
+                  <svg aria-label="Like" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                    <path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752a.48.48 0 0 1-.51 0c-.438-.283-1.791-1.509-4.303-3.752C4.652 14.081 2 12.194 2 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.208.28.569.28.777 0a4.21 4.21 0 0 1 3.632-1.941M12 21.35l-.015-.01a.34.34 0 0 1-.03-.027c-.366-.237-1.764-1.488-4.254-3.71C5.228 15.385 2.5 13.5 2.5 9.122c0-3.419 2.52-5.468 4.958-5.468a4.7 4.7 0 0 1 3.67 1.916.75.75 0 0 0 1.2 0 4.7 4.7 0 0 1 3.67-1.916c2.438 0 4.958 2.049 4.958 5.468 0 4.378-2.728 6.263-5.216 8.48-2.49 2.222-3.888 3.473-4.254 3.71a.34.34 0 0 1-.03.027z"></path>
+                  </svg>
+                )}
               </Button>
+              <span className="text-sm font-semibold select-none text-ig-text">
+                {currentLikeCount}
+              </span>
             </div>
 
             {/* Comment */}
@@ -556,10 +565,15 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onClick={() => navigate(`/posts/${id}`)}
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-8 w-8 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
-                <MessageCircle className="h-6 w-6" />
+                <svg aria-label="Comment" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                  <path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></path>
+                </svg>
               </Button>
+              <span className="text-sm font-semibold select-none text-ig-text">
+                {commentsCount}
+              </span>
             </div>
 
             {/* Share */}
@@ -567,10 +581,14 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg] transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-8 w-8 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
-                <Send className="h-6 w-6" />
+                <svg aria-label="Share Post" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                  <line fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" x1="22" x2="9.218" y1="3" y2="10.083"></line>
+                  <polygon fill="none" points="11.698 20.334 22 3.001 2 10.263 11.698 20.334" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></polygon>
+                </svg>
               </Button>
+              <span className="text-sm font-semibold select-none text-ig-text">0</span>
             </div>
           </div>
 
@@ -580,13 +598,19 @@ export const PostCard: React.FC<PostCardProps> = ({
             size="icon"
             onClick={handleBookmarkToggle}
             disabled={isBookmarkLoading}
-            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer ${
+            className={`h-8 w-8 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer ${
               isBookmarked ? "text-ig-text" : "text-ig-text hover:text-ig-secondary-text"
             }`}
           >
-            <Bookmark
-              className={`h-6 w-6 transition-all duration-150 ${isBookmarked ? "fill-current scale-110" : ""}`}
-            />
+            {isBookmarked ? (
+              <svg aria-label="Remove" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                <polygon points="20 21 12 13.44 4 21 4 3 20 3 20 21"></polygon>
+              </svg>
+            ) : (
+              <svg aria-label="Save" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
+                <polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon>
+              </svg>
+            )}
           </Button>
         </div>
 

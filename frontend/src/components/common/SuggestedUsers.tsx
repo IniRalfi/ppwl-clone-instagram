@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store/auth.store";
 import { apiClient } from "../../services/api.client";
 import { Avatar } from "./Avatar";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 
 interface SuggestedUser {
@@ -18,6 +19,9 @@ export function SuggestedUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  
+  // State untuk mengontrol kemunculan modal "See all"
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -47,8 +51,11 @@ export function SuggestedUsers() {
 
   if (!user || (!isLoading && suggestions.length === 0)) return null;
 
+  // Hanya tampilkan maksimal 5 akun di sidebar utama
+  const sidebarSuggestions = suggestions.slice(0, 5);
+
   return (
-    <div className="w-full text-left select-none">
+    <div className="w-full text-left select-none relative">
       {/* Header User yang Sedang Login */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
@@ -68,12 +75,15 @@ export function SuggestedUsers() {
         <span className="text-sm font-semibold text-ig-secondary-text">
           Suggested for you
         </span>
-        <button className="text-xs font-semibold text-ig-text hover:text-ig-secondary-text transition-colors cursor-pointer">
+        <button 
+          onClick={() => setShowModal(true)}
+          className="text-xs font-semibold text-ig-text hover:text-ig-secondary-text transition-colors cursor-pointer"
+        >
           See all
         </button>
       </div>
 
-      {/* List Suggestions */}
+      {/* List Suggestions (Maksimal 5) */}
       <div className="flex flex-col gap-3">
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
@@ -88,7 +98,7 @@ export function SuggestedUsers() {
                 <div className="h-4 w-10 bg-ig-elevated-bg rounded" />
               </div>
             ))
-          : suggestions.map((sugUser) => {
+          : sidebarSuggestions.map((sugUser) => {
               const isFollowed = followedIds.has(sugUser.id);
               const isThisLoading = loadingId === sugUser.id;
               return (
@@ -129,17 +139,71 @@ export function SuggestedUsers() {
             })}
       </div>
 
-      {/* Footer */}
+      {/* Footer (Hanya copyright, tautan tidak fungsional dihapus) */}
       <div className="mt-8 text-[11px] text-ig-secondary-text space-y-4">
-        <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 text-ig-secondary-text/80">
-          {["About", "Help", "Press", "API", "Jobs", "Privacy", "Terms", "Locations", "Language", "Meta Verified"].map((link, idx, arr) => (
-            <span key={link} className="hover:underline cursor-pointer">
-              {link} {idx < arr.length - 1 && "•"}
-            </span>
-          ))}
-        </div>
         <p className="opacity-60 uppercase tracking-tight text-[10px]">© 2026 INSTAFY FROM META</p>
       </div>
+
+      {/* ── MODAL SEE ALL SUGGESTED USERS ── */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[400px] max-h-[500px] overflow-hidden flex flex-col shadow-2xl">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-ig-border">
+              <span className="font-bold text-ig-text text-base">Suggested</span>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="text-ig-text hover:text-ig-secondary-text p-1 rounded-full hover:bg-ig-elevated-bg transition-colors cursor-pointer"
+                aria-label="Tutup rekomendasi"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* List Modal Body */}
+            <div className="overflow-y-auto p-4 flex flex-col gap-4">
+              {suggestions.map((sugUser) => {
+                const isFollowed = followedIds.has(sugUser.id);
+                const isThisLoading = loadingId === sugUser.id;
+                return (
+                  <div key={sugUser.id} className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={sugUser.name}
+                        avatarUrl={sugUser.avatarUrl}
+                        size="sm"
+                        className="flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-ig-text truncate leading-tight">
+                          {sugUser.username}
+                        </p>
+                        <p className="text-[11px] text-ig-secondary-text truncate mt-0.5">
+                          {sugUser._count.followers > 0
+                            ? `${sugUser._count.followers} followers`
+                            : "Suggested for you"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => !isFollowed && handleFollow(sugUser.id)}
+                      disabled={isThisLoading}
+                      className={`text-[12px] font-semibold transition-all duration-200 cursor-pointer ${
+                        isFollowed
+                          ? "text-ig-secondary-text cursor-default"
+                          : "text-ig-primary hover:text-white"
+                      } disabled:opacity-50`}
+                    >
+                      {isFollowed ? "Following" : isThisLoading ? "..." : "Follow"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

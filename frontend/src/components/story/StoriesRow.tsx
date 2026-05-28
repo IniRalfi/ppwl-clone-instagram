@@ -34,14 +34,14 @@ function StoryAvatar({ group, onClick }: StoryAvatarProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1.5 flex-shrink-0 w-20 cursor-pointer select-none"
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 w-24 cursor-pointer select-none"
     >
       <div className={`rounded-full ${ringClass} transition-transform duration-200 hover:scale-[1.03]`}>
         <div className="rounded-full p-[2.5px] bg-ig-background">
           <img
             src={group.avatarUrl}
             alt={group.username}
-            className="w-[56px] h-[56px] rounded-full object-cover"
+            className="w-[64px] h-[64px] rounded-full object-cover"
           />
         </div>
       </div>
@@ -97,7 +97,7 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
             <img
               src={avatarUrl}
               alt="Your story"
-              className={`w-[56px] h-[56px] rounded-full object-cover ${isUploading ? "opacity-50 animate-pulse" : ""}`}
+              className={`w-[64px] h-[64px] rounded-full object-cover ${isUploading ? "opacity-50 animate-pulse" : ""}`}
             />
           </div>
         </div>
@@ -176,7 +176,7 @@ export function StoriesRow() {
         {showLeftBtn && (
           <button
             onClick={() => handleScrollAction("left")}
-            className="absolute left-1 top-1/2 -translate-y-[28px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
+            className="absolute left-1 top-1/2 -translate-y-[38px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
             aria-label="Stories sebelumnya"
           >
             <ChevronLeft className="w-4 h-4 stroke-[3px]" />
@@ -201,12 +201,12 @@ export function StoriesRow() {
 
           {isLoading ? (
             <div className="flex gap-4 animate-pulse">
-              <div className="w-20 flex flex-col items-center gap-1.5">
-                <div className="w-[66px] h-[66px] bg-ig-border rounded-full" />
+              <div className="w-24 flex flex-col items-center gap-1.5">
+                <div className="w-[76px] h-[76px] bg-ig-border rounded-full" />
                 <div className="w-12 h-3 bg-ig-border rounded" />
               </div>
-              <div className="w-20 flex flex-col items-center gap-1.5">
-                <div className="w-[66px] h-[66px] bg-ig-border rounded-full" />
+              <div className="w-24 flex flex-col items-center gap-1.5">
+                <div className="w-[76px] h-[76px] bg-ig-border rounded-full" />
                 <div className="w-12 h-3 bg-ig-border rounded" />
               </div>
             </div>
@@ -225,7 +225,7 @@ export function StoriesRow() {
         {showRightBtn && (
           <button
             onClick={() => handleScrollAction("right")}
-            className="absolute right-1 top-1/2 -translate-y-[28px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
+            className="absolute right-1 top-1/2 -translate-y-[38px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
             aria-label="Stories berikutnya"
           >
             <ChevronRight className="w-4 h-4 stroke-[3px]" />
