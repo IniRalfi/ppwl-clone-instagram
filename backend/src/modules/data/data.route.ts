@@ -1,7 +1,5 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
-import { runDatabaseBackup } from "@/scripts/backup";
-import { localCache } from "@/utils/cache";
+import { DataService } from "./data.service";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
   // Middleware khusus untuk grup /data
@@ -11,30 +9,29 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
     console.log("[DEBUG] AWS_LAMBDA_FUNCTION_NAME ", process.env.AWS_LAMBDA_FUNCTION_NAME);
 
     // Hanya terapkan proteksi ini di Production (Lambda)
-    if (!process.env.AWS_LAMBDA_FUNCTION_NAME) return;
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      // Lewati preflight OPTIONS
+      if (request.method === "OPTIONS") return;
 
-    // Lewati preflight OPTIONS
-    if (request.method === "OPTIONS") return;
+      const origin = request.headers.get("origin");
+      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
 
-    // Sisa pengecekan origin dan API Key
-    const origin = request.headers.get("origin");
-    const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+      // Jika request datang dari Frontend kita, biarkan lewat
+      if (origin === frontendUrl) return;
 
-    // Jika request datang dari Frontend kita, biarkan lewat
-    if (origin === frontendUrl) return;
-
-    // Jika diakses manual (contoh via browser), cek parameter "key"
-    const key = url.searchParams.get("key");
-    const apiKey = process.env.API_SECRET_KEY || "ok";
-    if (key !== apiKey) {
-      set.status = 401;
-      return { message: "Unauthorized: Access denied without valid API Key" };
+      // Jika diakses manual (contoh via browser), cek parameter "key"
+      const key = url.searchParams.get("key");
+      const apiKey = process.env.API_SECRET_KEY || "ok";
+      if (key !== apiKey) {
+        set.status = 401;
+        return { message: "Unauthorized: Access denied without valid API Key" };
+      }
     }
   })
 
   // Trigger backup manual ke S3
   .post("/backup", async ({ set }) => {
-    const res = await runDatabaseBackup();
+    const res = await DataService.backupDatabase();
     if (!res.success) {
       set.status = 500;
       return { success: false, message: "Gagal membuat backup", error: res.error };
@@ -48,31 +45,29 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
 
   // Rute-rute /data (mengembalikan semua data untuk keperluan inspeksi DB)
   .get("/users", async () => {
-    const data = await db.user.findMany();
+    const data = await DataService.getUsers();
     return { data, message: "Users retrieved successfully" };
   })
   .get("/posts", async () => {
-    const data = await db.post.findMany();
+    const data = await DataService.getPosts();
     return { data, message: "Posts retrieved successfully" };
   })
   .get("/comments", async () => {
-    const data = await db.comment.findMany();
+    const data = await DataService.getComments();
     return { data, message: "Comments retrieved successfully" };
   })
   .get("/notifications", async () => {
-    const data = await db.notification.findMany();
+    const data = await DataService.getNotifications();
     return { data, message: "Notifications retrieved successfully" };
   })
   .get("/likes", async () => {
-    const data = await db.like.findMany();
+    const data = await DataService.getLikes();
     return { data, message: "Likes retrieved successfully" };
   })
 
-  // ─────────────────────────────────────────────
   // GET /data/cache/metrics — Lihat cache performance
-  // ─────────────────────────────────────────────
   .get("/cache/metrics", async () => {
-    const metrics = localCache.getMetrics();
+    const metrics = DataService.getCacheMetrics();
     return {
       message: "Cache metrics retrieved successfully",
       data: metrics,
@@ -87,18 +82,14 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
     };
   })
 
-  // ─────────────────────────────────────────────
   // POST /data/cache/reset — Reset cache metrics
-  // ─────────────────────────────────────────────
   .post("/cache/reset", async () => {
-    localCache.resetMetrics();
+    DataService.resetCacheMetrics();
     return { message: "Cache metrics berhasil direset" };
   })
 
-  // ─────────────────────────────────────────────
   // POST /data/cache/clear — Hapus semua cache
-  // ─────────────────────────────────────────────
   .post("/cache/clear", async () => {
-    localCache.clear();
+    DataService.clearCache();
     return { message: "Semua cache berhasil dihapus" };
   });

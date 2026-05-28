@@ -1,18 +1,12 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
-import {
-  MAX_FILE_SIZE_BYTES,
-  ALLOWED_MIME_TYPES,
-} from "@/config/cloudinary";
-import { uploadMedia } from "@/config/s3";
+import { StoryService } from "./story.service";
 import { authPlugin } from "@/plugins/auth.plugin";
+import { uploadStorySchema } from "./story.schema";
 
 export const storyRoutes = new Elysia({ prefix: "/stories" })
   .use(authPlugin)
 
-  // ─────────────────────────────────────────────
-  // GET /stories — Mengambil cerita aktif dari diri sendiri & teman yang diikuti
-  // ─────────────────────────────────────────────
+  // 1. GET /stories — Mengambil cerita aktif dari diri sendiri & teman yang diikuti
   .get("/", async ({ getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -20,77 +14,8 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const currentUserId = user.id;
-      const now = new Date();
 
-      // Ambil cerita yang belum kadaluwarsa dari diri sendiri OR user yang di-follow
-      const activeStories = await db.story.findMany({
-        where: {
-          expiresAt: { gt: now },
-          OR: [
-            { userId: currentUserId },
-            {
-              user: {
-                followers: {
-                  some: { followerId: currentUserId }
-                }
-              }
-            }
-          ]
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            }
-          }
-        },
-        orderBy: { createdAt: "asc" }
-      });
-
-      // Kelompokkan cerita berdasarkan User (UserStoryGroup)
-      const userGroupsMap = new Map<string, {
-        userId: string;
-        username: string;
-        avatarUrl: string;
-        hasUnread: boolean;
-        stories: {
-          id: string;
-          imageUrl: string;
-          createdAt: string;
-        }[];
-      }>();
-
-      for (const story of activeStories) {
-        const author = story.user;
-        if (!userGroupsMap.has(author.id)) {
-          userGroupsMap.set(author.id, {
-            userId: author.id,
-            username: author.username,
-            avatarUrl: author.avatarUrl || `https://ui-avatars.com/api/?name=${author.name}`,
-            hasUnread: true, // Default true untuk menyederhanakan indikator unread
-            stories: []
-          });
-        }
-        userGroupsMap.get(author.id)!.stories.push({
-          id: story.id,
-          imageUrl: story.imageUrl,
-          createdAt: story.createdAt.toISOString()
-        });
-      }
-
-      const groups = Array.from(userGroupsMap.values());
-      
-      // Pastikan cerita milik sendiri selalu muncul paling depan (indeks 0) jika ada
-      const currentUserGroupIdx = groups.findIndex(g => g.userId === currentUserId);
-      if (currentUserGroupIdx > 0) {
-        const [currentUserGroup] = groups.splice(currentUserGroupIdx, 1);
-        groups.unshift(currentUserGroup);
-      }
-
+      const groups = await StoryService.getActiveStories(user.id);
       return { data: groups };
     } catch (error) {
       console.error("❌ Gagal mengambil stories:", error);
@@ -99,11 +24,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
     }
   })
 
-  // ─────────────────────────────────────────────
-  // POST /stories — Mengunggah cerita baru
-  // Body: multipart/form-data
-  //   - image: File (wajib, max 5 MB)
-  // ─────────────────────────────────────────────
+  // 2. POST /stories — Mengunggah cerita baru (multipart/form-data)
   .post("/", async ({ body, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -113,47 +34,21 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
       }
 
       const formData = body as Record<string, any>;
-      const imageFile = formData.image as File | undefined;
+      const imageFile = formData.image as File;
 
-      if (!imageFile || imageFile.size === 0) {
-        set.status = 400;
-        return { message: "File gambar wajib diunggah" };
-      }
-
-      if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
-        set.status = 400;
-        return {
-          message: `Format gambar tidak didukung. Gunakan: ${ALLOWED_MIME_TYPES.join(", ")}`,
-        };
-      }
-
-      if (imageFile.size > MAX_FILE_SIZE_BYTES) {
-        set.status = 400;
-        return { message: "Ukuran gambar maksimal 5 MB" };
-      }
-
-      // Convert File ke Buffer untuk upload menggunakan S3 Media Service
-      const buffer = Buffer.from(await imageFile.arrayBuffer());
-      const imageUrl = await uploadMedia(buffer, imageFile.type);
-
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Kadaluwarsa dalam 24 jam
-
-      const newStory = await db.story.create({
-        data: {
-          imageUrl,
-          userId: user.id,
-          expiresAt,
-        },
-      });
+      const newStory = await StoryService.createStory(user.id, imageFile);
 
       return {
         message: "Story berhasil diunggah! 🎉",
         data: newStory,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Gagal membuat story:", error);
-      set.status = 500;
-      return { message: "Terjadi kesalahan server" };
+      if (error.message?.includes("wajib") || error.message?.includes("Format") || error.message?.includes("Ukuran")) {
+        set.status = 400;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server" };
     }
-  });
+  }, uploadStorySchema);

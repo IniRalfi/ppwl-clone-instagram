@@ -28,7 +28,9 @@ Berikut adalah to-do list untuk fase pengembangan baru:
   - [x] Refactoring **Post Module** (`post.routes.ts`, `post.schema.ts`, `post.service.ts`).
   - [x] Refactoring **Like Module** (`like.routes.ts`, `like.schema.ts`, `like.service.ts`).
   - [x] Refactoring **Follow Module** (`follow.routes.ts`, `follow.schema.ts`, `follow.service.ts`).
-  - [ ] Refactoring modul lainnya (`message`, `notification`, `story`, `user`).
+  - [x] Refactoring **Story Module** (`story.routes.ts`, `story.schema.ts`, `story.service.ts`).
+  - [x] Refactoring **Data & Monitoring Module** (`data.route.ts`/`service.ts`, `monitoring.routes.ts`/`service.ts`).
+  - [ ] Refactoring modul lainnya (`message`, `notification`, `user`).
 - [ ] Penggunaan middleware terpusat untuk error handling dan parsing data yang seragam.
 - [ ] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
 
