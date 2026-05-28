@@ -29,6 +29,8 @@ export const dummyStories: UserStoryGroup[] = [
       { id: "s-4", imageUrl: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800", createdAt: "2026-05-27T08:00:00Z" }
     ]
   }
+];
+
 import { SearchUserResult, ExplorePost } from "../pages/ExplorePage";
 
 // ─────────────────────────────────────────────
