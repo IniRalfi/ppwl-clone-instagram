@@ -37,4 +37,22 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
       set.status = 500;
       return { message: "Gagal menyimpan komentar", error: error?.message || String(error) };
     }
-  }, createCommentSchema);
+  }, createCommentSchema)
+
+  // 3. Toggle like komentar
+  .post("/:id/like", async ({ params: { id }, getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
+
+      const liked = await CommentService.toggleLikeComment(user.id, id);
+      return { message: liked ? "Komentar disukai" : "Batal menyukai komentar", liked };
+    } catch (error: any) {
+      console.error("Error toggling comment like:", error);
+      set.status = error.message === "Komentar tidak ditemukan" ? 404 : 500;
+      return { message: error?.message || "Terjadi kesalahan server saat menyukai komentar" };
+    }
+  });

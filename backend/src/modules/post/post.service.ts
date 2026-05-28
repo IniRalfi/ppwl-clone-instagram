@@ -85,6 +85,13 @@ export class PostService {
         comments: {
           include: {
             author: { select: { id: true, username: true, name: true, avatarUrl: true } },
+            likes: currentUserId
+              ? {
+                  where: { userId: currentUserId },
+                  select: { userId: true },
+                }
+              : false,
+            _count: { select: { likes: true } },
           },
           orderBy: { createdAt: "asc" },
         },
@@ -106,9 +113,19 @@ export class PostService {
 
     if (!post) return null;
 
-    const { likes, bookmarks, ...rest } = post as any;
+    const { likes, bookmarks, comments, ...rest } = post as any;
+    const mappedComments = (comments || []).map((c: any) => {
+      const { likes: commentLikes, _count, ...cRest } = c;
+      return {
+        ...cRest,
+        likesCount: _count?.likes ?? 0,
+        isLikedByMe: commentLikes && commentLikes.length > 0,
+      };
+    });
+
     return {
       ...rest,
+      comments: mappedComments,
       isLikedByMe: likes && likes.length > 0,
       isBookmarkedByMe: bookmarks && bookmarks.length > 0,
     };
