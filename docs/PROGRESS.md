@@ -65,3 +65,13 @@ Dokumen ini digunakan untuk melacak kemajuan pengerjaan fitur, optimalisasi infr
 - [x] Implementasikan global interceptor untuk auto-logout pada respon 401 Unauthorized (mengatasi ketidaksinkronan sesi setelah server restart).
 - [x] Selaraskan sidebar: perbaiki typo nama `Instagram` dan ubah ukuran font navigasi menjadi `14px` standard IG.
 - [x] Selaraskan layout postingan: terapkan aspek rasio 4:5 dengan `object-cover` untuk feed card dan sesuaikan skeleton loading.
+
+### 🔴 Fase 6: Integrasi Kerja Tim (Adella & Bagas)
+- [x] **Adella (Stories UI & Horizontal Flow):**
+  - [x] Menyatukan component StoriesRow horizontal ke halaman feed utama (HomePage).
+  - [x] Menyediakan StoryViewer modal dengan timer progress bar otomatis selama 5 detik per cerita.
+  - [x] Menambahkan navigasi keyboard (Escape, ArrowRight, ArrowLeft) pada penampil cerita.
+- [x] **Bagas (Saved Posts Tab & Database Integration):**
+  - [x] Menambahkan tab "Disimpan" di halaman profil (`ProfilePage`) dengan dynamic fetching dari API `/posts/saved`.
+  - [x] Mengintegrasikan tombol bookmark di `PostCard` secara penuh dengan database (`POST /posts/:id/bookmark`) beserta state loading.
+  - [x] Membatasi visibilitas tab "Disimpan" agar hanya tampil pada profil milik user yang sedang login (sesuai standar Instagram asli).
