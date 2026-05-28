@@ -867,6 +867,15 @@ export const PostCard: React.FC<PostCardProps> = ({
             )}
             <button
               onClick={() => {
+                handleBookmarkToggle();
+                setShowOptionsModal(false);
+              }}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              {isBookmarked ? "Batalkan Simpan" : "Simpan Postingan"}
+            </button>
+            <button
+              onClick={() => {
                 setShowShareModal(true);
                 setShowOptionsModal(false);
               }}

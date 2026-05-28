@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Comment } from "../../../../shared/src/types/comment";
 
 interface CommentItemProps {
@@ -16,6 +17,7 @@ export function CommentItem({
   onReplyClick,
   isReply = false,
 }: CommentItemProps) {
+  const navigate = useNavigate();
   /**
    * Instagram: replies di-collapse by default, expand dengan "Lihat X balasan".
    * Semua replies (termasuk replies-of-replies) ditampilkan FLAT di satu level
@@ -35,7 +37,10 @@ export function CommentItem({
       {/* ── Satu baris komentar ── */}
       <div className="flex gap-2.5 py-2.5">
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        <div 
+          onClick={() => navigate(`/profile/${comment.author.username}`)}
+          className="flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+        >
           {comment.author.avatarUrl ? (
             <img
               src={comment.author.avatarUrl}
@@ -55,7 +60,12 @@ export function CommentItem({
         {/* Konten */}
         <div className="flex-1 min-w-0">
           <p className="text-[14px] text-ig-text leading-snug">
-            <span className="font-semibold mr-1.5">{comment.author.username}</span>
+            <span 
+              onClick={() => navigate(`/profile/${comment.author.username}`)}
+              className="font-semibold mr-1.5 cursor-pointer hover:underline"
+            >
+              {comment.author.username}
+            </span>
             {/* Render @mention dengan warna biru, sisanya putih */}
             <ContentWithMentions text={comment.content} />
           </p>

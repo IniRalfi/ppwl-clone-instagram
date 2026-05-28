@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../store/auth.store";
 import { apiClient } from "../services/api.client";
-import { Smile, Loader2 } from "lucide-react";
+import { Smile, Loader2, MoreHorizontal } from "lucide-react";
 import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
 import { useThemeStore } from "../store/theme.store";
 
@@ -22,6 +22,7 @@ interface Post {
   };
   comments?: Comment[];
   isLikedByMe?: boolean;
+  isBookmarkedByMe?: boolean;
 }
 
 function buildCommentTree(flatComments: Comment[]): Comment[] {
@@ -61,6 +62,8 @@ export function PostDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
   const currentTheme = useThemeStore((state) => state.theme);
 
   // State reply: null = komentar baru, isi = sedang balas komentar tertentu
@@ -81,6 +84,7 @@ export function PostDetailPage() {
         if (json && json.data) {
           setPost(json.data);
           setComments(json.data.comments || []);
+          setIsBookmarked(!!json.data.isBookmarkedByMe);
         } else {
           toast.error("Gagal memuat detail postingan.");
           navigate('/');
@@ -144,6 +148,44 @@ export function PostDetailPage() {
     if (e.key === "Escape" && replyTarget) handleCancelReply();
   };
 
+  const handleBookmarkToggle = async () => {
+    if (!currentUser || !post) return;
+    const newBookmarked = !isBookmarked;
+    setIsBookmarked(newBookmarked);
+    try {
+      const res = await apiClient.post<{ bookmarked: boolean }>(`/posts/${post.id}/bookmark`, {});
+      if (res) {
+        setIsBookmarked(res.bookmarked);
+        toast.success(res.bookmarked ? "Postingan berhasil disimpan! 💾" : "Batal menyimpan postingan.");
+      }
+    } catch {
+      setIsBookmarked(!newBookmarked);
+      toast.error("Gagal memperbarui status simpan.");
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!post) return;
+    const postLink = `${window.location.origin}/posts/${post.id}`;
+    navigator.clipboard.writeText(postLink);
+    toast.success("Tautan disalin ke papan klip! 📋");
+    setShowOptionsModal(false);
+  };
+
+  const handleDeletePost = async () => {
+    if (!post) return;
+    const confirmDelete = window.confirm("Apakah Anda yakin ingin menghapus postingan ini?");
+    if (!confirmDelete) return;
+    try {
+      await apiClient.delete(`/posts/${post.id}`);
+      toast.success("Postingan berhasil dihapus! 🗑️");
+      setShowOptionsModal(false);
+      navigate('/');
+    } catch {
+      toast.error("Gagal menghapus postingan.");
+    }
+  };
+
   const canSubmit = inputValue.trim().length > 0 && !isSubmitting;
 
   if (isLoading) {
@@ -194,13 +236,28 @@ export function PostDetailPage() {
         <div className="w-full md:w-[40%] flex flex-col h-full bg-ig-background relative">
           
           {/* Header Info User */}
-          <div className="flex items-center p-4 border-b border-ig-border">
-            <img
-              src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
-              alt="Avatar"
-              className="w-8 h-8 rounded-full object-cover mr-3 border border-ig-border"
-            />
-            <span className="font-semibold text-sm mr-2">{post.author?.username}</span>
+          <div className="flex items-center justify-between p-4 border-b border-ig-border">
+            <div className="flex items-center">
+              <img
+                src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full object-cover mr-3 border border-ig-border cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => navigate(`/profile/${post.author?.username}`)}
+              />
+              <span 
+                className="font-semibold text-sm mr-2 cursor-pointer hover:underline"
+                onClick={() => navigate(`/profile/${post.author?.username}`)}
+              >
+                {post.author?.username}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setShowOptionsModal(true)}
+              className="text-ig-text hover:text-ig-secondary-text p-1 cursor-pointer transition-colors"
+            >
+              <MoreHorizontal size={20} />
+            </button>
           </div>
 
           {/* List Komentar */}
@@ -210,10 +267,16 @@ export function PostDetailPage() {
               <img
                 src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
                 alt="Avatar"
-                className="w-8 h-8 rounded-full object-cover mr-3 flex-shrink-0 border border-ig-border"
+                className="w-8 h-8 rounded-full object-cover mr-3 flex-shrink-0 border border-ig-border cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => navigate(`/profile/${post.author?.username}`)}
               />
               <div>
-                <span className="font-semibold text-sm mr-2">{post.author?.username}</span>
+                <span 
+                  className="font-semibold text-sm mr-2 cursor-pointer hover:underline"
+                  onClick={() => navigate(`/profile/${post.author?.username}`)}
+                >
+                  {post.author?.username}
+                </span>
                 <span className="text-sm whitespace-pre-wrap">{post.content}</span>
               </div>
             </div>
@@ -300,6 +363,43 @@ export function PostDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── MODAL PILIHAN (THREE DOTS MENU) ── */}
+      {showOptionsModal && post && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowOptionsModal(false)}>
+          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[400px] overflow-hidden flex flex-col text-center divide-y divide-ig-separator shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            {post.author.id === currentUser?.id && (
+              <button
+                onClick={handleDeletePost}
+                className="w-full text-red-500 font-bold hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+              >
+                Hapus Postingan
+              </button>
+            )}
+            <button
+              onClick={() => {
+                handleBookmarkToggle();
+                setShowOptionsModal(false);
+              }}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              {isBookmarked ? "Batalkan Simpan" : "Simpan Postingan"}
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              Salin Tautan
+            </button>
+            <button
+              onClick={() => setShowOptionsModal(false)}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
