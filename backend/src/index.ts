@@ -16,11 +16,13 @@ import { messageRoutes } from "@/modules/message/message.routes";
 import { monitoringRoutes } from "@/modules/monitoring/monitoring.routes";
 import { swagger } from "@elysiajs/swagger";
 import { runDatabaseBackup } from "@/scripts/backup";
+import { errorPlugin } from "@/plugins/error.plugin";
 
 const isProd = process.env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
+  .use(errorPlugin)
   .use(cors({
     origin: (request) => {
       const origin = request.headers.get("origin");
