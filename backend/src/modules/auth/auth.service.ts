@@ -46,7 +46,7 @@ export class AuthService {
         data: {
           email: data.email,
           name: data.name,
-          username: data.email.split("@")[0] + Math.floor(Math.random() * 1000),
+          username: data.name.toLowerCase().replace(/[^a-z0-9]/g, "") + Math.floor(Math.random() * 1000),
           avatarUrl: data.avatarUrl,
           passwordHash: "", // Google Auth tidak memakai password
           provider: "google",

@@ -195,13 +195,11 @@ export function PostDetailPage() {
           
           {/* Header Info User */}
           <div className="flex items-center p-4 border-b border-ig-border">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[2px] mr-3">
-              <img
-                src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
-                alt="Avatar"
-                className="w-full h-full rounded-full border-2 border-ig-background"
-              />
-            </div>
+            <img
+              src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
+              alt="Avatar"
+              className="w-8 h-8 rounded-full object-cover mr-3 border border-ig-border"
+            />
             <span className="font-semibold text-sm mr-2">{post.author?.username}</span>
           </div>
 
@@ -209,13 +207,11 @@ export function PostDetailPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
             {/* Caption sebagai komentar pertama */}
             <div className="flex items-start mb-6">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[2px] mr-3 flex-shrink-0">
-                <img
-                  src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
-                  alt="Avatar"
-                  className="w-full h-full rounded-full border-2 border-ig-background"
-                />
-              </div>
+              <img
+                src={post.author?.avatarUrl || `https://ui-avatars.com/api/?name=${post.author?.name}`}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full object-cover mr-3 flex-shrink-0 border border-ig-border"
+              />
               <div>
                 <span className="font-semibold text-sm mr-2">{post.author?.username}</span>
                 <span className="text-sm whitespace-pre-wrap">{post.content}</span>

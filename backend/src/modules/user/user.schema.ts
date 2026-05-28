@@ -14,6 +14,7 @@ export const getUserByUsernameSchema = {
 
 export const updateProfileSchema = {
   body: t.Object({
+    username: t.Optional(t.String()),
     name: t.Optional(t.String()),
     bio: t.Optional(t.String()),
     avatarUrl: t.Optional(t.String()),

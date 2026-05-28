@@ -10,17 +10,16 @@ interface EditProfileProps {
   initialAvatarUrl: string;
   initialWebsite?: string;
   initialGender?: string;
-  initialShowThreads?: boolean;
   initialSuggestions?: boolean;
   onClose: () => void;
   onSave: (data: {
+    username: string;
     name: string;
     bio: string;
     avatarUrl: string;
     image?: File;
     website?: string;
     gender?: string;
-    showThreads?: boolean;
     suggestions?: boolean;
   }) => Promise<void>;
 }
@@ -32,11 +31,11 @@ export function EditProfileModal({
   initialAvatarUrl,
   initialWebsite = "",
   initialGender = "Male",
-  initialShowThreads = false,
   initialSuggestions = true,
   onClose,
   onSave,
 }: EditProfileProps) {
+  const [username, setUsername] = useState(initialUsername);
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
@@ -44,7 +43,6 @@ export function EditProfileModal({
   const [avatarPreview, setAvatarPreview] = useState(initialAvatarUrl);
   
   const [website, setWebsite] = useState(initialWebsite);
-  const [showThreads, setShowThreads] = useState(initialShowThreads);
   const [gender, setGender] = useState(initialGender);
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   
@@ -68,6 +66,10 @@ export function EditProfileModal({
   };
 
   const handleSubmit = async () => {
+    if (!username.trim()) {
+      toast.error("Username tidak boleh kosong.");
+      return;
+    }
     if (!name.trim()) {
       toast.error("Nama tidak boleh kosong.");
       return;
@@ -75,13 +77,13 @@ export function EditProfileModal({
     setIsSubmitting(true);
     try {
       await onSave({
+        username: username.trim().toLowerCase(),
         name: name.trim(),
         bio: bio.trim(),
         avatarUrl: avatarUrl.trim(),
         image: avatarFile || undefined,
         website: website.trim(),
         gender,
-        showThreads,
         suggestions,
       });
       onClose();
@@ -153,6 +155,36 @@ export function EditProfileModal({
             </div>
           </div>
 
+          {/* Name Input */}
+          <div className="flex flex-col gap-2 text-left">
+            <label className="text-ig-text font-bold text-sm">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Name"
+              className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors"
+            />
+            <p className="text-ig-secondary-text text-[11px] leading-snug">
+              Bantu orang menemukan akun Anda dengan menggunakan nama yang biasa Anda gunakan (baik nama lengkap atau nama panggilan).
+            </p>
+          </div>
+
+          {/* Username Input */}
+          <div className="flex flex-col gap-2 text-left">
+            <label className="text-ig-text font-bold text-sm">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
+              placeholder="Username"
+              className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors"
+            />
+            <p className="text-ig-secondary-text text-[11px] leading-snug">
+              Dalam kebanyakan kasus, Anda dapat mengubah nama pengguna kembali menjadi {initialUsername} selama 14 hari lagi.
+            </p>
+          </div>
+
           {/* Website Input */}
           <div className="flex flex-col gap-2 text-left">
             <label className="text-ig-text font-bold text-sm">Website</label>
@@ -183,26 +215,6 @@ export function EditProfileModal({
               rows={3}
               className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors resize-none"
             />
-          </div>
-
-          {/* Show Threads badge */}
-          <div className="flex items-center justify-between py-2 text-left">
-            <div>
-              <label className="text-ig-text font-bold text-sm block">Show Threads badge</label>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowThreads(!showThreads)}
-              className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                showThreads ? "bg-ig-primary" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                  showThreads ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
           </div>
 
           {/* Gender Input */}

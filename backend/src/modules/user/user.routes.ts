@@ -36,7 +36,23 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         return { message: "Unauthorized" };
       }
 
-      const { name, bio, avatarUrl, image, website, gender, showThreads, suggestions } = body;
+      const { username, name, bio, avatarUrl, image, website, gender, showThreads, suggestions } = body;
+
+      if (username) {
+        const sanitizedUsername = username.trim().toLowerCase();
+        if (sanitizedUsername !== user.username) {
+          if (!/^[a-z0-9._]+$/.test(sanitizedUsername)) {
+            set.status = 400;
+            return { message: "Username hanya boleh mengandung huruf kecil, angka, titik, dan garis bawah." };
+          }
+          const existing = await UserService.getUserByUsername(sanitizedUsername);
+          if (existing) {
+            set.status = 400;
+            return { message: "Username sudah digunakan oleh akun lain." };
+          }
+        }
+      }
+
       let finalAvatarUrl = avatarUrl;
 
       if (image && image.size > 0) {
@@ -48,6 +64,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
       const parsedSuggestions = suggestions === "true" || suggestions === true;
 
       const updatedUser = await UserService.updateProfile(user.id, {
+        username: username ? username.trim().toLowerCase() : undefined,
         name,
         bio,
         avatarUrl: finalAvatarUrl,

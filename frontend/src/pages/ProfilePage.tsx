@@ -247,36 +247,36 @@ export default function ProfilePage() {
 
   // ── Handler Simpan Edit Profil ──
   const handleSaveProfile = async (data: {
+    username: string;
     name: string;
     bio: string;
     avatarUrl: string;
     image?: File;
     website?: string;
     gender?: string;
-    showThreads?: boolean;
     suggestions?: boolean;
   }) => {
     try {
       let res;
       if (data.image) {
         const formData = new FormData();
+        formData.append("username", data.username);
         formData.append("name", data.name);
         formData.append("bio", data.bio);
         formData.append("avatarUrl", data.avatarUrl);
         formData.append("image", data.image);
         if (data.website) formData.append("website", data.website);
         if (data.gender) formData.append("gender", data.gender);
-        formData.append("showThreads", String(data.showThreads ?? false));
         formData.append("suggestions", String(data.suggestions ?? true));
         res = await apiClient.putForm<{ data: ProfileUser }>("/users/profile", formData);
       } else {
         res = await apiClient.put<{ data: ProfileUser }>("/users/profile", {
+          username: data.username,
           name: data.name,
           bio: data.bio,
           avatarUrl: data.avatarUrl,
           website: data.website,
           gender: data.gender,
-          showThreads: data.showThreads,
           suggestions: data.suggestions,
         });
       }
@@ -284,12 +284,12 @@ export default function ProfilePage() {
       if (res && res.data) {
         // Sync ke Zustand store
         updateUser({
+          username: res.data.username,
           name: res.data.name,
           bio: res.data.bio ?? "",
           avatarUrl: res.data.avatarUrl ?? "",
           website: res.data.website ?? "",
           gender: res.data.gender ?? "",
-          showThreads: res.data.showThreads ?? false,
           suggestions: res.data.suggestions ?? true,
         });
         
@@ -298,21 +298,26 @@ export default function ProfilePage() {
           prev
             ? {
                 ...prev,
+                username: res.data.username,
                 name: res.data.name,
                 bio: res.data.bio,
                 avatarUrl: res.data.avatarUrl,
                 website: res.data.website,
                 gender: res.data.gender,
-                showThreads: res.data.showThreads,
                 suggestions: res.data.suggestions,
               }
             : null
         );
 
         toast.success("Profil berhasil diperbarui!");
+
+        if (username && res.data.username !== username) {
+          navigate(`/profile/${res.data.username}`, { replace: true });
+        }
       }
-    } catch (err) {
-      toast.error("Gagal memperbarui profil.");
+    } catch (err: any) {
+      const errMsg = err.response?.data?.message || "Gagal memperbarui profil.";
+      toast.error(errMsg);
       throw err;
     } finally {
       setIsEditModalOpen(false);
@@ -690,7 +695,6 @@ export default function ProfilePage() {
           initialAvatarUrl={profileUser.avatarUrl ?? ""}
           initialWebsite={profileUser.website ?? ""}
           initialGender={profileUser.gender ?? "Male"}
-          initialShowThreads={profileUser.showThreads ?? false}
           initialSuggestions={profileUser.suggestions ?? true}
           onClose={() => setIsEditModalOpen(false)}
           onSave={handleSaveProfile}

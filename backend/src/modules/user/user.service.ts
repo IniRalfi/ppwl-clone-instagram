@@ -43,12 +43,13 @@ export class UserService {
   }
 
   // 3. Perbarui informasi profil pengguna aktif
-  static async updateProfile(userId: string, data: { name?: string; bio?: string; avatarUrl?: string; website?: string; gender?: string; showThreads?: boolean; suggestions?: boolean }) {
-    const { name, bio, avatarUrl, website, gender, showThreads, suggestions } = data;
+  static async updateProfile(userId: string, data: { username?: string; name?: string; bio?: string; avatarUrl?: string; website?: string; gender?: string; showThreads?: boolean; suggestions?: boolean }) {
+    const { username, name, bio, avatarUrl, website, gender, showThreads, suggestions } = data;
 
     return await db.user.update({
       where: { id: userId },
       data: {
+        username: username ?? undefined,
         name: name ?? undefined,
         bio: bio ?? undefined,
         avatarUrl: avatarUrl ?? undefined,
