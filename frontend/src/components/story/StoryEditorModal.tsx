@@ -585,7 +585,7 @@ export default function StoryEditorModal({
                 <label className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider">
                   Pilih Filter
                 </label>
-                <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-2">
                   {filtersPreset.map((f) => (
                     <button
                       key={f.name}
