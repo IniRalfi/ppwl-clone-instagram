@@ -3,6 +3,9 @@ import { jwt } from "@elysiajs/jwt";
 import { bearer } from "@elysiajs/bearer";
 import { env } from "@/config/env";
 import { db } from "@/db/client";
+import { localCache } from "@/utils/cache";
+
+const USER_CACHE_TTL_MS = 30_000; // 30 detik
 
 export const authPlugin = new Elysia()
   .use(bearer())
@@ -25,13 +28,24 @@ export const authPlugin = new Elysia()
           set.status = 401;
           return null;
         }
+
+        const userId = payload.id as string;
+        const cacheKey = `user:${userId}`;
+
+        // Cek cache terlebih dahulu sebelum query ke database
+        const cached = localCache.get<any>(cacheKey);
+        if (cached) return cached;
+
         const user = await db.user.findUnique({
-          where: { id: payload.id as string },
+          where: { id: userId },
         });
         if (!user) {
           set.status = 401;
           return null;
         }
+
+        // Simpan ke cache 30 detik
+        localCache.set(cacheKey, user, USER_CACHE_TTL_MS);
         return user;
       },
     };

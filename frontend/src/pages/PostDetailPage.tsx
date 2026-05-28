@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Comment } from "../../../shared/src/types/comment";
 import { CommentItem } from "../components/comment/CommentItem";
 import { useParams, useNavigate } from "react-router-dom";
@@ -81,6 +81,9 @@ export function PostDetailPage() {
   // Mengambil user aktif dari auth store
   const currentUser = useAuthStore((state) => state.user);
 
+  // PERF-04: Memoize comment tree agar tidak dibangun ulang tiap render
+  const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
+
   useEffect(() => {
     const fetchPostData = async () => {
       try {
@@ -128,13 +131,9 @@ export function PostDetailPage() {
         authorId: currentUser.id,
       });
 
-      if (json) {
-        // Refresh post comments
-        const resPost = await apiClient.get<{ data: Post }>(`/posts/${id}`);
-        if (resPost && resPost.data) {
-          setComments(resPost.data.comments || []);
-        }
-        
+      if (json?.data) {
+        // BUG-07: Gunakan response POST langsung, tidak perlu fetch ulang
+        setComments((prev) => [json.data, ...prev]);
         setInputValue("");
         setReplyTarget(null);
         toast.success("Komentar berhasil ditambahkan.");
@@ -310,7 +309,7 @@ export function PostDetailPage() {
             </div>
 
             {/* List komentar riil */}
-            {buildCommentTree(comments).map((comment) => (
+            {commentTree.map((comment) => (
               <CommentItem
                 key={comment.id}
                 comment={comment}

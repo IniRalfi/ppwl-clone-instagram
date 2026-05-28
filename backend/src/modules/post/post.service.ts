@@ -21,10 +21,12 @@ export const AUTHOR_SELECT = {
 
 export class PostService {
   // 1. Ambil list postingan (feed)
-  static async getPosts(currentUserId?: string, authorId?: string, take = 10) {
+  static async getPosts(currentUserId?: string, authorId?: string, take = 10, cursor?: string) {
     const posts = await db.post.findMany({
       where: authorId ? { authorId } : undefined,
-      take,
+      take: take + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
       include: {
         author: { select: AUTHOR_SELECT },
         likes: currentUserId
@@ -44,7 +46,13 @@ export class PostService {
       orderBy: { createdAt: "desc" },
     });
 
-    return posts.map((post) => {
+    let nextCursor: string | null = null;
+    if (posts.length > take) {
+      const nextItem = posts.pop();
+      nextCursor = nextItem ? nextItem.id : null;
+    }
+
+    const mappedPosts = posts.map((post) => {
       const { likes, bookmarks, ...rest } = post as any;
       return {
         ...rest,
@@ -52,6 +60,11 @@ export class PostService {
         isBookmarkedByMe: bookmarks && bookmarks.length > 0,
       };
     });
+
+    return {
+      posts: mappedPosts,
+      nextCursor,
+    };
   }
 
   // 2. Ambil postingan tersimpan (bookmark) milik user aktif
@@ -205,24 +218,24 @@ export class PostService {
       imageUrl = await uploadMedia(buffer, imageFile.type);
     }
 
-    // Inkrementasi jumlah postingan user
-    await db.user.update({
-      where: { id: userId },
-      data: { postCount: { increment: 1 } },
-    });
-
-    // Simpan ke database
-    const post = await db.post.create({
-      data: {
-        content: content.trim(),
-        imageUrl,
-        authorId: userId,
-      },
-      include: {
-        author: { select: AUTHOR_SELECT },
-        _count: { select: { likes: true, comments: true } },
-      },
-    });
+    // Buat post dan update postCount secara atomik dalam satu transaksi
+    const [post] = await db.$transaction([
+      db.post.create({
+        data: {
+          content: content.trim(),
+          imageUrl,
+          authorId: userId,
+        },
+        include: {
+          author: { select: AUTHOR_SELECT },
+          _count: { select: { likes: true, comments: true } },
+        },
+      }),
+      db.user.update({
+        where: { id: userId },
+        data: { postCount: { increment: 1 } },
+      }),
+    ]);
 
     // Invalidate feed cache
     localCache.deletePattern("posts:feed:");
@@ -246,13 +259,14 @@ export class PostService {
       await deleteMedia(post.imageUrl);
     }
 
-    await db.post.delete({ where: { id: postId } });
-
-    // Dekrementasi jumlah postingan user
-    await db.user.update({
-      where: { id: userId },
-      data: { postCount: { decrement: 1 } },
-    });
+    // Hapus post dan update postCount secara atomik dalam satu transaksi
+    await db.$transaction([
+      db.post.delete({ where: { id: postId } }),
+      db.user.update({
+        where: { id: userId },
+        data: { postCount: { decrement: 1 } },
+      }),
+    ]);
 
     // Invalidate feed cache
     localCache.deletePattern("posts:feed:");

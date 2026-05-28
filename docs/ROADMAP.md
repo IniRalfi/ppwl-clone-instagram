@@ -58,13 +58,13 @@ Semua pekerjaan di bawah sudah selesai dan telah diarsipkan di `CHANGELOG.md`:
 
 | Status | ID | Task | File Target | Estimasi |
 |---|---|---|---|---|
-| 🔴 | PERF-01 | Cache `getCurrentUser()` di memory (TTL 30 detik) pakai `localCache` yang sudah ada | `auth.plugin.ts` | 1 jam |
-| 🔴 | PERF-07 | Refactor `getNotificationsForUser` — hapus N+1 loop, batch query `findMany` + `in` | `notification.service.ts` | 2 jam |
-| 🔴 | PERF-06 | Bungkus `postCount`/`commentCount` increment dengan `db.$transaction` | `post.service.ts`, `comment.service.ts` | 30 menit |
-| 🔴 | PERF-02 | Ganti 2-query `getSuggestions` menjadi 1 Prisma subquery relation filter | `follow.service.ts` | 1 jam |
-| 🔴 | PERF-04 | Tambahkan `useMemo` di `buildCommentTree` | `PostDetailPage.tsx` | 20 menit |
-| 🔴 | PERF-05 | Implementasi cursor-based pagination di feed `GET /posts` | `post.routes.ts`, `post.service.ts`, `HomePage.tsx` | 3 jam |
-| 🔴 | BUG-07 | Fix double API call setelah submit komentar (gunakan response POST langsung) | `PostDetailPage.tsx` | 30 menit |
+| ✅ | PERF-01 | Cache `getCurrentUser()` di memory (TTL 30 detik) pakai `localCache` yang sudah ada | `auth.plugin.ts` | 1 jam |
+| ✅ | PERF-07 | Refactor `getNotificationsForUser` — hapus N+1 loop, batch query `findMany` + `in` | `notification.service.ts` | 2 jam |
+| ✅ | PERF-06 | Bungkus `postCount`/`commentCount` increment dengan `db.$transaction` | `post.service.ts`, `comment.service.ts` | 30 menit |
+| ✅ | PERF-02 | Ganti 2-query `getSuggestions` menjadi 1 Prisma subquery relation filter | `follow.service.ts` | 1 jam |
+| ✅ | PERF-04 | Tambahkan `useMemo` di `buildCommentTree` | `PostDetailPage.tsx` | 20 menit |
+| ✅ | PERF-05 | Implementasi cursor-based pagination di feed `GET /posts` | `post.routes.ts`, `post.service.ts`, `HomePage.tsx` | 3 jam |
+| ✅ | BUG-07 | Fix double API call setelah submit komentar (gunakan response POST langsung) | `PostDetailPage.tsx` | 30 menit |
 
 ---
 

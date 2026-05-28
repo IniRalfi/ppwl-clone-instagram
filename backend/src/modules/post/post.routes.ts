@@ -17,26 +17,27 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   .get("/", async ({ query, getCurrentUser }) => {
     const user = await getCurrentUser();
     const currentUserId = user?.id;
-    const { authorId, limit } = query;
-    const take = limit ? parseInt(limit, 10) : 10;
+    const { authorId, limit, cursor } = query;
+    const requestedLimit = limit ? Number(limit) : 10;
+    const take = Number.isInteger(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 50) : 10;
 
-    const cacheKey = `posts:feed:${authorId || "all"}:limit:${take}:user:${currentUserId || "guest"}`;
+    const cacheKey = `posts:feed:${authorId || "all"}:limit:${take}:cursor:${cursor || "none"}:user:${currentUserId || "guest"}`;
     const cached = localCache.get<any>(cacheKey);
     if (cached) {
       if (process.env.DEBUG_CACHE === "true") {
         console.log(`✅ Cache HIT: ${cacheKey}`);
       }
-      return { data: cached, _cached: true };
+      return { data: cached.posts, nextCursor: cached.nextCursor, _cached: true };
     }
 
     if (process.env.DEBUG_CACHE === "true") {
       console.log(`❌ Cache MISS: ${cacheKey}`);
     }
 
-    const mappedPosts = await PostService.getPosts(currentUserId, authorId, take);
-    localCache.set(cacheKey, mappedPosts, 15000); // cache 15 detik
+    const result = await PostService.getPosts(currentUserId, authorId, take, cursor);
+    localCache.set(cacheKey, result, 15000); // cache 15 detik
 
-    return { data: mappedPosts };
+    return { data: result.posts, nextCursor: result.nextCursor };
   }, getPostsSchema)
 
   // 2. GET /posts/saved — Mengambil postingan yang di-bookmark oleh user aktif

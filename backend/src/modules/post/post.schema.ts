@@ -4,6 +4,7 @@ export const getPostsSchema = {
   query: t.Object({
     authorId: t.Optional(t.String()),
     limit: t.Optional(t.String()),
+    cursor: t.Optional(t.String()),
   }),
 };
 

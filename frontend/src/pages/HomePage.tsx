@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/auth.store';
 import { apiClient } from '../services/api.client';
 import { StoriesRow } from "../components/story/StoriesRow";
 import { PostSkeleton } from '../components/ui/Skeleton';
+import { Loader2 } from 'lucide-react';
 
 interface Post {
   id: string;
@@ -36,25 +37,43 @@ const HomePage: React.FC = () => {
   const { user } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await apiClient.get<{ data: Post[] }>('/posts');
+  const fetchPosts = async (cursorValue?: string | null) => {
+    const isInitial = !cursorValue;
+    if (isInitial) {
+      setIsLoading(true);
+    } else {
+      setIsFetchingMore(true);
+    }
 
-        if (res && res.data) {
+    try {
+      const params = new URLSearchParams({ limit: '10' });
+      if (cursorValue) params.set('cursor', cursorValue);
+      const url = `/posts?${params.toString()}`;
+      const res = await apiClient.get<{ data: Post[], nextCursor?: string | null }>(url);
+
+      if (res && res.data) {
+        if (isInitial) {
           setPosts(res.data);
         } else {
-          toast.error("Gagal mengambil data postingan dari server.");
+          setPosts((prev) => [...prev, ...res.data]);
         }
-      } catch (error) {
-        console.error("Fetch Error:", error);
-        toast.error("Tidak dapat terhubung ke server backend.");
-      } finally {
-        setIsLoading(false);
+        setNextCursor(res.nextCursor || null);
+      } else {
+        toast.error("Gagal mengambil data postingan dari server.");
       }
-    };
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      toast.error("Tidak dapat terhubung ke server backend.");
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPosts();
   }, []);
 
@@ -114,7 +133,26 @@ const HomePage: React.FC = () => {
             })
           )}
 
-          {!isLoading && posts.length > 0 && (
+          {nextCursor && (
+            <div className="flex justify-center pb-8 mt-2">
+              <button
+                onClick={() => fetchPosts(nextCursor)}
+                disabled={isFetchingMore}
+                className="px-6 py-2 bg-ig-elevated border border-ig-border rounded-lg text-sm font-semibold hover:bg-ig-hover-background transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isFetchingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Memuat...
+                  </>
+                ) : (
+                  "Muat postingan lainnya"
+                )}
+              </button>
+            </div>
+          )}
+
+          {!isLoading && !nextCursor && posts.length > 0 && (
             <div className="text-center text-ig-secondary-text text-sm mt-2 pb-8">
               ✓ Kamu sudah melihat semua postingan
             </div>

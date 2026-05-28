@@ -23,28 +23,29 @@ export class CommentService {
 
   // 2. Buat komentar baru + update stats + kirim notifikasi
   static async createComment(data: { content: string; postId: string; parentId: string | null; authorId: string }) {
-    const newComment = await db.comment.create({
-      data: {
-        content: data.content,
-        postId: data.postId,
-        parentId: data.parentId,
-        authorId: data.authorId,
-      },
-      include: {
-        author: {
-          select: { id: true, username: true, name: true, avatarUrl: true },
+    // Buat komentar dan update commentCount secara atomik
+    const [newComment] = await db.$transaction([
+      db.comment.create({
+        data: {
+          content: data.content,
+          postId: data.postId,
+          parentId: data.parentId,
+          authorId: data.authorId,
         },
-      },
-    });
+        include: {
+          author: {
+            select: { id: true, username: true, name: true, avatarUrl: true },
+          },
+        },
+      }),
+      db.user.update({
+        where: { id: data.authorId },
+        data: { commentCount: { increment: 1 } },
+      }),
+    ]);
 
     // Invalidate feed cache agar postingan terupdate
     localCache.deletePattern("posts:feed:");
-
-    // Update commentCount di tabel User
-    await db.user.update({
-      where: { id: data.authorId },
-      data: { commentCount: { increment: 1 } },
-    });
 
     // Ambil data post untuk mengetahui siapa pemiliknya
     const post = await db.post.findUnique({

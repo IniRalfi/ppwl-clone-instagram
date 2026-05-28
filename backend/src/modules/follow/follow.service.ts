@@ -77,20 +77,16 @@ export class FollowService {
     return followingList.map(f => f.following);
   }
 
-  // 4. Ambil saran user (suggestions)
+  // 4. Ambil saran user (suggestions) — 1 query dengan nested relation filter
   static async getSuggestions(userId: string) {
-    // Ambil daftar ID yang sudah di-follow oleh user ini
-    const alreadyFollowing = await db.follow.findMany({
-      where: { followerId: userId },
-      select: { followingId: true },
-    });
-    const followingIds = alreadyFollowing.map((f: { followingId: string }) => f.followingId);
-
-    // Ambil 5 user selain diri sendiri, yang belum di-follow, dan bersedia disarankan (suggestions: true)
-    const suggestions = await db.user.findMany({
+    return await db.user.findMany({
       where: {
-        id: { notIn: [userId, ...followingIds] },
+        id: { not: userId },
         suggestions: true,
+        // Filter: belum di-follow oleh userId (tidak ada follow record dari userId ke user ini)
+        followers: {
+          none: { followerId: userId },
+        },
       },
       select: {
         id: true,
@@ -102,8 +98,6 @@ export class FollowService {
       take: 30,
       orderBy: { createdAt: "desc" },
     });
-
-    return suggestions;
   }
 
   // 5. Follow user
