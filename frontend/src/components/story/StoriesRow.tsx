@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import StoryViewer from "./StoryViewer";
-import { getActiveStories, uploadStory } from "../../services/story.service";
+import { getActiveStories } from "../../services/story.service";
 import { toast } from "sonner";
+import StoryEditorModal from "./StoryEditorModal";
 
 export interface ActiveStory {
   id: string;
@@ -63,56 +64,51 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
     user?.avatarUrl ??
     `https://ui-avatars.com/api/?name=${user?.name || "User"}`;
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setIsUploading(true);
-    const toastId = toast.loading("Mengunggah cerita...");
-    try {
-      await uploadStory(file);
-      toast.success("Cerita berhasil diunggah! 🎉", { id: toastId });
-      onUploadSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Gagal mengunggah cerita", { id: toastId });
-    } finally {
-      setIsUploading(false);
-    }
+    setSelectedFile(file);
+    e.target.value = ""; // reset
   };
 
   return (
-    <label className="flex flex-col items-center gap-1.5 flex-shrink-0 w-20 cursor-pointer relative select-none">
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        disabled={isUploading}
-        className="hidden"
-      />
-      <div className="relative transition-transform duration-200 hover:scale-[1.03]">
-        <div className="rounded-full bg-ig-border p-[1px]">
-          <div className="rounded-full p-[2.5px] bg-ig-background">
-            <img
-              src={avatarUrl}
-              alt="Your story"
-              className={`w-[64px] h-[64px] rounded-full object-cover ${isUploading ? "opacity-50 animate-pulse" : ""}`}
-            />
+    <>
+      <label className="flex flex-col items-center gap-1.5 flex-shrink-0 w-20 cursor-pointer relative select-none">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <div className="relative transition-transform duration-200 hover:scale-[1.03]">
+          <div className="rounded-full bg-ig-border p-[1px]">
+            <div className="rounded-full p-[2.5px] bg-ig-background">
+              <img
+                src={avatarUrl}
+                alt="Your story"
+                className="w-[64px] h-[64px] rounded-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-ig-primary border-2 border-ig-background flex items-center justify-center shadow">
+            <span className="text-white text-xs font-bold leading-none">+</span>
           </div>
         </div>
-        <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-ig-primary border-2 border-ig-background flex items-center justify-center shadow">
-          {isUploading ? (
-            <span className="text-white text-[9px] font-bold animate-spin">◌</span>
-          ) : (
-            <span className="text-white text-xs font-bold leading-none">+</span>
-          )}
-        </div>
-      </div>
-      <span className="text-ig-secondary-text text-[11px] tracking-tight truncate w-full text-center">
-        {username}
-      </span>
-    </label>
+        <span className="text-ig-secondary-text text-[11px] tracking-tight truncate w-full text-center">
+          {username}
+        </span>
+      </label>
+
+      {selectedFile && (
+        <StoryEditorModal
+          imageFile={selectedFile}
+          onClose={() => setSelectedFile(null)}
+          onUploadSuccess={onUploadSuccess}
+        />
+      )}
+    </>
   );
 }
 
@@ -165,9 +161,17 @@ export function StoriesRow() {
     }
   };
 
-  // Filter out current user's story group from the rest of the list, since we always display a dedicated MyStoryAvatar
   const otherStories = stories.filter((g) => g.userId !== user?.id);
   const myStoryGroup = stories.find((g) => g.userId === user?.id);
+
+  // Gabungkan seluruh grup cerita aktif untuk dinavigasikan di StoryViewer
+  const allActiveGroups: UserStoryGroup[] = [];
+  if (myStoryGroup) {
+    allActiveGroups.push({ ...myStoryGroup, username: "Cerita Anda" });
+  }
+  allActiveGroups.push(...otherStories);
+
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   return (
     <>
@@ -195,7 +199,7 @@ export function StoriesRow() {
           {myStoryGroup && (
             <StoryAvatar
               group={{ ...myStoryGroup, username: "Cerita Anda" }}
-              onClick={() => setActiveGroup(myStoryGroup)}
+              onClick={() => setActiveGroupId(myStoryGroup.userId)}
             />
           )}
 
@@ -215,7 +219,7 @@ export function StoriesRow() {
               <StoryAvatar
                 key={group.userId}
                 group={group}
-                onClick={() => setActiveGroup(group)}
+                onClick={() => setActiveGroupId(group.userId)}
               />
             ))
           )}
@@ -233,10 +237,11 @@ export function StoriesRow() {
         )}
       </div>
 
-      {activeGroup && (
+      {activeGroupId && (
         <StoryViewer
-          group={activeGroup}
-          onClose={() => setActiveGroup(null)}
+          groups={allActiveGroups}
+          initialGroupId={activeGroupId}
+          onClose={() => setActiveGroupId(null)}
         />
       )}
     </>

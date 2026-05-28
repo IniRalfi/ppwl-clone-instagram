@@ -4,6 +4,7 @@ import { apiClient } from "../../services/api.client";
 import { Avatar } from "./Avatar";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface SuggestedUser {
   id: string;
@@ -14,7 +15,8 @@ interface SuggestedUser {
 }
 
 export function SuggestedUsers() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState<SuggestedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
@@ -49,6 +51,20 @@ export function SuggestedUsers() {
     }
   };
 
+  const handleProfileClick = (targetUsername: string) => {
+    if (targetUsername === user?.username) {
+      navigate("/profile");
+    } else {
+      navigate(`/profile/${targetUsername}`);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Berhasil keluar! 👋");
+    navigate("/login");
+  };
+
   if (!user || (!isLoading && suggestions.length === 0)) return null;
 
   // Hanya tampilkan maksimal 5 akun di sidebar utama
@@ -59,14 +75,25 @@ export function SuggestedUsers() {
       {/* Header User yang Sedang Login */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <Avatar name={user.name} avatarUrl={user.avatarUrl} size="md" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-ig-text truncate leading-tight">{user.username}</p>
+          <div 
+            onClick={() => handleProfileClick(user.username)}
+            className="cursor-pointer"
+          >
+            <Avatar name={user.name} avatarUrl={user.avatarUrl} size="md" />
+          </div>
+          <div 
+            onClick={() => handleProfileClick(user.username)}
+            className="flex-1 min-w-0 cursor-pointer"
+          >
+            <p className="text-sm font-semibold text-ig-text hover:underline truncate leading-tight">{user.username}</p>
             <p className="text-[13px] text-ig-secondary-text truncate mt-0.5">{user.name}</p>
           </div>
         </div>
-        <button className="text-[12px] font-semibold text-ig-primary hover:text-white transition-colors cursor-pointer">
-          Switch
+        <button 
+          onClick={handleLogout}
+          className="text-[12px] font-semibold text-ig-primary hover:text-red-500 transition-colors cursor-pointer"
+        >
+          Log Out
         </button>
       </div>
 
@@ -104,14 +131,22 @@ export function SuggestedUsers() {
               return (
                 <div key={sugUser.id} className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <Avatar
-                      name={sugUser.name}
-                      avatarUrl={sugUser.avatarUrl}
-                      size="sm"
-                      className="flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-ig-text truncate leading-tight">
+                    <div 
+                      onClick={() => handleProfileClick(sugUser.username)}
+                      className="cursor-pointer"
+                    >
+                      <Avatar
+                        name={sugUser.name}
+                        avatarUrl={sugUser.avatarUrl}
+                        size="sm"
+                        className="flex-shrink-0"
+                      />
+                    </div>
+                    <div 
+                      onClick={() => handleProfileClick(sugUser.username)}
+                      className="flex-1 min-w-0 cursor-pointer"
+                    >
+                      <p className="text-sm font-semibold text-ig-text hover:underline truncate leading-tight">
                         {sugUser.username}
                       </p>
                       <p className="text-[11px] text-ig-secondary-text truncate mt-0.5">
@@ -147,7 +182,7 @@ export function SuggestedUsers() {
       {/* ── MODAL SEE ALL SUGGESTED USERS ── */}
       {showModal && (
         <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[400px] max-h-[500px] overflow-hidden flex flex-col shadow-2xl">
+          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[480px] h-[600px] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Header Modal */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-ig-border">
               <span className="font-bold text-ig-text text-base">Suggested</span>
@@ -168,14 +203,28 @@ export function SuggestedUsers() {
                 return (
                   <div key={sugUser.id} className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <Avatar
-                        name={sugUser.name}
-                        avatarUrl={sugUser.avatarUrl}
-                        size="sm"
-                        className="flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-ig-text truncate leading-tight">
+                      <div 
+                        onClick={() => {
+                          setShowModal(false);
+                          handleProfileClick(sugUser.username);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Avatar
+                          name={sugUser.name}
+                          avatarUrl={sugUser.avatarUrl}
+                          size="sm"
+                          className="flex-shrink-0"
+                        />
+                      </div>
+                      <div 
+                        onClick={() => {
+                          setShowModal(false);
+                          handleProfileClick(sugUser.username);
+                        }}
+                        className="flex-1 min-w-0 cursor-pointer"
+                      >
+                        <p className="text-sm font-semibold text-ig-text hover:underline truncate leading-tight">
                           {sugUser.username}
                         </p>
                         <p className="text-[11px] text-ig-secondary-text truncate mt-0.5">

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { createPost } from "../services/post.service";
 import { toast } from "sonner";
-import { ImageIcon, VideoIcon, X, ArrowLeft, Loader2 } from "lucide-react";
+import { ImageIcon, VideoIcon, X, ArrowLeft, Loader2, Type, Paintbrush, Sparkles, Undo2, Trash2, Check, Move } from "lucide-react";
 import { Avatar } from "../components/common/Avatar";
 import { compressImage } from "../lib/image";
 
@@ -12,7 +12,72 @@ const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
-type Step = "upload" | "caption";
+type Step = "upload" | "editor" | "caption";
+
+interface TextItem {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  color: string;
+  font: string;
+  size: number;
+}
+
+interface StrokePoint {
+  x: number;
+  y: number;
+}
+
+interface Stroke {
+  points: StrokePoint[];
+  color: string;
+  size: number;
+}
+
+const filtersPreset = [
+  { name: "Normal", value: "none" },
+  { name: "Grayscale", value: "grayscale(100%)" },
+  { name: "Sepia", value: "sepia(100%)" },
+  { name: "Vintage", value: "contrast(115%) sepia(35%) saturate(85%)" },
+  { name: "Bright", value: "brightness(125%) contrast(90%)" },
+  { name: "Warm", value: "sepia(25%) saturate(130%) hue-rotate(-10deg)" },
+  { name: "Cool", value: "saturate(110%) hue-rotate(10deg) brightness(95%)" },
+  { name: "Retro", value: "contrast(140%) brightness(110%) sepia(15%)" },
+];
+
+const colorsList = [
+  "#ffffff", // Putih
+  "#000000", // Hitam
+  "#ff3040", // Merah
+  "#ffc300", // Kuning
+  "#00f5d4", // Toska
+  "#7638fa", // Ungu
+  "#00b4d8", // Biru
+];
+
+const bgPresets = [
+  { name: "Hitam", value: "#000000" },
+  { name: "Abu-abu", value: "#1a1a1a" },
+  { name: "Putih", value: "#ffffff" },
+  { name: "Instagram", value: "gradient-insta" },
+  { name: "Ungu", value: "#7638fa" },
+  { name: "Kuning", value: "#ffc300" },
+];
+
+const fontsList = [
+  { name: "Modern", value: "Outfit, sans-serif" },
+  { name: "Classic", value: "'Playfair Display', serif" },
+  { name: "Cursive", value: "'Dancing Script', cursive" },
+  { name: "Typewriter", value: "'Courier Prime', monospace" },
+  { name: "Heavy Retro", value: "'Rubik Mono One', sans-serif" },
+];
+
+const aspectRatios = [
+  { name: "1:1 Square", width: 800, height: 800 },
+  { name: "4:5 Portrait", width: 800, height: 1000 },
+  { name: "16:9 Landscape", width: 1080, height: 608 },
+];
 
 export default function CreatePostPage() {
   const navigate = useNavigate();
@@ -21,9 +86,49 @@ export default function CreatePostPage() {
   const [step, setStep] = useState<Step>("upload");
   const [caption, setCaption] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editedFile, setEditedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // ── States untuk Editor Kanvas Postingan ──
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  // Dimensi Kanvas (Dapat diubah berdasarkan Rasio Aspek)
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(800);
+  const [activeRatioName, setActiveRatioName] = useState("1:1 Square");
+
+  // Kontrol Alat Editor
+  const [tool, setTool] = useState<"photo" | "filter" | "draw" | "text">("photo");
+  const [activeFilter, setActiveFilter] = useState("none");
+
+  // Penyesuaian Foto
+  const [imageScale, setImageScale] = useState(100);
+  const [imageX, setImageX] = useState(0);
+  const [imageY, setImageY] = useState(0);
+  const [bgColor, setBgColor] = useState("#000000");
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Coretan Kuas
+  const [brushColor, setBrushColor] = useState("#ff3040");
+  const [brushSize, setBrushSize] = useState(8);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  // Overlay Teks
+  const [textItems, setTextItems] = useState<TextItem[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [fontColor, setFontColor] = useState("#ffffff");
+  const [fontStyle, setFontStyle] = useState("Outfit, sans-serif");
+  const [fontSize, setFontSize] = useState(32);
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+  const [isDraggingText, setIsDraggingText] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Clean up Object URL to prevent memory leaks
   useEffect(() => {
@@ -34,7 +139,235 @@ export default function CreatePostPage() {
     };
   }, [imagePreview]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Load Image ke memory
+  useEffect(() => {
+    if (!imageFile) {
+      setLoadedImage(null);
+      setThumbnailUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    const img = new Image();
+    img.src = url;
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      setLoadedImage(img);
+
+      // Buat miniatur thumbnail cepat untuk pratinjau filter
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = 120;
+      tempCanvas.height = 120;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (tempCtx) {
+        const ratio = Math.min(120 / img.width, 120 / img.height);
+        const w = img.width * ratio;
+        const h = img.height * ratio;
+        tempCtx.drawImage(img, (120 - w) / 2, (120 - h) / 2, w, h);
+        setThumbnailUrl(tempCanvas.toDataURL("image/jpeg", 0.7));
+      }
+    };
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [imageFile]);
+
+  // Render Kanvas Editor
+  useEffect(() => {
+    renderCanvas();
+  }, [loadedImage, activeFilter, strokes, textItems, imageScale, imageX, imageY, bgColor, canvasWidth, canvasHeight]);
+
+  const renderCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !loadedImage) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Latar Belakang
+    if (bgColor === "gradient-insta") {
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, "#c32aa3");
+      grad.addColorStop(0.5, "#d62976");
+      grad.addColorStop(1, "#f77737");
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = bgColor;
+    }
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Gambar Foto Fit Contain + Skala + Geser
+    ctx.filter = activeFilter;
+    const imgWidth = loadedImage.width;
+    const imgHeight = loadedImage.height;
+
+    const ratio = Math.min(canvas.width / imgWidth, canvas.height / imgHeight);
+    const baseWidth = imgWidth * ratio;
+    const baseHeight = imgHeight * ratio;
+
+    const scale = imageScale / 100;
+    const drawWidth = baseWidth * scale;
+    const drawHeight = baseHeight * scale;
+
+    const centerX = (canvas.width - drawWidth) / 2 + imageX;
+    const centerY = (canvas.height - drawHeight) / 2 + imageY;
+
+    ctx.drawImage(loadedImage, centerX, centerY, drawWidth, drawHeight);
+    ctx.filter = "none";
+
+    // 3. Gambar Semua Coretan
+    strokes.forEach((stroke) => {
+      if (stroke.points.length < 2) return;
+      ctx.beginPath();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    });
+
+    // 4. Gambar Semua Teks
+    textItems.forEach((item) => {
+      ctx.font = `${item.size}px ${item.font}`;
+      ctx.fillStyle = item.color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+
+      ctx.fillText(item.text, item.x, item.y);
+
+      // Reset Shadow
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    });
+  };
+
+  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
+    return { x, y };
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasCoords(e);
+
+    if (tool === "photo") {
+      setIsDraggingPhoto(true);
+      setDragStart({ x: x - imageX, y: y - imageY });
+    } else if (tool === "draw") {
+      setIsDrawing(true);
+      const newStroke: Stroke = {
+        points: [{ x, y }],
+        color: brushColor,
+        size: brushSize,
+      };
+      setStrokes((prev) => [...prev, newStroke]);
+    } else if (tool === "text") {
+      const clickedItem = [...textItems]
+        .reverse()
+        .find((item) => Math.hypot(item.x - x, item.y - y) < item.size * 2);
+
+      if (clickedItem) {
+        setSelectedTextId(clickedItem.id);
+        setIsDraggingText(true);
+        setInputText(clickedItem.text);
+        setFontColor(clickedItem.color);
+        setFontStyle(clickedItem.font);
+        setFontSize(clickedItem.size);
+      } else {
+        setSelectedTextId(null);
+      }
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasCoords(e);
+
+    if (tool === "photo" && isDraggingPhoto) {
+      setImageX(x - dragStart.x);
+      setImageY(y - dragStart.y);
+    } else if (tool === "draw" && isDrawing) {
+      setStrokes((prev) => {
+        if (prev.length === 0) return prev;
+        const next = [...prev];
+        const last = { ...next[next.length - 1] };
+        last.points = [...last.points, { x, y }];
+        next[next.length - 1] = last;
+        return next;
+      });
+    } else if (tool === "text" && isDraggingText && selectedTextId) {
+      setTextItems((prev) =>
+        prev.map((item) =>
+          item.id === selectedTextId ? { ...item, x, y } : item
+        )
+      );
+    }
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsDrawing(false);
+    setIsDraggingText(false);
+    setIsDraggingPhoto(false);
+  };
+
+  const handleResetPhoto = () => {
+    setImageScale(100);
+    setImageX(0);
+    setImageY(0);
+    setBgColor("#000000");
+  };
+
+  const handleAddText = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+
+    if (selectedTextId) {
+      setTextItems((prev) =>
+        prev.map((item) =>
+          item.id === selectedTextId
+            ? { ...item, text: inputText, color: fontColor, font: fontStyle, size: fontSize }
+            : item
+        )
+      );
+      setSelectedTextId(null);
+    } else {
+      const newItem: TextItem = {
+        id: Math.random().toString(36).substring(2, 9),
+        text: inputText,
+        x: canvasWidth / 2,
+        y: canvasHeight / 2,
+        color: fontColor,
+        font: fontStyle,
+        size: fontSize,
+      };
+      setTextItems((prev) => [...prev, newItem]);
+    }
+    setInputText("");
+  };
+
+  const handleDeleteText = () => {
+    if (!selectedTextId) return;
+    setTextItems((prev) => prev.filter((item) => item.id !== selectedTextId));
+    setSelectedTextId(null);
+    setInputText("");
+  };
+
+  const handleUndoDraw = () => {
+    setStrokes((prev) => prev.slice(0, -1));
+  };
 
   // ── Validasi dan proses file yang dipilih ──
   const processFile = useCallback(async (file: File) => {
@@ -50,14 +383,11 @@ export default function CreatePostPage() {
     try {
       const optimizedFile = await compressImage(file);
       setImageFile(optimizedFile);
-      setImagePreview(URL.createObjectURL(optimizedFile));
     } catch (err) {
       console.warn("⚠️ Gagal mengompres gambar, menggunakan file asli:", err);
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
     }
-    // Langsung pindah ke step caption setelah pilih gambar
-    setStep("caption");
+    setStep("editor");
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +412,35 @@ export default function CreatePostPage() {
   const handleRemoveImage = () => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(null);
+    setEditedFile(null);
     setImagePreview(null);
+    setStrokes([]);
+    setTextItems([]);
+    setActiveFilter("none");
+    handleResetPhoto();
     setStep("upload");
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Ekspor Canvas Editor ke File JPEG
+  const handleEditorNext = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          toast.error("Gagal mengolah gambar hasil edit.");
+          return;
+        }
+        const file = new File([blob], "instafy_post.jpg", { type: "image/jpeg" });
+        setEditedFile(file);
+        setImagePreview(URL.createObjectURL(file));
+        setStep("caption");
+      },
+      "image/jpeg",
+      0.9
+    );
   };
 
   // ── Submit form ──
@@ -93,7 +449,7 @@ export default function CreatePostPage() {
       toast.error("Kamu harus login terlebih dahulu.");
       return;
     }
-    if (!caption.trim() && !imageFile) {
+    if (!caption.trim() && !editedFile) {
       toast.error("Tambahkan caption atau gambar terlebih dahulu.");
       return;
     }
@@ -103,7 +459,7 @@ export default function CreatePostPage() {
       await createPost({
         userId: user.id,
         content: caption.trim(),
-        image: imageFile ?? undefined,
+        image: editedFile ?? undefined,
       });
       toast.success("Postingan berhasil dibagikan! 🎉");
       navigate("/");
@@ -115,29 +471,51 @@ export default function CreatePostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col">
+    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col select-none">
+      {/* Load Google Fonts */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&family=Outfit:wght@800&family=Courier+Prime:wght@700&family=Rubik+Mono+One&display=swap"
+        rel="stylesheet"
+      />
 
-      {/* ── Header — Mirip Instagram "Create new post" ── */}
+      {/* ── Header ── */}
       <div className="sticky top-0 z-10 flex items-center justify-between px-4 h-11 border-b border-ig-border bg-ig-background">
         <button
-          onClick={step === "caption" ? handleRemoveImage : () => navigate(-1)}
+          onClick={
+            step === "caption"
+              ? () => setStep("editor")
+              : step === "editor"
+              ? handleRemoveImage
+              : () => navigate(-1)
+          }
           className="p-1 rounded-full hover:bg-ig-secondary-bg transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="text-sm font-semibold">
-          {step === "upload" ? "Buat postingan baru" : "Edit"}
+          {step === "upload"
+            ? "Buat postingan baru"
+            : step === "editor"
+            ? "Edit Foto Postingan"
+            : "Tulis Caption"}
         </h1>
-        {step === "caption" ? (
+        {step === "editor" ? (
+          <button
+            onClick={handleEditorNext}
+            className="text-sm font-semibold text-ig-primary hover:text-blue-300 transition-colors cursor-pointer"
+          >
+            Lanjut
+          </button>
+        ) : step === "caption" ? (
           <button
             onClick={handleSubmit}
-            disabled={isLoading || (!caption.trim() && !imageFile)}
+            disabled={isLoading || (!caption.trim() && !editedFile)}
             className="text-sm font-semibold text-ig-primary hover:text-blue-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Bagikan"}
           </button>
         ) : (
-          <div className="w-14" /> // spacer agar judul tetap tengah
+          <div className="w-14" />
         )}
       </div>
 
@@ -152,7 +530,6 @@ export default function CreatePostPage() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* Ikon file seperti IG asli */}
           <div className="relative">
             <ImageIcon className="h-20 w-20 text-ig-text opacity-90" strokeWidth={1} />
             <VideoIcon
@@ -162,16 +539,15 @@ export default function CreatePostPage() {
           </div>
 
           <p className="text-ig-text text-xl font-light">
-            {isDragOver ? "Lepaskan di sini!" : "Drag photos and videos here"}
+            {isDragOver ? "Lepaskan di sini!" : "Seret foto dan video ke sini"}
           </p>
 
-          {/* Tombol "Select from computer" — persis seperti IG */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="px-4 py-1.5 bg-ig-primary hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
           >
-            Select from computer
+            Pilih dari komputer
           </button>
 
           <p className="text-neutral-600 text-xs">
@@ -186,33 +562,387 @@ export default function CreatePostPage() {
             className="hidden"
           />
         </div>
-      ) : (
-        /* ── Step 2: Preview + Caption (2-panel layout) ── */
+      ) : step === "editor" ? (
+        /* ── Step 2: Canvas Photo Editor (Reuses story editor layout) ── */
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Panel Kiri: Kanvas Postingan */}
+          <div className="flex-1 flex items-center justify-center bg-black/90 p-4 relative min-h-[400px] md:min-h-[500px]">
+            <div
+              style={{
+                width: "100%",
+                maxWidth: canvasWidth >= canvasHeight ? "500px" : `${(canvasWidth / canvasHeight) * 500}px`,
+                aspectRatio: `${canvasWidth}/${canvasHeight}`,
+              }}
+              className="relative max-h-[50vh] md:max-h-[75vh] rounded-xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center"
+            >
+              <canvas
+                ref={canvasRef}
+                width={canvasWidth}
+                height={canvasHeight}
+                className={`max-w-full max-h-full object-contain ${
+                  tool === "photo"
+                    ? "cursor-move"
+                    : tool === "draw"
+                    ? "cursor-crosshair"
+                    : tool === "text"
+                    ? "cursor-move"
+                    : "cursor-default"
+                }`}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUpOrLeave}
+                onMouseLeave={handleMouseUpOrLeave}
+              />
+              {tool === "photo" && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/85 px-3 py-1.5 rounded-full text-[10px] text-white/95 font-medium pointer-events-none border border-white/10 shadow-lg flex items-center gap-1">
+                  <Move className="w-3 h-3" /> Seret gambar untuk memposisikannya
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Panel Kiri: Preview Gambar */}
-          <div className="relative md:flex-1 w-full aspect-square md:aspect-auto bg-black flex items-center justify-center">
+          {/* Panel Kanan: Alat Editor */}
+          <div className="w-full md:w-[350px] bg-ig-secondary-bg border-t md:border-t-0 md:border-l border-ig-border p-4 flex flex-col justify-between overflow-y-auto max-h-[40vh] md:max-h-[calc(100vh-44px)]">
+            <div className="space-y-5">
+              {/* Tab Selector */}
+              <div className="grid grid-cols-4 gap-1 bg-ig-elevated-bg/50 p-1 rounded-xl">
+                {["photo", "filter", "draw", "text"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      setTool(t as any);
+                      setSelectedTextId(null);
+                    }}
+                    className={`py-1.5 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
+                      tool === t
+                        ? "bg-ig-primary text-white shadow-sm"
+                        : "text-ig-secondary-text hover:text-white"
+                    }`}
+                  >
+                    {t === "photo" ? "Layout" : t === "draw" ? "Coret" : t}
+                  </button>
+                ))}
+              </div>
+
+              {/* Kontrol dinamis */}
+              <div className="space-y-4 min-h-[200px]">
+                {/* 1. TAB LAYOUT */}
+                {tool === "photo" && (
+                  <div className="space-y-4">
+                    {/* Rasio Aspek */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        Rasio Aspek Postingan
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {aspectRatios.map((ratio) => (
+                          <button
+                            key={ratio.name}
+                            onClick={() => {
+                              setCanvasWidth(ratio.width);
+                              setCanvasHeight(ratio.height);
+                              setActiveRatioName(ratio.name);
+                            }}
+                            className={`py-2 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
+                              activeRatioName === ratio.name
+                                ? "bg-ig-primary text-white border-ig-primary"
+                                : "bg-ig-elevated-bg border-ig-border text-ig-text hover:bg-neutral-800"
+                            }`}
+                          >
+                            {ratio.name.split(" ")[0]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Latar Belakang */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        Latar Belakang (Margin)
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {bgPresets.map((bg) => (
+                          <button
+                            key={bg.name}
+                            onClick={() => setBgColor(bg.value)}
+                            style={{
+                              background:
+                                bg.value === "gradient-insta"
+                                  ? "linear-gradient(135deg, #c32aa3, #d62976, #f77737)"
+                                  : bg.value,
+                            }}
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-semibold cursor-pointer border border-neutral-700 transition-all ${
+                              bgColor === bg.value
+                                ? "ring-2 ring-ig-primary text-white"
+                                : "text-ig-text"
+                            }`}
+                          >
+                            {bg.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Skala */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-ig-secondary-text">Skala Foto</span>
+                        <span className="text-ig-text">{imageScale}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={10}
+                        max={300}
+                        value={imageScale}
+                        onChange={(e) => setImageScale(Number(e.target.value))}
+                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleResetPhoto}
+                      className="w-full py-2 text-xs font-semibold rounded-lg bg-ig-elevated-bg hover:bg-neutral-800 text-ig-text transition-colors cursor-pointer border-none"
+                    >
+                      Reset Layout Foto
+                    </button>
+                  </div>
+                )}
+
+                {/* 2. TAB FILTER */}
+                {tool === "filter" && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                      Pilih Filter Foto
+                    </span>
+                    <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                      {filtersPreset.map((f) => (
+                        <button
+                          key={f.name}
+                          onClick={() => setActiveFilter(f.value)}
+                          className={`flex flex-col items-center justify-center p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
+                            activeFilter === f.value
+                              ? "bg-ig-primary/10 border-ig-primary text-ig-primary font-semibold"
+                              : "bg-ig-elevated-bg border-ig-border text-ig-text hover:bg-neutral-800"
+                          }`}
+                        >
+                          {thumbnailUrl ? (
+                            <img
+                              src={thumbnailUrl}
+                              alt={f.name}
+                              style={{ filter: f.value }}
+                              className="w-12 h-12 object-cover rounded-md mb-1 shadow-md border border-neutral-700"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-neutral-700 rounded-md mb-1 animate-pulse" />
+                          )}
+                          <span className="text-[10px]">{f.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. TAB DRAW */}
+                {tool === "draw" && (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-ig-secondary-text">Ukuran Kuas</span>
+                        <span className="text-ig-text">{brushSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={2}
+                        max={30}
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(Number(e.target.value))}
+                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        Warna Kuas
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {colorsList.map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => setBrushColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-transform hover:scale-110 ${
+                              brushColor === c
+                                ? "ring-2 ring-offset-2 ring-offset-ig-secondary-bg ring-ig-primary scale-105"
+                                : "border border-neutral-700"
+                            }`}
+                          >
+                            {brushColor === c && (
+                              <Check
+                                className={`w-3.5 h-3.5 ${
+                                  c === "#ffffff" || c === "#ffc300" || c === "#00f5d4"
+                                    ? "text-black"
+                                    : "text-white"
+                                }`}
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleUndoDraw}
+                      disabled={strokes.length === 0}
+                      className="w-full flex items-center justify-center gap-1 py-2 text-xs font-semibold rounded-lg bg-ig-elevated-bg text-ig-text hover:bg-neutral-800 disabled:opacity-40 transition-colors cursor-pointer border-none"
+                    >
+                      <Undo2 className="w-3.5 h-3.5" /> Batal Coret ({strokes.length})
+                    </button>
+                  </div>
+                )}
+
+                {/* 4. TAB TEKS */}
+                {tool === "text" && (
+                  <form onSubmit={handleAddText} className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        {selectedTextId ? "Edit Teks" : "Tambah Teks"}
+                      </label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          value={inputText}
+                          onChange={(e) => setInputText(e.target.value)}
+                          placeholder="Teks..."
+                          className="flex-1 bg-ig-elevated-bg border border-ig-border rounded-lg px-2.5 py-1.5 text-xs text-ig-text placeholder-ig-secondary-text focus:outline-none focus:ring-1 focus:ring-ig-primary"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!inputText.trim()}
+                          className="bg-ig-primary hover:bg-blue-500 text-white font-semibold px-3 rounded-lg text-xs disabled:opacity-40 cursor-pointer"
+                        >
+                          {selectedTextId ? "Set" : "Ok"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Gaya Font */}
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        Font
+                      </span>
+                      <div className="grid grid-cols-2 gap-1">
+                        {fontsList.map((f) => (
+                          <button
+                            key={f.name}
+                            type="button"
+                            onClick={() => setFontStyle(f.value)}
+                            className={`py-1 px-1.5 text-[10px] rounded-md text-center transition-all cursor-pointer ${
+                              fontStyle === f.value
+                                ? "bg-ig-primary text-white font-bold"
+                                : "bg-ig-elevated-bg border border-ig-border text-ig-text hover:bg-neutral-800"
+                            }`}
+                            style={{ fontFamily: f.value }}
+                          >
+                            {f.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Ukuran Font */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-ig-secondary-text">Ukuran</span>
+                        <span className="text-ig-text">{fontSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={14}
+                        max={60}
+                        value={fontSize}
+                        onChange={(e) => setFontSize(Number(e.target.value))}
+                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
+                      />
+                    </div>
+
+                    {/* Warna Font */}
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+                        Warna
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {colorsList.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setFontColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-transform hover:scale-110 ${
+                              fontColor === c
+                                ? "ring-2 ring-offset-2 ring-offset-ig-secondary-bg ring-ig-primary scale-105"
+                                : "border border-neutral-700"
+                            }`}
+                          >
+                            {fontColor === c && (
+                              <Check
+                                className={`w-3.5 h-3.5 ${
+                                  c === "#ffffff" || c === "#ffc300" || c === "#00f5d4"
+                                    ? "text-black"
+                                    : "text-white"
+                                }`}
+                              />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedTextId && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteText}
+                        className="w-full py-1.5 text-xs font-semibold rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-500 transition-colors cursor-pointer border border-red-500/20"
+                      >
+                        Hapus Teks
+                      </button>
+                    )}
+                  </form>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleRemoveImage}
+              className="mt-4 w-full py-2.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors cursor-pointer border border-red-500/20"
+            >
+              Hapus Gambar & Batalkan
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ── Step 3: Preview + Caption ── */
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Panel Kiri: Preview Hasil Edit */}
+          <div className="relative md:flex-1 w-full aspect-square md:aspect-auto bg-black flex items-center justify-center p-4">
             {imagePreview && (
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-full h-auto max-h-[550px] object-contain select-none"
+                className="w-full h-auto max-h-[500px] object-contain rounded-lg shadow-lg select-none"
               />
             )}
-            {/* Tombol hapus gambar */}
             <button
               type="button"
               onClick={handleRemoveImage}
-              className="absolute top-3 right-3 p-1.5 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors"
+              className="absolute top-6 right-6 p-2 bg-black/70 hover:bg-black/90 rounded-full text-white transition-colors cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Panel Kanan: Username + Caption + Info */}
-          <div className="w-full md:w-[340px] flex flex-col border-t md:border-t-0 md:border-l border-ig-border bg-ig-background">
-            {/* Info User */}
-            <div className="flex items-center gap-3 px-4 py-3">
+          {/* Panel Kanan: Caption & Info */}
+          <div className="w-full md:w-[340px] flex flex-col border-t md:border-t-0 md:border-l border-ig-border bg-ig-background p-4">
+            <div className="flex items-center gap-3 pb-4">
               <Avatar
                 name={user?.name ?? "?"}
                 avatarUrl={user?.avatarUrl}
@@ -221,8 +951,7 @@ export default function CreatePostPage() {
               <span className="text-sm font-semibold">{user?.username}</span>
             </div>
 
-            {/* Textarea Caption */}
-            <div className="px-4 flex-1">
+            <div className="flex-1">
               <textarea
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
@@ -233,24 +962,22 @@ export default function CreatePostPage() {
               />
             </div>
 
-            {/* Counter karakter */}
-            <div className="px-4 pb-3 flex justify-end">
+            <div className="flex justify-between items-center pt-2">
               <span className="text-xs text-neutral-500">
                 {caption.length}/2,200
               </span>
             </div>
 
-            <hr className="border-ig-border" />
+            <hr className="border-ig-border my-4" />
 
-            {/* Info tambahan (Add location, dll) */}
             <div className="divide-y divide-ig-border text-sm text-ig-secondary-text">
-              <div className="flex items-center justify-between px-4 py-3 opacity-40 cursor-not-allowed">
+              <div className="flex items-center justify-between py-2.5 opacity-40 cursor-not-allowed">
                 <span>Add location</span>
-                <span className="text-lg">📍</span>
+                <span>📍</span>
               </div>
-              <div className="flex items-center justify-between px-4 py-3 opacity-40 cursor-not-allowed">
+              <div className="flex items-center justify-between py-2.5 opacity-40 cursor-not-allowed">
                 <span>Accessibility</span>
-                <span className="text-xs text-neutral-500">›</span>
+                <span>›</span>
               </div>
             </div>
           </div>

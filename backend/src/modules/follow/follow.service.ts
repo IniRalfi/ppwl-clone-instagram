@@ -97,7 +97,7 @@ export class FollowService {
         avatarUrl: true,
         _count: { select: { followers: true } },
       },
-      take: 5,
+      take: 30,
       orderBy: { createdAt: "desc" },
     });
 

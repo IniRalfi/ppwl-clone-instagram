@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Heart,
   MessageCircle,
@@ -10,6 +10,7 @@ import {
   User,
   UserPlus,
   Check,
+  X,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -97,10 +98,134 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isHoverStatsLoading, setIsHoverStatsLoading] = useState(false);
   const hoverTimeoutRef = useRef<any>(null);
 
+  // ── Pembaruan Sempurna: Edit, Delete, Options, Share States ──
+  const [currentCaption, setCurrentCaption] = useState(caption);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(caption);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [isAuthorFollowed, setIsAuthorFollowed] = useState(false);
+
+  const [shareSearch, setShareSearch] = useState("");
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [followingUsers, setFollowingUsers] = useState<any[]>([]);
+  const [isShareListLoading, setIsShareListLoading] = useState(false);
+  const [sentUserIds, setSentUserIds] = useState<Set<string>>(new Set());
+
+  // Sinkronisasi status follow pembuat post
+  useEffect(() => {
+    if (currentUserId && authorId && currentUserId !== authorId) {
+      apiClient.get<any>(`/follow/stats/${authorId}?currentUserId=${currentUserId}`)
+        .then((res) => {
+          const stats = res.data || res;
+          setIsAuthorFollowed(stats.isFollowing);
+          setIsHoverFollowed(stats.isFollowing);
+        })
+        .catch(() => {});
+    }
+  }, [currentUserId, authorId]);
+
+  // Fetch daftar pengguna untuk dishare
+  useEffect(() => {
+    if (showShareModal && currentUserId) {
+      setIsShareListLoading(true);
+      Promise.all([
+        apiClient.get<any>(`/follow/following/${currentUserId}`).catch(() => ({ data: [] })),
+        apiClient.get<any>(`/users?search=${shareSearch}`).catch(() => ({ data: [] })),
+      ]).then(([followingRes, allRes]) => {
+        const following = followingRes.data?.data || followingRes.data || [];
+        const all = allRes.data?.data || allRes.data || [];
+        setFollowingUsers(following);
+        setAllUsers(all);
+      }).finally(() => {
+        setIsShareListLoading(false);
+      });
+    }
+  }, [showShareModal, currentUserId, shareSearch]);
+
+  const handleUsernameClick = () => {
+    if (authorId === currentUserId) {
+      navigate("/profile");
+    } else {
+      navigate(`/profile/${username}`);
+    }
+  };
+
+  const handleEditCaption = async () => {
+    if (!editContent.trim()) return;
+    setIsEditLoading(true);
+    try {
+      await apiClient.put(`/posts/${id}`, { content: editContent });
+      setCurrentCaption(editContent);
+      setIsEditing(false);
+      toast.success("Caption berhasil diperbarui! 🎉");
+    } catch {
+      toast.error("Gagal memperbarui caption.");
+    } finally {
+      setIsEditLoading(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    const confirmDelete = window.confirm("Apakah Anda yakin ingin menghapus postingan ini?");
+    if (!confirmDelete) return;
+    try {
+      await apiClient.delete(`/posts/${id}`);
+      setIsDeleted(true);
+      toast.success("Postingan berhasil dihapus! 🗑️");
+      setShowOptionsModal(false);
+    } catch {
+      toast.error("Gagal menghapus postingan.");
+    }
+  };
+
+  const handleUnfollowAuthor = async () => {
+    const confirmUnfollow = window.confirm(`Batal mengikuti @${username}?`);
+    if (!confirmUnfollow) return;
+    try {
+      await apiClient.delete("/follow", {
+        data: {
+          followerId: currentUserId,
+          followingId: authorId,
+        }
+      });
+      setIsAuthorFollowed(false);
+      setIsHoverFollowed(false);
+      toast.success(`Batal mengikuti @${username}`);
+      setShowOptionsModal(false);
+    } catch {
+      toast.error("Gagal batal mengikuti.");
+    }
+  };
+
+  const handleCopyLink = () => {
+    const postLink = `${window.location.origin}/posts/${id}`;
+    navigator.clipboard.writeText(postLink);
+    toast.success("Tautan disalin ke papan klip! 📋");
+    setShowOptionsModal(false);
+  };
+
+  const handleSendPost = (targetUsername: string, targetId: string) => {
+    setSentUserIds((prev) => {
+      const next = new Set(prev);
+      next.add(targetId);
+      return next;
+    });
+    toast.success(`Berhasil mengirim postingan ke @${targetUsername}! 🚀`);
+  };
+
+  const followingIds = new Set(followingUsers.map((u) => u.id));
+  const filteredAllUsers = allUsers.filter((u) => u.id !== currentUserId);
+  const followed = filteredAllUsers.filter((u) => followingIds.has(u.id));
+  const others = filteredAllUsers.filter((u) => !followingIds.has(u.id));
+  const shareList = [...followed, ...others];
+
   const maxLength = 60;
-  const shouldTruncate = caption.length > maxLength;
+  const shouldTruncate = currentCaption.length > maxLength;
   const displayedCaption =
-    isExpanded || !shouldTruncate ? caption : `${caption.substring(0, maxLength)}...`;
+    isExpanded || !shouldTruncate ? currentCaption : `${currentCaption.substring(0, maxLength)}...`;
 
   // ── Like ──
   const handleLikeToggle = async () => {
@@ -395,23 +520,30 @@ export const PostCard: React.FC<PostCardProps> = ({
     </div>
   );
 
+  if (isDeleted) return null;
+
   return (
     <div className="w-full bg-transparent text-ig-text text-left relative pb-8 mb-4 border-b border-ig-separator">
       {/* ── HEADER ── */}
       <div className="flex items-center justify-between px-0 pb-3 relative">
         <div className="flex items-center space-x-3">
-          <Avatar
-            avatarUrl={avatarUrl}
-            name={username}
-            size="sm"
-            className="border border-ig-border"
-          />
+          <div onClick={handleUsernameClick} className="cursor-pointer">
+            <Avatar
+              avatarUrl={avatarUrl}
+              name={username}
+              size="sm"
+              className="border border-ig-border"
+            />
+          </div>
           <div
             className="flex items-baseline space-x-2 relative group"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <span className="font-semibold text-[14px] text-ig-text hover:text-ig-secondary-text cursor-pointer">
+            <span 
+              onClick={handleUsernameClick}
+              className="font-semibold text-[14px] text-ig-text hover:text-ig-secondary-text cursor-pointer"
+            >
               {username}
             </span>
             <span className="text-xs text-ig-secondary-text">• {timeAgo}</span>
@@ -421,6 +553,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => setShowOptionsModal(true)}
           className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent rounded-full h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
         >
           <MoreHorizontal className="h-5 w-5" />
@@ -538,19 +671,19 @@ export const PostCard: React.FC<PostCardProps> = ({
                 size="icon"
                 onClick={handleLikeToggle}
                 disabled={isLikeLoading}
-                className={`h-8 w-8 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 cursor-pointer ${
+                className={`h-11 w-11 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 cursor-pointer ${
                   isLiked
-                    ? "text-red-500 hover:text-red-600"
+                    ? "text-[#ed4956] hover:text-[#FF3040]"
                     : "text-ig-text hover:text-ig-secondary-text"
                 }`}
               >
                 {isLiked ? (
-                  <svg aria-label="Unlike" fill="#FF3040" height="24" viewBox="0 0 24 24" width="24">
-                    <path d="M21.35 9.122c0-3.072-2.65-4.959-5.197-7.222-2.512-2.243-3.865-3.469-4.303-3.752a.48.48 0 0 0-.51 0C10.9 1.433 9.547 2.66 7.035 4.9c-2.545 2.263-5.197 4.15-5.197 7.222 0 3.072 2.65 4.959 5.197 7.222 2.512 2.243 3.865 3.469 4.303 3.752.19.123.418.19.65.19s.46-.067.65-.19c.438-.283 1.791-1.509 4.303-3.752 2.545-2.263 5.197-4.15 5.197-7.222z"></path>
+                  <svg aria-label="Unlike" fill="#ed4956" stroke="#ed4956" strokeWidth="1" className="w-[36px] h-[36px]" viewBox="0 0 24 24">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
                 ) : (
-                  <svg aria-label="Like" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-                    <path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-5.197 7.222-2.512 2.243-3.865 3.469-4.303 3.752a.48.48 0 0 1-.51 0c-.438-.283-1.791-1.509-4.303-3.752C4.652 14.081 2 12.194 2 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.208.28.569.28.777 0a4.21 4.21 0 0 1 3.632-1.941M12 21.35l-.015-.01a.34.34 0 0 1-.03-.027c-.366-.237-1.764-1.488-4.254-3.71C5.228 15.385 2.5 13.5 2.5 9.122c0-3.419 2.52-5.468 4.958-5.468a4.7 4.7 0 0 1 3.67 1.916.75.75 0 0 0 1.2 0 4.7 4.7 0 0 1 3.67-1.916c2.438 0 4.958 2.049 4.958 5.468 0 4.378-2.728 6.263-5.216 8.48-2.49 2.222-3.888 3.473-4.254 3.71a.34.34 0 0 1-.03.027z"></path>
+                  <svg aria-label="Like" fill="none" stroke="currentColor" strokeWidth="2" className="w-[36px] h-[36px]" viewBox="0 0 24 24">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
                 )}
               </Button>
@@ -565,10 +698,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onClick={() => navigate(`/posts/${id}`)}
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-8 w-8 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-11 w-11 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
-                <svg aria-label="Comment" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-                  <path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></path>
+                <svg aria-label="Comment" fill="none" stroke="currentColor" strokeWidth="2" className="w-[36px] h-[36px]" viewBox="0 0 24 24">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                 </svg>
               </Button>
               <span className="text-sm font-semibold select-none text-ig-text">
@@ -581,11 +714,12 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-8 w-8 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
+                onClick={() => setShowShareModal(true)}
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-11 w-11 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
-                <svg aria-label="Share Post" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-                  <line fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" x1="22" x2="9.218" y1="3" y2="10.083"></line>
-                  <polygon fill="none" points="11.698 20.334 22 3.001 2 10.263 11.698 20.334" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></polygon>
+                <svg aria-label="Share Post" fill="none" stroke="currentColor" strokeWidth="2" className="w-[36px] h-[36px]" viewBox="0 0 24 24">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
               </Button>
               <span className="text-sm font-semibold select-none text-ig-text">0</span>
@@ -598,19 +732,13 @@ export const PostCard: React.FC<PostCardProps> = ({
             size="icon"
             onClick={handleBookmarkToggle}
             disabled={isBookmarkLoading}
-            className={`h-8 w-8 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer ${
+            className={`h-11 w-11 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer ${
               isBookmarked ? "text-ig-text" : "text-ig-text hover:text-ig-secondary-text"
             }`}
           >
-            {isBookmarked ? (
-              <svg aria-label="Remove" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-                <polygon points="20 21 12 13.44 4 21 4 3 20 3 20 21"></polygon>
-              </svg>
-            ) : (
-              <svg aria-label="Save" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-                <polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon>
-              </svg>
-            )}
+            <svg aria-label="Save" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="w-[36px] h-[36px]" viewBox="0 0 24 24">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
           </Button>
         </div>
 
@@ -623,35 +751,71 @@ export const PostCard: React.FC<PostCardProps> = ({
 
         {/* Caption */}
         <div className="text-[13.5px] leading-relaxed relative">
-          <div>
-            <span
-              className="inline-block relative group mr-2"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <span className="font-semibold cursor-pointer text-ig-text hover:underline text-[13.5px]">
-                {username}
+          {isEditing ? (
+            <div className="space-y-2 mt-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-ig-elevated-bg border border-ig-border text-ig-text rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ig-primary resize-none"
+                rows={3}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditContent(currentCaption);
+                  }}
+                  disabled={isEditLoading}
+                  className="text-xs text-ig-secondary-text hover:text-white"
+                >
+                  Batal
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleEditCaption}
+                  disabled={isEditLoading || !editContent.trim()}
+                  className="text-xs bg-ig-primary text-white hover:bg-blue-500"
+                >
+                  {isEditLoading ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <span
+                className="inline-block relative group mr-2"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                <span 
+                  onClick={handleUsernameClick}
+                  className="font-semibold cursor-pointer text-ig-text hover:underline text-[13.5px]"
+                >
+                  {username}
+                </span>
+                {renderHoverCard(true)}
               </span>
-              {renderHoverCard(true)}
-            </span>
-            <span className="text-ig-text whitespace-pre-wrap">{displayedCaption}</span>
-            {shouldTruncate && !isExpanded && (
-              <button
-                onClick={() => setIsExpanded(true)}
-                className="text-ig-secondary-text font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
-              >
-                ... lainnya
-              </button>
-            )}
-            {isExpanded && shouldTruncate && (
-              <button
-                onClick={() => setIsExpanded(false)}
-                className="text-ig-secondary-text text-xs font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
-              >
-                (lebih sedikit)
-              </button>
-            )}
-          </div>
+              <span className="text-ig-text whitespace-pre-wrap">{displayedCaption}</span>
+              {shouldTruncate && !isExpanded && (
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="text-ig-secondary-text font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
+                >
+                  ... lainnya
+                </button>
+              )}
+              {isExpanded && shouldTruncate && (
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="text-ig-secondary-text text-xs font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
+                >
+                  (lebih sedikit)
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Link Komentar */}
@@ -664,6 +828,172 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* ── MODAL PILIHAN (THREE DOTS MENU) ── */}
+      {showOptionsModal && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[400px] overflow-hidden flex flex-col text-center divide-y divide-ig-separator shadow-2xl">
+            {authorId !== currentUserId ? (
+              <>
+                {isAuthorFollowed && (
+                  <button
+                    onClick={handleUnfollowAuthor}
+                    className="w-full text-red-500 font-bold hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+                  >
+                    Batal Mengikuti
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleDeletePost}
+                  className="w-full text-red-500 font-bold hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+                >
+                  Hapus Postingan
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(true);
+                    setShowOptionsModal(false);
+                  }}
+                  className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+                >
+                  Edit Caption
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => {
+                setShowShareModal(true);
+                setShowOptionsModal(false);
+              }}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              Bagikan...
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              Salin Tautan
+            </button>
+            <button
+              onClick={() => setShowOptionsModal(false)}
+              className="w-full text-ig-text hover:bg-ig-elevated-bg/50 py-3.5 text-sm cursor-pointer border-none bg-transparent transition-colors"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL SHARE (KIRIM KE PENGGUNA) ── */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-ig-secondary-bg border border-ig-border rounded-xl w-full max-w-[480px] h-[550px] max-h-[80vh] overflow-hidden flex flex-col shadow-2xl text-left">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-ig-border">
+              <span className="font-bold text-ig-text text-base">Bagikan</span>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-ig-text hover:text-ig-secondary-text p-1 rounded-full hover:bg-ig-elevated-bg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Input Pencarian */}
+            <div className="px-4 py-2 border-b border-ig-border">
+              <input
+                type="text"
+                value={shareSearch}
+                onChange={(e) => setShareSearch(e.target.value)}
+                placeholder="Cari pengguna..."
+                className="w-full bg-ig-elevated-bg border border-ig-border rounded-lg px-3 py-1.5 text-sm text-ig-text placeholder-ig-secondary-text focus:outline-none focus:ring-1 focus:ring-ig-primary"
+              />
+            </div>
+
+            {/* List Pengguna */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {isShareListLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between animate-pulse">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-9 h-9 rounded-full bg-ig-elevated-bg" />
+                        <div className="space-y-1">
+                          <div className="h-3 bg-ig-elevated-bg w-24 rounded" />
+                          <div className="h-2 bg-ig-elevated-bg w-16 rounded" />
+                        </div>
+                      </div>
+                      <div className="h-7 w-12 bg-ig-elevated-bg rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              ) : shareList.length === 0 ? (
+                <div className="text-center text-ig-secondary-text text-sm py-8">
+                  Pengguna tidak ditemukan
+                </div>
+              ) : (
+                shareList.map((targetUser) => {
+                  const isSent = sentUserIds.has(targetUser.id);
+                  const isFollowingThisUser = followingIds.has(targetUser.id);
+                  return (
+                    <div key={targetUser.id} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          name={targetUser.name}
+                          avatarUrl={targetUser.avatarUrl}
+                          size="sm"
+                          className="flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-semibold text-ig-text truncate">
+                              {targetUser.username}
+                            </span>
+                            {isFollowingThisUser && (
+                              <span className="text-[10px] bg-ig-elevated-bg text-ig-secondary-text px-1.5 py-0.5 rounded-full font-medium">
+                                Mengikuti
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-ig-secondary-text truncate block">
+                            {targetUser.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => !isSent && handleSendPost(targetUser.username, targetUser.id)}
+                        disabled={isSent}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                          isSent
+                            ? "bg-ig-elevated-bg text-ig-secondary-text cursor-default"
+                            : "bg-ig-primary hover:bg-blue-500 text-white"
+                        }`}
+                      >
+                        {isSent ? "Terkirim" : "Kirim"}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Tombol Salin Link di Bawah */}
+            <div className="p-4 border-t border-ig-border">
+              <button
+                onClick={handleCopyLink}
+                className="w-full bg-ig-primary hover:bg-blue-500 text-white font-semibold text-sm py-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                Salin Link Postingan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

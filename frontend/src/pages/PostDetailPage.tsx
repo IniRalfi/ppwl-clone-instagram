@@ -5,6 +5,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../store/auth.store";
 import { apiClient } from "../services/api.client";
+import { Smile } from "lucide-react";
+import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
+import { useThemeStore } from "../store/theme.store";
 
 interface Post {
   id: string;
@@ -57,6 +60,8 @@ export function PostDetailPage() {
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const currentTheme = useThemeStore((state) => state.theme);
 
   // State reply: null = komentar baru, isi = sedang balas komentar tertentu
   const [replyTarget, setReplyTarget] = useState<{
@@ -242,6 +247,32 @@ export function PostDetailPage() {
                   <img src={currentUser.avatarUrl} className="w-full h-full object-cover" />
                 ) : (
                   currentUser?.name?.charAt(0).toUpperCase() || "?"
+                )}
+              </div>
+
+              <div className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="text-neutral-400 hover:text-white transition-colors cursor-pointer p-1"
+                >
+                  <Smile className="w-5 h-5" />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-12 left-0 z-50 shadow-2xl animate-in slide-in-from-bottom-2 duration-150">
+                    <EmojiPicker
+                      theme={currentTheme === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
+                      onEmojiClick={(emojiData) => {
+                        setInputValue((prev) => prev + emojiData.emoji);
+                        setShowEmojiPicker(false);
+                        inputRef.current?.focus();
+                      }}
+                      width={320}
+                      height={400}
+                      skinTonesDisabled
+                      searchDisabled={false}
+                    />
+                  </div>
                 )}
               </div>
 

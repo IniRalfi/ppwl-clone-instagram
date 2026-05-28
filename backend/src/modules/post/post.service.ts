@@ -218,4 +218,36 @@ export class PostService {
 
     return bookmarked;
   }
+
+  // 7. Update postingan (Edit Caption)
+  static async updatePost(userId: string, postId: string, content: string) {
+    const post = await db.post.findUnique({ where: { id: postId } });
+    if (!post) {
+      throw new Error("Postingan tidak ditemukan");
+    }
+    if (post.authorId !== userId) {
+      throw new Error("Kamu tidak memiliki akses untuk mengedit postingan ini");
+    }
+    const updated = await db.post.update({
+      where: { id: postId },
+      data: { content: content.trim() },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
+          }
+        },
+        _count: { select: { likes: true, comments: true } },
+      },
+    });
+
+    // Invalidate feed cache
+    localCache.deletePattern("posts:feed:");
+    localCache.deletePattern("posts:single:");
+
+    return updated;
+  }
 }

@@ -150,4 +150,28 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       set.status = error.message === "Postingan tidak ditemukan" ? 404 : 500;
       return { message: error.message || "Terjadi kesalahan server" };
     }
-  }, bookmarkPostSchema);
+  }, bookmarkPostSchema)
+
+  // 7. PUT /posts/:id — Edit caption postingan
+  .put("/:id", async ({ params: { id }, body, getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        set.status = 401;
+        return { message: "Unauthorized" };
+      }
+      const { content } = body as { content: string };
+      const updatedPost = await PostService.updatePost(user.id, id, content);
+      return { message: "Postingan berhasil diperbarui", data: updatedPost };
+    } catch (error: any) {
+      console.error("❌ Gagal mengedit post:", error);
+      if (error.message === "Postingan tidak ditemukan") {
+        set.status = 404;
+      } else if (error.message === "Kamu tidak memiliki akses untuk mengedit postingan ini") {
+        set.status = 403;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server saat mengedit postingan" };
+    }
+  });

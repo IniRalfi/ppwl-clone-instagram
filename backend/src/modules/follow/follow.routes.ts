@@ -22,12 +22,12 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
       const stats = await FollowService.getFollowStats(userId, currentUserId);
       return stats;
     } catch (error: any) {
-      console.error("❌ Gagal mengambil stats follow:", error);
       if (error.message === "User tidak ditemukan") {
         set.status = 404;
-      } else {
-        set.status = 500;
+        return { message: error.message };
       }
+      console.error("❌ Gagal mengambil stats follow:", error);
+      set.status = 500;
       return { message: error.message || "Terjadi kesalahan server" };
     }
   }, getFollowStatsSchema)
