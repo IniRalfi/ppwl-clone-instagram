@@ -1,0 +1,27 @@
+import { t } from "elysia";
+
+export const searchUsersSchema = {
+  query: t.Object({
+    search: t.Optional(t.String()),
+  }),
+};
+
+export const getUserByUsernameSchema = {
+  params: t.Object({
+    username: t.String({ error: "Username tidak valid" }),
+  }),
+};
+
+export const updateProfileSchema = {
+  body: t.Object({
+    username: t.Optional(t.String()),
+    name: t.Optional(t.String()),
+    bio: t.Optional(t.String()),
+    avatarUrl: t.Optional(t.String()),
+    image: t.Optional(t.Any()),
+    website: t.Optional(t.String()),
+    gender: t.Optional(t.String()),
+    showThreads: t.Optional(t.Any()),
+    suggestions: t.Optional(t.Any()),
+  }),
+};

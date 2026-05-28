@@ -1,0 +1,189 @@
+// ============================================================
+// Instafy — Database ERD (dbdiagram.io DSL)
+// Generated from Prisma Schema
+// Copy & paste ke https://dbdiagram.io
+// ============================================================
+
+Table users {
+  id              String  [pk]
+  email           String  [unique, not null]
+  username        String  [unique, not null]
+  name            String  [not null]
+  passwordHash    String
+  role            String  [default: 'USER']
+  avatarUrl       String
+  bio             String
+  website         String
+  gender          String
+  showThreads     Boolean [default: false]
+  suggestions     Boolean [default: true]
+  provider        String  [default: 'email']
+  providerId      String
+  postCount       Int     [default: 0]
+  commentCount    Int     [default: 0]
+  createdAt       DateTime [default: `now()`]
+  updatedAt       DateTime
+}
+
+Table posts {
+  id        String  [pk]
+  content   String  [not null]
+  imageUrl  String
+  authorId  String  [not null, ref: > users.id]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  indexes {
+    (authorId)
+  }
+}
+
+Table comments {
+  id        String  [pk]
+  content   String  [not null]
+  authorId  String  [not null, ref: > users.id]
+  postId    String  [not null, ref: > posts.id]
+  parentId  String  [ref: > comments.id]
+  createdAt DateTime [default: `now()`]
+  indexes {
+    (authorId)
+    (postId)
+    (parentId)
+  }
+}
+
+Table likes {
+  id        String  [pk]
+  userId    String  [not null, ref: > users.id]
+  postId    String  [not null, ref: > posts.id]
+  createdAt DateTime [default: `now()`]
+  indexes {
+    (userId, postId) [unique]
+    (postId)
+  }
+}
+
+Table comment_likes {
+  id        String  [pk]
+  userId    String  [not null, ref: > users.id]
+  commentId String  [not null, ref: > comments.id]
+  createdAt DateTime [default: `now()`]
+  indexes {
+    (userId, commentId) [unique]
+    (commentId)
+  }
+}
+
+Table follows {
+  id          String  [pk]
+  followerId  String  [not null, ref: > users.id]
+  followingId String  [not null, ref: > users.id]
+  createdAt   DateTime [default: `now()`]
+  indexes {
+    (followerId, followingId) [unique]
+    (followingId)
+  }
+}
+
+Table notifications {
+  id         String   [pk]
+  type       String   [not null]
+  message    String   [not null]
+  isRead     Boolean  [default: false]
+  refId      String
+  receiverId String   [not null, ref: > users.id]
+  senderId   String   [ref: > users.id]
+  createdAt  DateTime [default: `now()`]
+  indexes {
+    (receiverId)
+    (senderId)
+  }
+}
+
+Table push_subscriptions {
+  id        String   [pk]
+  userId    String   [not null, ref: > users.id]
+  endpoint  String   [unique, not null]
+  p256dh    String   [not null]
+  auth      String   [not null]
+  userAgent String
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  indexes {
+    (userId)
+  }
+}
+
+Table stories {
+  id        String   [pk]
+  imageUrl  String   [not null]
+  userId    String   [not null, ref: > users.id]
+  createdAt DateTime [default: `now()`]
+  expiresAt DateTime [not null]
+  indexes {
+    (userId)
+  }
+}
+
+Table bookmarks {
+  id        String   [pk]
+  userId    String   [not null, ref: > users.id]
+  postId    String   [not null, ref: > posts.id]
+  createdAt DateTime [default: `now()`]
+  indexes {
+    (userId, postId) [unique]
+    (postId)
+  }
+}
+
+Table chat_rooms {
+  id        String   [pk]
+  user1Id   String   [not null, ref: > users.id]
+  user2Id   String   [not null, ref: > users.id]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  indexes {
+    (user1Id, user2Id) [unique]
+    (user2Id)
+  }
+}
+
+Table messages {
+  id        String   [pk]
+  roomId    String   [not null, ref: > chat_rooms.id]
+  senderId  String   [not null, ref: > users.id]
+  text      String   [not null]
+  isRead    Boolean  [default: false]
+  createdAt DateTime [default: `now()`]
+  indexes {
+    (roomId)
+    (senderId)
+  }
+}
+
+// ============================================================
+// Referensi Visual
+// ============================================================
+
+// users 1---* posts
+// users 1---* comments
+// users 1---* likes
+// users 1---* comment_likes
+// users 1---* follows (as follower)
+// users 1---* follows (as following)
+// users 1---* notifications (as receiver)
+// users 1---* notifications (as sender)
+// users 1---* push_subscriptions
+// users 1---* stories
+// users 1---* bookmarks
+// users 1---* messages (as sender)
+// users 1---* chat_rooms (as user1)
+// users 1---* chat_rooms (as user2)
+
+// posts 1---* comments
+// posts 1---* likes
+// posts 1---* bookmarks
+
+// comments 1---* comments (self: parentId)
+// comments 1---* comment_likes
+
+// chat_rooms 1---* messages

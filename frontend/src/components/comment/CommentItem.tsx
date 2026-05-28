@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Comment } from "../../../../shared/src/types/comment";
-
+import { apiClient } from "../../services/api.client";
+import { toast } from "sonner";
 interface CommentItemProps {
   comment: Comment;
   currentUserId: string | null;
@@ -16,6 +18,7 @@ export function CommentItem({
   onReplyClick,
   isReply = false,
 }: CommentItemProps) {
+  const navigate = useNavigate();
   /**
    * Instagram: replies di-collapse by default, expand dengan "Lihat X balasan".
    * Semua replies (termasuk replies-of-replies) ditampilkan FLAT di satu level
@@ -30,12 +33,44 @@ export function CommentItem({
   const timeAgo = formatTimeAgo(comment.createdAt);
   const avatarColor = getAvatarColor(comment.author.username);
 
+  const [isLiked, setIsLiked] = useState(!!comment.isLikedByMe);
+  const [likesCount, setLikesCount] = useState(comment.likesCount || 0);
+  const [isLiking, setIsLiking] = useState(false);
+
+  const handleLikeToggle = async () => {
+    if (!currentUserId) {
+      toast.error("Silakan login terlebih dahulu untuk menyukai komentar. 🔒");
+      return;
+    }
+    if (isLiking) return;
+    setIsLiking(true);
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setLikesCount((prev) => prev + (newLiked ? 1 : -1));
+
+    try {
+      const res = await apiClient.post<{ liked: boolean }>(`/comments/${comment.id}/like`, {});
+      if (res) {
+        setIsLiked(res.liked);
+      }
+    } catch {
+      setIsLiked(!newLiked);
+      setLikesCount((prev) => prev + (newLiked ? -1 : 1));
+      toast.error("Gagal menyukai komentar.");
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
   return (
     <div>
       {/* ── Satu baris komentar ── */}
       <div className="flex gap-2.5 py-2.5">
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        <div 
+          onClick={() => navigate(`/profile/${comment.author.username}`)}
+          className="flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+        >
           {comment.author.avatarUrl ? (
             <img
               src={comment.author.avatarUrl}
@@ -55,13 +90,23 @@ export function CommentItem({
         {/* Konten */}
         <div className="flex-1 min-w-0">
           <p className="text-[14px] text-ig-text leading-snug">
-            <span className="font-semibold mr-1.5">{comment.author.username}</span>
+            <span 
+              onClick={() => navigate(`/profile/${comment.author.username}`)}
+              className="font-semibold mr-1.5 cursor-pointer hover:underline"
+            >
+              {comment.author.username}
+            </span>
             {/* Render @mention dengan warna biru, sisanya putih */}
             <ContentWithMentions text={comment.content} />
           </p>
 
           <div className="flex items-center gap-4 mt-1.5">
             <span className="text-[12px] text-neutral-500">{timeAgo}</span>
+            {likesCount > 0 && (
+              <span className="text-[12px] text-neutral-400 font-semibold select-none">
+                {likesCount} suka
+              </span>
+            )}
             {canReply && (
               <button
                 type="button"
@@ -77,13 +122,17 @@ export function CommentItem({
         {/* Ikon hati kanan */}
         <button
           type="button"
-          className="flex-shrink-0 self-start mt-1 text-neutral-500 hover:text-red-400 transition-colors"
+          onClick={handleLikeToggle}
+          disabled={isLiking}
+          className={`flex-shrink-0 self-start mt-1 transition-colors cursor-pointer ${
+            isLiked ? "text-[#ed4956] hover:text-[#FF3040]" : "text-neutral-500 hover:text-neutral-300"
+          }`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
+            fill={isLiked ? "currentColor" : "none"}
+            stroke={isLiked ? "none" : "currentColor"}
             strokeWidth={1.5}
             className="w-3.5 h-3.5"
           >

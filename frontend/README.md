@@ -1,21 +1,9 @@
-# bun-react-tailwind-shadcn-template
+# @ppwl/frontend — Instafy Frontend
 
-To install dependencies:
+React + Vite + TypeScript + Tailwind CSS v4 + Shadcn/UI
 
 ```bash
 bun install
+bun dev       # → http://localhost:5173
+bun run build # → dist/
 ```
-
-To start a development server:
-
-```bash
-bun dev
-```
-
-To run for production:
-
-```bash
-bun start
-```
-
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

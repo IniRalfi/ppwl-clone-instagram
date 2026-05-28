@@ -37,9 +37,10 @@ jobs:
       - name: 🛠️ Build Frontend
         run: bun run build
         env:
-          # Pastikan URL backend saat production disuntikkan ke sini
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_PUSHER_KEY: ${{ secrets.VITE_PUSHER_KEY }}
+          VITE_PUSHER_CLUSTER: ${{ secrets.VITE_PUSHER_CLUSTER }}
 
       - name: ☁️ Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

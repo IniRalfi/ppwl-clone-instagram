@@ -1,101 +1,88 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
+import { requireAuth } from "@/plugins/require-auth.plugin";
+import { AuthService } from "./auth.service";
+import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
+  .use(requireAuth)
+  
+  // 1. Registrasi Akun
   .post("/register", async ({ body, set }) => {
     try {
-      const { name, username, email, password } = body as any;
-      
-      const user = await db.user.create({
-        data: {
-          name,
-          username,
-          email,
-          passwordHash: password, // Di versi real harus di-hash (bcrypt/argon2)
-          provider: "email",
-        }
+      const { name, username, email, password } = body;
+      const passwordHash = await Bun.password.hash(password);
+
+      const user = await AuthService.register({
+        name,
+        username,
+        email,
+        passwordHash,
       });
-      
-      return { 
-        message: "Registrasi Berhasil", 
-        data: { id: user.id, name: user.name, email: user.email } 
+
+      return {
+        message: "Registrasi Berhasil",
+        data: { id: user.id, name: user.name, email: user.email },
       };
     } catch (error) {
       set.status = 400;
-      return { message: "Gagal register, mungkin email/username sudah dipakai", error };
+      return { message: "Gagal register, mungkin email atau username sudah dipakai." };
     }
-  })
-  .post("/login", async ({ body, set }) => {
+  }, registerSchema)
+
+  // 2. Login Akun (Email/Username)
+  .post("/login", async ({ body, set, jwt }) => {
     try {
-      const { email, password } = body as any;
-      
-      const user = await db.user.findUnique({
-        where: { email }
-      });
-      
-      if (!user || user.passwordHash !== password) {
+      const { email, password } = body;
+
+      const user = await AuthService.findUserByEmailOrUsername(email);
+
+      if (
+        !user ||
+        !user.passwordHash ||
+        !(await Bun.password.verify(password, user.passwordHash))
+      ) {
         set.status = 401;
-        return { message: "Email atau password salah" };
+        return { message: "Email/Username atau password salah" };
       }
-      
+
+      const accessToken = await jwt.sign({ id: user.id });
       return {
         message: "Login Berhasil",
         data: {
           user: {
             id: user.id,
             name: user.name,
-            username: user.username,  // ← wajib ada untuk auth store
+            username: user.username,
             email: user.email,
+            role: user.role,
             avatarUrl: user.avatarUrl,
           },
-          accessToken: "dummy_jwt_token_nanti_diganti_dengan_elysia_jwt",
-        }
+          accessToken,
+        },
       };
     } catch (error) {
       set.status = 500;
       return { message: "Terjadi kesalahan server" };
     }
-  })
-  .post("/google", async ({ body, set }) => {
+  }, loginSchema)
+
+  // 3. Login Google OAuth
+  .post("/google", async ({ body, set, jwt }) => {
     try {
-      const { token } = body as { token: string };
-      if (!token) {
-        set.status = 400;
-        return { message: "Google token tidak ditemukan" };
-      }
+      const { token } = body;
 
-      // Memverifikasi token via Google endpoint
-      const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!googleRes.ok) {
-        const errText = await googleRes.text();
-        console.error("Google Info Error:", errText);
-        set.status = 401;
-        return { message: `Google Error: ${errText}` };
-      }
-
-      const googleUser = await googleRes.json();
+      // Verifikasi token via Google API Service
+      const googleUser = await AuthService.verifyGoogleToken(token);
       const { email, name, picture } = googleUser;
 
-      // Cari user di database
-      let user = await db.user.findUnique({ where: { email } });
+      // Cari atau buat user baru
+      const user = await AuthService.findOrCreateGoogleUser({
+        email,
+        name,
+        avatarUrl: picture,
+      });
 
-      if (!user) {
-        // Auto-register jika belum ada
-        user = await db.user.create({
-          data: {
-            email,
-            name,
-            username: email.split("@")[0] + Math.floor(Math.random() * 1000),
-            avatarUrl: picture,
-            passwordHash: "", // Akun OAuth
-            provider: "google",
-          },
-        });
-      }
-
+      const accessToken = await jwt.sign({ id: user.id });
       return {
         message: "Login Google Berhasil",
         data: {
@@ -104,13 +91,14 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
             name: user.name,
             username: user.username,
             email: user.email,
+            role: user.role,
             avatarUrl: user.avatarUrl,
           },
-          accessToken: "dummy_jwt_token_nanti_diganti_dengan_elysia_jwt",
-        }
+          accessToken,
+        },
       };
-    } catch (error) {
-      set.status = 500;
-      return { message: "Kesalahan server saat Login Google" };
+    } catch (error: any) {
+      set.status = 401;
+      return { message: error.message || "Kesalahan server saat Login Google" };
     }
-  });
+  }, googleSchema);

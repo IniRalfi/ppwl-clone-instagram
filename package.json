@@ -10,6 +10,8 @@
   "scripts": {
     "dev:fe": "bun --cwd frontend dev",
     "dev:be": "bun --cwd backend dev",
+    "dev:prod-be": "bun --cwd backend --env-file=.env.production dev",
+    "dev:prod": "bun run dev:prod-be & bun run dev:fe",
     "dev": "bun run dev:be & bun run dev:fe",
     "build:shared": "bun --cwd shared build",
     "build:fe": "bun --cwd frontend build",

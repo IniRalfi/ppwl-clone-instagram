@@ -1,13 +1,12 @@
-// Base URL backend — sesuaikan dengan environment variable Vite
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+import { useAuthStore } from "../store/auth.store";
 
-// Helper: ambil token dari Zustand persist store (key: "auth-storage")
+// Base URL backend — sesuaikan dengan environment variable Vite
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+// Helper: ambil token dari Zustand store
 function getToken(): string | null {
   try {
-    const raw = localStorage.getItem("auth-storage");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.token ?? null;
+    return useAuthStore.getState().token ?? null;
   } catch {
     return null;
   }
@@ -43,12 +42,15 @@ async function request<T>(
     ...((options.headers as Record<string, string>) ?? {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      useAuthStore.getState().logout();
+    }
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
   }
@@ -60,20 +62,23 @@ async function request<T>(
 
 // Fungsi fetch khusus untuk FormData (upload file)
 // Tidak perlu set Content-Type — browser yang atur boundary-nya
-async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+async function requestForm<T>(path: string, formData: FormData, method: string = "POST"): Promise<T> {
   const token = getToken();
 
   const headers: HeadersInit = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
     body: formData,
     headers,
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      useAuthStore.getState().logout();
+    }
     const body = await res.json().catch(() => ({ message: res.statusText }));
     throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
   }
@@ -94,6 +99,6 @@ export const apiClient = {
       ...(body ? { body: JSON.stringify(body) } : {}),
     }),
   // Untuk upload file (multipart/form-data)
-  postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData),
+  postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "POST"),
+  putForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "PUT"),
 };
-

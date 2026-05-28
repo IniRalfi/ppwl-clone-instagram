@@ -13,7 +13,7 @@ createRoot(document.getElementById("root")!).render(
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "dummy-client-id"}>
       <BrowserRouter>
         <App />
-        <Toaster richColors position="top-right" />
+        <Toaster richColors closeButton position="top-right" />
       </BrowserRouter>
     </GoogleOAuthProvider>
   </StrictMode>

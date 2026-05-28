@@ -1,77 +1,45 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
+import { LikeService } from "./like.service";
+import { requireAuth } from "@/plugins/require-auth.plugin";
+import { toggleLikeSchema, getLikeStatusSchema } from "./like.schema";
 
 export const likeRoutes = new Elysia({ prefix: "/likes" })
+  .use(requireAuth)
 
-  // ─────────────────────────────────────────────
-  // POST /likes/:postId — Toggle like/unlike
-  // Body JSON: { userId: string }
-  // ─────────────────────────────────────────────
-  .post("/:postId", async ({ params: { postId }, body, set }) => {
+  // 1. POST /likes/:postId — Toggle like/unlike
+  .post("/:postId", async ({ params: { postId }, requireUser, set }) => {
     try {
-      const { userId } = body as { userId: string };
+      const user = await requireUser();
+      if (!user) return;
 
-      if (!userId) {
-        set.status = 400;
-        return { message: "userId wajib diisi" };
-      }
-
-      // Pastikan post ada
-      const post = await db.post.findUnique({ where: { id: postId } });
-      if (!post) {
-        set.status = 404;
-        return { message: "Postingan tidak ditemukan" };
-      }
-
-      // Cek apakah sudah di-like
-      const existingLike = await db.like.findUnique({
-        where: { userId_postId: { userId, postId } },
-      });
-
-      if (existingLike) {
-        // Sudah like → unlike (hapus)
-        await db.like.delete({
-          where: { userId_postId: { userId, postId } },
-        });
-
-        const likeCount = await db.like.count({ where: { postId } });
-        return { message: "Unlike berhasil", liked: false, likeCount };
-      } else {
-        // Belum like → like (tambah)
-        await db.like.create({
-          data: { userId, postId },
-        });
-
-        const likeCount = await db.like.count({ where: { postId } });
-        return { message: "Like berhasil", liked: true, likeCount };
-      }
-    } catch (error) {
+      const { liked, likeCount } = await LikeService.toggleLike(user.id, postId);
+      return {
+        message: liked ? "Like berhasil" : "Unlike berhasil",
+        liked,
+        likeCount,
+      };
+    } catch (error: any) {
       console.error("❌ Gagal toggle like:", error);
+      if (error.message === "Postingan tidak ditemukan") {
+        set.status = 404;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server" };
+    }
+  }, toggleLikeSchema)
+
+  // 2. GET /likes/:postId/status — Cek status & jumlah like
+  .get("/:postId/status", async ({ params: { postId }, getCurrentUser, set }) => {
+    try {
+      const user = await getCurrentUser();
+      const userId = user?.id;
+
+      const status = await LikeService.getLikeStatus(postId, userId);
+      return status;
+    } catch (error) {
+      console.error("❌ Gagal get like status:", error);
       set.status = 500;
       return { message: "Terjadi kesalahan server" };
     }
-  })
-
-  // ─────────────────────────────────────────────
-  // GET /likes/:postId/status?userId=xxx
-  // Cek apakah user sudah like postingan ini
-  // ─────────────────────────────────────────────
-  .get("/:postId/status", async ({ params: { postId }, query, set }) => {
-    const { userId } = query as { userId?: string };
-
-    if (!userId) {
-      set.status = 400;
-      return { message: "userId wajib diisi sebagai query param" };
-    }
-
-    const existingLike = await db.like.findUnique({
-      where: { userId_postId: { userId, postId } },
-    });
-
-    const likeCount = await db.like.count({ where: { postId } });
-
-    return {
-      liked: !!existingLike,
-      likeCount,
-    };
-  });
+  }, getLikeStatusSchema);
