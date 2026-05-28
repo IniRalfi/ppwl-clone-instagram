@@ -50,7 +50,13 @@ export function App() {
 
       <Route
         path="/notifications"
-        element={<Navigate to="/" replace />}
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <NotificationPage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
       />
 
       <Route

@@ -35,21 +35,6 @@ export function BottomNav() {
           );
         }
 
-        if (to === "/notifications") {
-          return (
-            <button
-              key={to}
-              onClick={toggleNotif}
-              className={`flex-1 flex items-center justify-center h-full transition-colors cursor-pointer ${
-                isNotifOpen ? "text-ig-text" : "text-ig-secondary-text"
-              }`}
-              aria-label={label}
-            >
-              <Icon className="w-6 h-6" strokeWidth={isNotifOpen ? 2.5 : 1.5} />
-            </button>
-          );
-        }
-
         return (
           <NavLink
             key={to}

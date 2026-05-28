@@ -166,9 +166,9 @@ export function NotificationDrawer() {
   return (
     <div
       ref={drawerRef}
-      className={`fixed top-0 z-40 h-screen w-full md:w-[397px] bg-ig-background border-r border-ig-border shadow-2xl flex flex-col transition-all duration-300 ease-in-out select-none ${
+      className={`fixed top-0 z-40 h-screen w-[397px] bg-ig-background border-r border-ig-border shadow-2xl hidden md:flex flex-col transition-all duration-300 ease-in-out select-none ${
         isOpen
-          ? "left-0 md:left-[72px] opacity-100 translate-x-0"
+          ? "left-[72px] opacity-100 translate-x-0"
           : "-translate-x-full opacity-0 pointer-events-none"
       }`}
     >

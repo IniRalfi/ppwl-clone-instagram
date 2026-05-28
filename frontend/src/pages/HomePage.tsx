@@ -64,7 +64,7 @@ const HomePage: React.FC = () => {
         Geser feed ke kanan sebesar 397px secara default pada layar desktop (md ke atas)
         untuk menyisakan ruang bagi Laci Notifikasi di sebelah kiri feed.
       */}
-      <div className="max-w-[975px] mx-auto md:mx-0 md:pl-[397px] flex gap-8 px-4 pt-6 pb-20 transition-all duration-300">
+      <div className="max-w-[1372px] mx-auto md:pl-[397px] flex gap-8 px-4 pt-6 pb-20 transition-all duration-300">
 
         {/* ── KOLOM KIRI: Stories + Feed Postingan ── */}
         <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
