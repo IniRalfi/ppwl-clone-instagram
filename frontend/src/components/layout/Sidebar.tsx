@@ -1,15 +1,17 @@
-import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun, Activity } from "lucide-react";
+import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun, Activity, Send } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { useThemeStore } from "../../store/theme.store";
 import { useNotificationDrawerStore } from "../../store/notification-drawer.store";
 import { useNotificationStore } from "../../store/notification.store";
+import { useMessageStore } from "../../store/message.store";
 import { toast } from "sonner";
 
 const navItems = [
   { icon: Home, label: "Beranda", to: "/", wip: false },
   { icon: Search, label: "Cari", to: "/explore", wip: false },
   { icon: PlusSquare, label: "Buat Post", to: "/create", wip: false },
+  { icon: Send, label: "Pesan", to: "/messages", wip: false },
   { icon: Heart, label: "Notifikasi", to: "/notifications", wip: false },
   { icon: User, label: "Profil", to: "/profile", wip: false },
   { icon: Activity, label: "Monitoring", to: "/monitoring", wip: false },
@@ -23,6 +25,7 @@ export function Sidebar() {
   const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const isAdmin = user?.role === "ADMIN";
+  const unreadMessageCount = useMessageStore((state) => state.unreadCount);
 
   const visibleItems = navItems.filter((item) => item.to !== "/monitoring" || isAdmin);
 
@@ -95,6 +98,41 @@ export function Sidebar() {
                   {label}
                 </span>
               </button>
+            );
+          }
+
+          if (to === "/messages") {
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg group ${
+                    isActive
+                      ? "text-ig-text font-semibold bg-ig-elevated-bg/55"
+                      : "text-ig-secondary-text hover:text-ig-text"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="relative flex-shrink-0">
+                      <Icon
+                        className="w-6 h-6 transition-transform group-hover:scale-105"
+                        strokeWidth={isActive ? 2.2 : 1.5}
+                      />
+                      {unreadMessageCount > 0 && (
+                        <span className="absolute -right-1.5 -top-1.5 min-w-[16px] rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                          {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                        </span>
+                      )}
+                    </span>
+                    <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+                      {label}
+                    </span>
+                  </>
+                )}
+              </NavLink>
             );
           }
 

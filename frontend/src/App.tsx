@@ -8,6 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import CreatePostPage from "./pages/CreatePostPage";
 import RegisterPage from "./pages/RegisterPage";
 import MonitoringPage from "./pages/MonitoringPage";
+import MessagesPage from "./pages/MessagesPage";
 import { PostDetailPage } from "./pages/PostDetailPage";
 import { MainLayout } from "./components/layout/MainLayout";
 import ExplorePage from "./pages/ExplorePage";
@@ -84,6 +85,17 @@ export function App() {
           <ProtectedRoute>
             <MainLayout>
               <PostDetailPage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <MessagesPage />
             </MainLayout>
           </ProtectedRoute>
         }

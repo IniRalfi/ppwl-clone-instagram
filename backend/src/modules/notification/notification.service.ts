@@ -147,7 +147,7 @@ export class NotificationService {
     }
 
     if (notification.type === "message") {
-      return "/messages";
+      return notification.refId ? `/messages?roomId=${notification.refId}` : "/messages";
     }
 
     if (notification.post?.id) {

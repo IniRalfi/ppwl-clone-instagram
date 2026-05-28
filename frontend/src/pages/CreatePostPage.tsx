@@ -3,9 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { createPost } from "../services/post.service";
 import { toast } from "sonner";
-import { ImageIcon, VideoIcon, X, ArrowLeft, Loader2, Type, Paintbrush, Sparkles, Undo2, Trash2, Check, Move } from "lucide-react";
-import { Avatar } from "../components/common/Avatar";
+import { ArrowLeft, Loader2, Move } from "lucide-react";
 import { compressImage } from "../lib/image";
+import { UploadStep } from "./create/UploadStep";
+import { EditorToolPanel } from "./create/EditorToolPanel";
+import { LayoutTab } from "./create/LayoutTab";
+import { FilterTab } from "./create/FilterTab";
+import { DrawTab } from "./create/DrawTab";
+import { TextTab } from "./create/TextTab";
+import { CaptionStep } from "./create/CaptionStep";
 
 /** Ukuran maksimal file yang diizinkan (sesuai backend: 5 MB) */
 const MAX_FILE_SIZE_MB = 5;
@@ -521,47 +527,15 @@ export default function CreatePostPage() {
 
       {/* ── Main Content ── */}
       {step === "upload" ? (
-        /* ── Step 1: Upload area ── */
-        <div
-          className={`flex-1 flex flex-col items-center justify-center gap-5 transition-colors duration-200 ${
-            isDragOver ? "bg-blue-500/5" : "bg-ig-background"
-          }`}
+        <UploadStep
+          isDragOver={isDragOver}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-        >
-          <div className="relative">
-            <ImageIcon className="h-20 w-20 text-ig-text opacity-90" strokeWidth={1} />
-            <VideoIcon
-              className="h-10 w-10 text-ig-text opacity-90 absolute -bottom-1 -right-3"
-              strokeWidth={1}
-            />
-          </div>
-
-          <p className="text-ig-text text-xl font-light">
-            {isDragOver ? "Lepaskan di sini!" : "Seret foto dan video ke sini"}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-1.5 bg-ig-primary hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
-          >
-            Pilih dari komputer
-          </button>
-
-          <p className="text-neutral-600 text-xs">
-            JPEG, PNG, WebP, GIF — maks. {MAX_FILE_SIZE_MB} MB
-          </p>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ALLOWED_TYPES.join(",")}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
+          onFileChange={handleFileChange}
+          fileInputRef={fileInputRef}
+          isLoading={isLoading}
+        />
       ) : step === "editor" ? (
         /* ── Step 2: Canvas Photo Editor (Reuses story editor layout) ── */
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -601,387 +575,79 @@ export default function CreatePostPage() {
             </div>
           </div>
 
-          {/* Panel Kanan: Alat Editor */}
-          <div className="w-full md:w-[350px] bg-ig-secondary-bg border-t md:border-t-0 md:border-l border-ig-border p-4 flex flex-col justify-between overflow-y-auto max-h-[40vh] md:max-h-[calc(100vh-44px)]">
-            <div className="space-y-5">
-              {/* Tab Selector */}
-              <div className="grid grid-cols-4 gap-1 bg-ig-elevated-bg/50 p-1 rounded-xl">
-                {["photo", "filter", "draw", "text"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => {
-                      setTool(t as any);
-                      setSelectedTextId(null);
-                    }}
-                    className={`py-1.5 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
-                      tool === t
-                        ? "bg-ig-primary text-white shadow-sm"
-                        : "text-ig-secondary-text hover:text-white"
-                    }`}
-                  >
-                    {t === "photo" ? "Layout" : t === "draw" ? "Coret" : t}
-                  </button>
-                ))}
-              </div>
-
-              {/* Kontrol dinamis */}
-              <div className="space-y-4 min-h-[200px]">
-                {/* 1. TAB LAYOUT */}
-                {tool === "photo" && (
-                  <div className="space-y-4">
-                    {/* Rasio Aspek */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        Rasio Aspek Postingan
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {aspectRatios.map((ratio) => (
-                          <button
-                            key={ratio.name}
-                            onClick={() => {
-                              setCanvasWidth(ratio.width);
-                              setCanvasHeight(ratio.height);
-                              setActiveRatioName(ratio.name);
-                            }}
-                            className={`py-2 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
-                              activeRatioName === ratio.name
-                                ? "bg-ig-primary text-white border-ig-primary"
-                                : "bg-ig-elevated-bg border-ig-border text-ig-text hover:bg-neutral-800"
-                            }`}
-                          >
-                            {ratio.name.split(" ")[0]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Latar Belakang */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        Latar Belakang (Margin)
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {bgPresets.map((bg) => (
-                          <button
-                            key={bg.name}
-                            onClick={() => setBgColor(bg.value)}
-                            style={{
-                              background:
-                                bg.value === "gradient-insta"
-                                  ? "linear-gradient(135deg, #c32aa3, #d62976, #f77737)"
-                                  : bg.value,
-                            }}
-                            className={`px-2.5 py-1 rounded-md text-[10px] font-semibold cursor-pointer border border-neutral-700 transition-all ${
-                              bgColor === bg.value
-                                ? "ring-2 ring-ig-primary text-white"
-                                : "text-ig-text"
-                            }`}
-                          >
-                            {bg.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Skala */}
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-ig-secondary-text">Skala Foto</span>
-                        <span className="text-ig-text">{imageScale}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={10}
-                        max={300}
-                        value={imageScale}
-                        onChange={(e) => setImageScale(Number(e.target.value))}
-                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleResetPhoto}
-                      className="w-full py-2 text-xs font-semibold rounded-lg bg-ig-elevated-bg hover:bg-neutral-800 text-ig-text transition-colors cursor-pointer border-none"
-                    >
-                      Reset Layout Foto
-                    </button>
-                  </div>
-                )}
-
-                {/* 2. TAB FILTER */}
-                {tool === "filter" && (
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                      Pilih Filter Foto
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {filtersPreset.map((f) => (
-                        <button
-                          key={f.name}
-                          onClick={() => setActiveFilter(f.value)}
-                          className={`flex flex-col items-center justify-center p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
-                            activeFilter === f.value
-                              ? "bg-ig-primary/10 border-ig-primary text-ig-primary font-semibold"
-                              : "bg-ig-elevated-bg border-ig-border text-ig-text hover:bg-neutral-800"
-                          }`}
-                        >
-                          {thumbnailUrl ? (
-                            <img
-                              src={thumbnailUrl}
-                              alt={f.name}
-                              style={{ filter: f.value }}
-                              className="w-12 h-12 object-cover rounded-md mb-1 shadow-md border border-neutral-700"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-neutral-700 rounded-md mb-1 animate-pulse" />
-                          )}
-                          <span className="text-[10px]">{f.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. TAB DRAW */}
-                {tool === "draw" && (
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-ig-secondary-text">Ukuran Kuas</span>
-                        <span className="text-ig-text">{brushSize}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={2}
-                        max={30}
-                        value={brushSize}
-                        onChange={(e) => setBrushSize(Number(e.target.value))}
-                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        Warna Kuas
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {colorsList.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setBrushColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-transform hover:scale-110 ${
-                              brushColor === c
-                                ? "ring-2 ring-offset-2 ring-offset-ig-secondary-bg ring-ig-primary scale-105"
-                                : "border border-neutral-700"
-                            }`}
-                          >
-                            {brushColor === c && (
-                              <Check
-                                className={`w-3.5 h-3.5 ${
-                                  c === "#ffffff" || c === "#ffc300" || c === "#00f5d4"
-                                    ? "text-black"
-                                    : "text-white"
-                                }`}
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleUndoDraw}
-                      disabled={strokes.length === 0}
-                      className="w-full flex items-center justify-center gap-1 py-2 text-xs font-semibold rounded-lg bg-ig-elevated-bg text-ig-text hover:bg-neutral-800 disabled:opacity-40 transition-colors cursor-pointer border-none"
-                    >
-                      <Undo2 className="w-3.5 h-3.5" /> Batal Coret ({strokes.length})
-                    </button>
-                  </div>
-                )}
-
-                {/* 4. TAB TEKS */}
-                {tool === "text" && (
-                  <form onSubmit={handleAddText} className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        {selectedTextId ? "Edit Teks" : "Tambah Teks"}
-                      </label>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="text"
-                          value={inputText}
-                          onChange={(e) => setInputText(e.target.value)}
-                          placeholder="Teks..."
-                          className="flex-1 bg-ig-elevated-bg border border-ig-border rounded-lg px-2.5 py-1.5 text-xs text-ig-text placeholder-ig-secondary-text focus:outline-none focus:ring-1 focus:ring-ig-primary"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!inputText.trim()}
-                          className="bg-ig-primary hover:bg-blue-500 text-white font-semibold px-3 rounded-lg text-xs disabled:opacity-40 cursor-pointer"
-                        >
-                          {selectedTextId ? "Set" : "Ok"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Gaya Font */}
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        Font
-                      </span>
-                      <div className="grid grid-cols-2 gap-1">
-                        {fontsList.map((f) => (
-                          <button
-                            key={f.name}
-                            type="button"
-                            onClick={() => setFontStyle(f.value)}
-                            className={`py-1 px-1.5 text-[10px] rounded-md text-center transition-all cursor-pointer ${
-                              fontStyle === f.value
-                                ? "bg-ig-primary text-white font-bold"
-                                : "bg-ig-elevated-bg border border-ig-border text-ig-text hover:bg-neutral-800"
-                            }`}
-                            style={{ fontFamily: f.value }}
-                          >
-                            {f.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Ukuran Font */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-ig-secondary-text">Ukuran</span>
-                        <span className="text-ig-text">{fontSize}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={14}
-                        max={60}
-                        value={fontSize}
-                        onChange={(e) => setFontSize(Number(e.target.value))}
-                        className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
-                      />
-                    </div>
-
-                    {/* Warna Font */}
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
-                        Warna
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {colorsList.map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setFontColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-transform hover:scale-110 ${
-                              fontColor === c
-                                ? "ring-2 ring-offset-2 ring-offset-ig-secondary-bg ring-ig-primary scale-105"
-                                : "border border-neutral-700"
-                            }`}
-                          >
-                            {fontColor === c && (
-                              <Check
-                                className={`w-3.5 h-3.5 ${
-                                  c === "#ffffff" || c === "#ffc300" || c === "#00f5d4"
-                                    ? "text-black"
-                                    : "text-white"
-                                }`}
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {selectedTextId && (
-                      <button
-                        type="button"
-                        onClick={handleDeleteText}
-                        className="w-full py-1.5 text-xs font-semibold rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-500 transition-colors cursor-pointer border border-red-500/20"
-                      >
-                        Hapus Teks
-                      </button>
-                    )}
-                  </form>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={handleRemoveImage}
-              className="mt-4 w-full py-2.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors cursor-pointer border border-red-500/20"
-            >
-              Hapus Gambar & Batalkan
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* ── Step 3: Preview + Caption ── */
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* Panel Kiri: Preview Hasil Edit */}
-          <div className="relative md:flex-1 w-full aspect-square md:aspect-auto bg-black flex items-center justify-center p-4">
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-auto max-h-[500px] object-contain rounded-lg shadow-lg select-none"
+          <EditorToolPanel
+            activeTab={tool}
+            onTabChange={(t) => {
+              setTool(t as any);
+              setSelectedTextId(null);
+            }}
+            onRemoveImage={handleRemoveImage}
+          >
+            {tool === "photo" && (
+              <LayoutTab
+                aspectRatios={aspectRatios}
+                activeRatioName={activeRatioName}
+                onRatioChange={(width, height, name) => {
+                  setCanvasWidth(width);
+                  setCanvasHeight(height);
+                  setActiveRatioName(name);
+                }}
+                bgPresets={bgPresets}
+                bgColor={bgColor}
+                onBgColorChange={setBgColor}
+                imageScale={imageScale}
+                onScaleChange={setImageScale}
+                onReset={handleResetPhoto}
               />
             )}
-            <button
-              type="button"
-              onClick={handleRemoveImage}
-              className="absolute top-6 right-6 p-2 bg-black/70 hover:bg-black/90 rounded-full text-white transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Panel Kanan: Caption & Info */}
-          <div className="w-full md:w-[340px] flex flex-col border-t md:border-t-0 md:border-l border-ig-border bg-ig-background p-4">
-            <div className="flex items-center gap-3 pb-4">
-              <Avatar
-                name={user?.name ?? "?"}
-                avatarUrl={user?.avatarUrl}
-                size="sm"
+            {tool === "filter" && (
+              <FilterTab
+                filtersPreset={filtersPreset}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                thumbnailUrl={thumbnailUrl}
               />
-              <span className="text-sm font-semibold">{user?.username}</span>
-            </div>
-
-            <div className="flex-1">
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Write a caption..."
-                rows={8}
-                maxLength={2200}
-                className="w-full bg-transparent text-sm text-ig-text placeholder-neutral-500 resize-none focus:outline-none leading-relaxed"
+            )}
+            {tool === "draw" && (
+              <DrawTab
+                brushColor={brushColor}
+                onBrushColorChange={setBrushColor}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                colorsList={colorsList}
+                onUndo={handleUndoDraw}
+                strokeCount={strokes.length}
               />
-            </div>
-
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-xs text-neutral-500">
-                {caption.length}/2,200
-              </span>
-            </div>
-
-            <hr className="border-ig-border my-4" />
-
-            <div className="divide-y divide-ig-border text-sm text-ig-secondary-text">
-              <div className="flex items-center justify-between py-2.5 opacity-40 cursor-not-allowed">
-                <span>Add location</span>
-                <span>📍</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 opacity-40 cursor-not-allowed">
-                <span>Accessibility</span>
-                <span>›</span>
-              </div>
-            </div>
-          </div>
+            )}
+            {tool === "text" && (
+              <TextTab
+                inputText={inputText}
+                onInputTextChange={setInputText}
+                onAddText={handleAddText}
+                selectedTextId={selectedTextId}
+                onDeleteText={handleDeleteText}
+                fontStyle={fontStyle}
+                onFontStyleChange={setFontStyle}
+                fontSize={fontSize}
+                onFontSizeChange={setFontSize}
+                fontColor={fontColor}
+                onFontColorChange={setFontColor}
+                fontsList={fontsList}
+                colorsList={colorsList}
+              />
+            )}
+          </EditorToolPanel>
         </div>
+      ) : (
+        <CaptionStep
+          caption={caption}
+          onCaptionChange={(e) => setCaption(e.target.value)}
+          imagePreview={imagePreview}
+          onRemoveImage={handleRemoveImage}
+          avatarUrl={user?.avatarUrl}
+          username={user?.username}
+          name={user?.name ?? "?"}
+        />
       )}
     </div>
   );

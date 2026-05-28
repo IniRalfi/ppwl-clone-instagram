@@ -1,17 +1,14 @@
 import { Elysia } from "elysia";
 import { NotificationService } from "./notification.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { isPusherEnabled, pusher } from "@/config/pusher";
 
 export const notificationRoutes = new Elysia({ prefix: "/notifications" })
-  .use(authPlugin)
-  .get("/", async ({ getCurrentUser, set }) => {
+  .use(requireAuth)
+  .get("/", async ({ requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       const notifications = await NotificationService.getNotificationsForUser(user.id);
       return { data: notifications };
     } catch (error) {
@@ -20,13 +17,10 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       return { message: "Terjadi kesalahan server" };
     }
   })
-  .get("/unread-count", async ({ getCurrentUser, set }) => {
+  .get("/unread-count", async ({ requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const count = await NotificationService.getUnreadCount(user.id);
       return { count };
@@ -36,13 +30,10 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       return { message: "Terjadi kesalahan server" };
     }
   })
-  .post("/subscribe", async ({ body, headers, getCurrentUser, set }) => {
+  .post("/subscribe", async ({ body, headers, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       await NotificationService.savePushSubscription(
         user.id,
@@ -57,13 +48,10 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       return { message: error.message || "Terjadi kesalahan server" };
     }
   })
-  .delete("/subscribe", async ({ body, getCurrentUser, set }) => {
+  .delete("/subscribe", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const endpoint = (body as { endpoint?: string } | undefined)?.endpoint;
       if (!endpoint) {
@@ -79,12 +67,9 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       return { message: "Terjadi kesalahan server" };
     }
   })
-  .post("/pusher/auth", async ({ body, getCurrentUser, set }) => {
-    const user = await getCurrentUser();
-    if (!user) {
-      set.status = 401;
-      return { message: "Unauthorized" };
-    }
+  .post("/pusher/auth", async ({ body, requireUser, set }) => {
+    const user = await requireUser();
+    if (!user) return;
 
     if (!isPusherEnabled || !pusher) {
       set.status = 503;

@@ -12,3 +12,9 @@ export const sendMessageSchema = {
     text: t.String({ minLength: 1, error: "Teks pesan tidak boleh kosong" }),
   }),
 };
+
+export const markReadSchema = {
+  params: t.Object({
+    roomId: t.String({ error: "ID ruang obrolan tidak valid" }),
+  }),
+};

@@ -1,11 +1,11 @@
 import { Elysia } from "elysia";
 import { DataService } from "./data.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
-  .use(authPlugin)
+  .use(requireAuth)
   // Middleware khusus untuk grup /data
-  .onBeforeHandle(async ({ request, set, getCurrentUser }) => {
+  .onBeforeHandle(async ({ request, set, requireUser }) => {
     // Lewati preflight OPTIONS
     if (request.method === "OPTIONS") return;
 
@@ -21,8 +21,9 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
     }
 
     // 2. Jika tidak ada/tidak cocok, cek session user (JWT token)
-    const user = await getCurrentUser();
-    const isAdmin = user && user.role === "ADMIN";
+    const user = await requireUser();
+    if (!user) return;
+    const isAdmin = user.role === "ADMIN";
 
     if (!isAdmin) {
       set.status = 401;

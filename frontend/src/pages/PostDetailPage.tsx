@@ -242,13 +242,13 @@ export function PostDetailPage() {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-ig-background md:bg-black/80 flex items-center justify-center p-0 md:p-4 md:backdrop-blur-sm"
       onClick={() => navigate('/')}
     >
       {/* Tombol X (Close) */}
       <button 
         onClick={() => navigate('/')}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 z-[60]"
+        className="absolute top-3 right-3 md:top-4 md:right-4 text-ig-text md:text-white hover:text-gray-300 p-2 z-[60] rounded-full bg-ig-background/70 md:bg-transparent"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -258,12 +258,12 @@ export function PostDetailPage() {
 
       {/* Modal Content */}
       <div 
-        className="w-full max-w-[1200px] flex flex-col md:flex-row bg-ig-background border border-ig-border md:h-[85vh] overflow-hidden rounded-md shadow-2xl relative"
+        className="w-full h-full md:h-[85vh] md:max-w-[1200px] flex flex-col md:flex-row bg-ig-background border-0 md:border border-ig-border overflow-hidden md:rounded-md shadow-2xl relative"
         onClick={(e) => e.stopPropagation()} // Mencegah klik di dalam modal tertutup
       >
         
         {/* KIRI: POST GAMBAR/KONTEN */}
-        <div className="w-full md:w-[60%] flex items-center justify-center bg-black border-r border-ig-border overflow-hidden relative">
+        <div className="w-full h-[42vh] md:h-auto md:w-[60%] flex items-center justify-center bg-black md:border-r border-ig-border overflow-hidden relative flex-shrink-0">
           {post.imageUrl ? (
             <img src={post.imageUrl} alt="Post" className="object-contain w-full h-full" />
           ) : (
@@ -272,7 +272,7 @@ export function PostDetailPage() {
         </div>
 
         {/* KANAN: KOMENTAR & INFO */}
-        <div className="w-full md:w-[40%] flex flex-col h-full bg-ig-background relative">
+        <div className="w-full md:w-[40%] flex flex-col min-h-0 flex-1 bg-ig-background relative">
           
           {/* Header Info User */}
           <div className="flex items-center justify-between p-4 border-b border-ig-border">
@@ -300,7 +300,7 @@ export function PostDetailPage() {
           </div>
 
           {/* List Komentar */}
-          <div ref={commentListRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+          <div ref={commentListRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 pb-24">
             {/* Caption sebagai komentar pertama */}
             <div className="flex items-start mb-6">
               <img
@@ -338,7 +338,7 @@ export function PostDetailPage() {
           </div>
 
           {/* Input Bar (Fixed Bottom of Right Panel) */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-ig-border bg-ig-background">
+          <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 border-t border-ig-border bg-ig-background">
             {replyTarget && (
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] text-neutral-400">
@@ -368,7 +368,7 @@ export function PostDetailPage() {
                   <Smile className="w-5 h-5" />
                 </button>
                 {showEmojiPicker && (
-                  <div className="absolute bottom-12 left-0 z-50 shadow-2xl animate-in slide-in-from-bottom-2 duration-150">
+                  <div className="absolute bottom-12 left-0 z-50 shadow-2xl animate-in slide-in-from-bottom-2 duration-150 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl">
                     <EmojiPicker
                       theme={currentTheme === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
                       onEmojiClick={(emojiData) => {
@@ -376,7 +376,7 @@ export function PostDetailPage() {
                         setShowEmojiPicker(false);
                         inputRef.current?.focus();
                       }}
-                      width={320}
+                      width={Math.min(320, window.innerWidth - 32)}
                       height={400}
                       skinTonesDisabled
                       searchDisabled={false}

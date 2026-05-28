@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { PostService } from "./post.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { localCache } from "@/utils/cache";
 import {
   getPostsSchema,
@@ -11,7 +11,7 @@ import {
 } from "./post.schema";
 
 export const postRoutes = new Elysia({ prefix: "/posts" })
-  .use(authPlugin)
+  .use(requireAuth)
 
   // 1. GET /posts — Ambil semua postingan (feed)
   .get("/", async ({ query, getCurrentUser }) => {
@@ -41,13 +41,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   }, getPostsSchema)
 
   // 2. GET /posts/saved — Mengambil postingan yang di-bookmark oleh user aktif
-  .get("/saved", async ({ getCurrentUser, set }) => {
+  .get("/saved", async ({ requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       const mappedPosts = await PostService.getSavedPosts(user.id);
       return { data: mappedPosts };
     } catch (error) {
@@ -98,13 +95,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   })
 
   // 4. POST /posts — Buat postingan baru (multipart/form-data)
-  .post("/", async ({ body, getCurrentUser, set }) => {
+  .post("/", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const formData = body as Record<string, any>;
       const content = formData.content as string;
@@ -120,13 +114,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   }, createPostSchema)
 
   // 5. DELETE /posts/:id — Hapus postingan
-  .delete("/:id", async ({ params: { id }, getCurrentUser, set }) => {
+  .delete("/:id", async ({ params: { id }, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       await PostService.deletePost(user.id, id);
       return { message: "Postingan berhasil dihapus" };
@@ -144,13 +135,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   }, deletePostSchema)
 
   // 6. POST /posts/:id/bookmark — Toggle simpan postingan
-  .post("/:id/bookmark", async ({ params: { id }, getCurrentUser, set }) => {
+  .post("/:id/bookmark", async ({ params: { id }, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const bookmarked = await PostService.toggleBookmark(user.id, id);
       return {
@@ -165,13 +153,10 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
   }, bookmarkPostSchema)
 
   // 7. PUT /posts/:id — Edit caption postingan
-  .put("/:id", async ({ params: { id }, body, getCurrentUser, set }) => {
+  .put("/:id", async ({ params: { id }, body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       const { content } = body as { content: string };
       const updatedPost = await PostService.updatePost(user.id, id, content);
       return { message: "Postingan berhasil diperbarui", data: updatedPost };

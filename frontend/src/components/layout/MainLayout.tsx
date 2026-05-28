@@ -6,6 +6,7 @@ import { PushPermissionModal } from "../notification/PushPermissionModal";
 import { useRealtimeNotifications } from "../../hooks/useRealtimeNotifications";
 import { useAuthStore } from "../../store/auth.store";
 import { useNotificationStore } from "../../store/notification.store";
+import { useMessageStore } from "../../store/message.store";
 import { toast } from "sonner";
 import type { Notification } from "../../../../shared/src/types/notification";
 
@@ -42,21 +43,36 @@ function NotificationRealtimeBridge() {
   const fetchUnreadCount = useNotificationStore((state) => state.fetchUnreadCount);
   const setNotifications = useNotificationStore((state) => state.setNotifications);
   const markAllRead = useNotificationStore((state) => state.markAllRead);
+  const activeRoomId = useMessageStore((state) => state.activeRoomId);
+  const fetchUnreadMessageCount = useMessageStore((state) => state.fetchUnreadCount);
 
   useEffect(() => {
     if (user) {
       fetchUnreadCount().catch(() => null);
+      fetchUnreadMessageCount().catch(() => null);
     } else {
       setNotifications([]);
       markAllRead();
     }
-  }, [user, fetchUnreadCount, setNotifications, markAllRead]);
+  }, [user, fetchUnreadCount, fetchUnreadMessageCount, setNotifications, markAllRead]);
 
   useRealtimeNotifications(user?.id, token, (notification) => {
     prependNotification(notification);
-    toast(formatRealtimeNotification(notification), {
-      description: notification.sender?.username ? `Dari @${notification.sender.username}` : "Notifikasi baru",
-    });
+
+    // Suppress toast notification for messages if user is inside that chat room
+    const isMessageInActiveChat =
+      notification.type === "message" &&
+      notification.refId &&
+      notification.refId === activeRoomId;
+
+    if (!isMessageInActiveChat) {
+      toast(formatRealtimeNotification(notification), {
+        description: notification.sender?.username ? `Dari @${notification.sender.username}` : "Notifikasi baru",
+      });
+    }
+
+    // Also refresh unread message count on any new notification (might be a message)
+    fetchUnreadMessageCount().catch(() => null);
   });
 
   return <PushPermissionModal />;

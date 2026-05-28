@@ -194,6 +194,7 @@ model Message {
   senderId  String
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   text      String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([roomId])

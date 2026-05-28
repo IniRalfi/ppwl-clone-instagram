@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { CommentService } from "./comment.service";
 import { createCommentSchema } from "./comment.schema";
 
 export const commentRoutes = new Elysia({ prefix: "/comments" })
-  .use(authPlugin)
+  .use(requireAuth)
   
   // 1. Ambil semua komentar
   .get("/", async () => {
@@ -13,13 +13,10 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
   })
   
   // 2. Kirim komentar baru
-  .post("/", async ({ body, getCurrentUser, set }) => {
+  .post("/", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       
       const { postId, content, parentId } = body;
       const authorId = user.id;
@@ -40,13 +37,10 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
   }, createCommentSchema)
 
   // 3. Toggle like komentar
-  .post("/:id/like", async ({ params: { id }, getCurrentUser, set }) => {
+  .post("/:id/like", async ({ params: { id }, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const liked = await CommentService.toggleLikeComment(user.id, id);
       return { message: liked ? "Komentar disukai" : "Batal menyukai komentar", liked };

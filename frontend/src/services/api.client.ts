@@ -3,13 +3,10 @@ import { useAuthStore } from "../store/auth.store";
 // Base URL backend — sesuaikan dengan environment variable Vite
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-// Helper: ambil token dari Zustand persist store (key: "auth-storage")
+// Helper: ambil token dari Zustand store
 function getToken(): string | null {
   try {
-    const raw = localStorage.getItem("auth-storage");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.token ?? null;
+    return useAuthStore.getState().token ?? null;
   } catch {
     return null;
   }

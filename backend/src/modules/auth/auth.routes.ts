@@ -1,10 +1,10 @@
 import { Elysia } from "elysia";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { AuthService } from "./auth.service";
 import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
-  .use(authPlugin)
+  .use(requireAuth)
   
   // 1. Registrasi Akun
   .post("/register", async ({ body, set }) => {

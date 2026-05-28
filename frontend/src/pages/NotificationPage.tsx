@@ -236,7 +236,9 @@ function NotificationItem({ notif, onFollowToggle }: NotificationItemProps) {
       return;
     }
 
-    if (notif.type === "follow") {
+    if (notif.type === "message") {
+      navigate(notif.refId ? `/messages?roomId=${notif.refId}` : "/messages");
+    } else if (notif.type === "follow") {
       if (sender) navigate(`/profile/${sender.username}`);
     } else if (post) {
       navigate(`/posts/${post.id}`);
@@ -280,7 +282,7 @@ function NotificationItem({ notif, onFollowToggle }: NotificationItemProps) {
       <div 
         onClick={handleContentClick}
         className={`flex-1 min-w-0 text-left ${
-          (notif.type === "follow" || post) ? "cursor-pointer" : ""
+          (notif.type === "follow" || notif.type === "message" || post) ? "cursor-pointer" : ""
         }`}
       >
         <p className="text-ig-text text-[14px] leading-snug break-words">

@@ -1,19 +1,16 @@
 import { Elysia } from "elysia";
 import { LikeService } from "./like.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { toggleLikeSchema, getLikeStatusSchema } from "./like.schema";
 
 export const likeRoutes = new Elysia({ prefix: "/likes" })
-  .use(authPlugin)
+  .use(requireAuth)
 
   // 1. POST /likes/:postId — Toggle like/unlike
-  .post("/:postId", async ({ params: { postId }, getCurrentUser, set }) => {
+  .post("/:postId", async ({ params: { postId }, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const { liked, likeCount } = await LikeService.toggleLike(user.id, postId);
       return {

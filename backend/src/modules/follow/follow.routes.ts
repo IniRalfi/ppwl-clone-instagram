@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { FollowService } from "./follow.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import {
   getFollowStatsSchema,
   getFollowersSchema,
@@ -11,7 +11,7 @@ import {
 } from "./follow.schema";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
-  .use(authPlugin)
+  .use(requireAuth)
 
   /** GET /follow/stats/:userId?currentUserId=xxx — Jumlah followers & following + status follow */
   .get("/stats/:userId", async ({ params: { userId }, query, getCurrentUser, set }) => {
@@ -77,13 +77,10 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   }, getSuggestionsSchema)
 
   /** POST /follow — Follow user */
-  .post("/", async ({ body, getCurrentUser, set }) => {
+  .post("/", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       const { followerId, followingId } = body;
 
       if (followerId !== user.id) {
@@ -107,13 +104,10 @@ export const followRoutes = new Elysia({ prefix: "/follow" })
   }, followActionSchema)
 
   /** DELETE /follow — Unfollow user */
-  .delete("/", async ({ body, getCurrentUser, set }) => {
+  .delete("/", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
       const { followerId, followingId } = body;
 
       if (followerId !== user.id) {

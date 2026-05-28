@@ -1,19 +1,16 @@
 import { Elysia } from "elysia";
 import { StoryService } from "./story.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { uploadStorySchema } from "./story.schema";
 
 export const storyRoutes = new Elysia({ prefix: "/stories" })
-  .use(authPlugin)
+  .use(requireAuth)
 
   // 1. GET /stories — Mengambil cerita aktif dari diri sendiri & teman yang diikuti
-  .get("/", async ({ getCurrentUser, set }) => {
+  .get("/", async ({ requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const groups = await StoryService.getActiveStories(user.id);
       return { data: groups };
@@ -25,13 +22,10 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
   })
 
   // 2. POST /stories — Mengunggah cerita baru (multipart/form-data)
-  .post("/", async ({ body, getCurrentUser, set }) => {
+  .post("/", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const formData = body as Record<string, any>;
       const imageFile = formData.image as File;

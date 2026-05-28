@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { UserService } from "./user.service";
-import { authPlugin } from "@/plugins/auth.plugin";
+import { requireAuth } from "@/plugins/require-auth.plugin";
 import { uploadMedia } from "@/config/s3";
 import {
   searchUsersSchema,
@@ -9,7 +9,7 @@ import {
 } from "./user.schema";
 
 export const userRoutes = new Elysia({ prefix: "/users" })
-  .use(authPlugin)
+  .use(requireAuth)
   // 1. GET /users — Cari pengguna (wajib auth + minimal 2 karakter)
   .get("/", async ({ query, set }) => {
     const { search } = query;
@@ -32,13 +32,10 @@ export const userRoutes = new Elysia({ prefix: "/users" })
   }, getUserByUsernameSchema)
 
   // 3. PUT /users/profile — Update profil user aktif
-  .put("/profile", async ({ body, getCurrentUser, set }) => {
+  .put("/profile", async ({ body, requireUser, set }) => {
     try {
-      const user = await getCurrentUser();
-      if (!user) {
-        set.status = 401;
-        return { message: "Unauthorized" };
-      }
+      const user = await requireUser();
+      if (!user) return;
 
       const { username, name, bio, avatarUrl, image, website, gender, showThreads, suggestions } = body;
 

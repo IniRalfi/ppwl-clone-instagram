@@ -19,20 +19,8 @@ import { getActiveStories } from "../services/story.service";
 import type { UserStoryGroup } from "../components/story/StoriesRow";
 import StoryViewer from "../components/story/StoryViewer";
 import StoryEditorModal from "../components/story/StoryEditorModal";
-
-// ─────────────────────────────────────────────
-// Tipe
-// ─────────────────────────────────────────────
-interface Post {
-  id: string;
-  content: string;
-  imageUrl: string | null;
-  authorId: string;
-  _count?: {
-    likes: number;
-    comments: number;
-  };
-}
+import { PostGrid } from "../components/post/PostGrid";
+import type { Post } from "../../../shared/src/types/post";
 
 interface FollowStats {
   followers: number;
@@ -390,10 +378,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-ig-background max-w-[935px] mx-auto px-4 text-ig-text">
+    <div className="min-h-screen bg-ig-background max-w-[935px] mx-auto px-4 pb-20 md:pb-0 text-ig-text">
 
       {/* ── Header Profil ── */}
-      <div className="flex items-start gap-8 py-8 border-b border-ig-border">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 py-6 sm:py-8 border-b border-ig-border">
 
         {/* Custom Avatar dengan Integrasi Story & Plus Icon */}
         <div className="relative group flex-shrink-0 select-none">
@@ -410,10 +398,10 @@ export default function ProfilePage() {
                 <img
                   src={profileUser.avatarUrl}
                   alt={`Foto profil ${profileUser.name}`}
-                  className="w-[150px] h-[150px] rounded-full object-cover border border-neutral-800"
+                  className="w-24 h-24 sm:w-[150px] sm:h-[150px] rounded-full object-cover border border-neutral-800"
                 />
               ) : (
-                <div className="w-[150px] h-[150px] rounded-full bg-neutral-900/60 flex items-center justify-center text-ig-text text-4xl font-bold border border-neutral-800">
+                <div className="w-24 h-24 sm:w-[150px] sm:h-[150px] rounded-full bg-neutral-900/60 flex items-center justify-center text-ig-text text-3xl sm:text-4xl font-bold border border-neutral-800">
                   {profileUser.name?.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -439,13 +427,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Info Profil */}
-        <div className="flex-1">
-          <div className="flex items-center gap-4 mb-4">
-            <h1 className="text-ig-text text-xl font-semibold">
+        <div className="w-full sm:flex-1 text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+            <h1 className="text-ig-text text-xl font-semibold break-all">
               {profileUser.username}
             </h1>
             {isOwnProfile ? (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="px-8 py-1.5 text-ig-text text-sm font-semibold bg-ig-elevated-bg border border-ig-border rounded-lg hover:bg-neutral-800 transition-all active:scale-95 cursor-pointer"
@@ -464,7 +452,7 @@ export default function ProfilePage() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <button
                   onClick={handleFollowToggle}
                   disabled={isFollowLoading}
@@ -489,7 +477,15 @@ export default function ProfilePage() {
                   )}
                 </button>
                 <Link
-                  to="/messages"
+                  to={`/messages?userId=${profileUser.id}`}
+                  state={{
+                    user: {
+                      id: profileUser.id,
+                      username: profileUser.username,
+                      name: profileUser.name,
+                      avatarUrl: profileUser.avatarUrl,
+                    },
+                  }}
                   className="px-6 py-1.5 text-sm font-semibold bg-ig-elevated-bg text-ig-text rounded-lg hover:bg-neutral-800 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                 >
                   Kirim Pesan
@@ -499,7 +495,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Statistik: Postingan, Followers, Following */}
-          <div className="flex gap-8 mb-4">
+          <div className="flex justify-center sm:justify-start gap-5 sm:gap-8 mb-4">
             <div>
               <span className="text-ig-text font-semibold">{myPosts.length}</span>
               <span className="text-ig-text text-sm ml-1">postingan</span>
@@ -581,61 +577,11 @@ export default function ProfilePage() {
       <div className="py-4">
         {/* TAB: POSTINGAN */}
         {activeTab === "posts" && (
-          myPosts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2">
-              <span className="text-4xl">📷</span>
-              <p className="text-ig-text font-semibold">Belum Ada Postingan</p>
-              {isOwnProfile && (
-                <>
-                  <p className="text-ig-secondary-text text-sm">
-                    Mulai bagikan foto pertamamu!
-                  </p>
-                  <Link
-                    to="/create"
-                    className="mt-2 text-ig-primary text-sm font-semibold hover:opacity-80"
-                  >
-                    Buat Postingan
-                  </Link>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-[2px]">
-              {myPosts.map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/posts/${post.id}`}
-                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-ig-elevated-bg"
-                >
-                  {post.imageUrl ? (
-                    <img
-                      src={post.imageUrl}
-                      alt={post.content}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center p-3">
-                      <span className="text-xs text-ig-secondary-text line-clamp-3 text-center">
-                        {post.content}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                    <div className="flex items-center gap-2 font-semibold text-white">
-                      <Heart size={20} fill="white" />
-                      <span>{post._count?.likes ?? 0}</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-semibold text-white">
-                      <MessageCircle size={20} fill="white" />
-                      <span>{post._count?.comments ?? 0}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )
+          <PostGrid
+            posts={myPosts}
+            emptyMessage="Belum Ada Postingan"
+            emptyAction={isOwnProfile ? { text: "Buat Postingan", to: "/create" } : undefined}
+          />
         )}
 
         {/* TAB: DISIMPAN */}
@@ -647,41 +593,7 @@ export default function ProfilePage() {
           ) : savedPosts.length === 0 ? (
             <SavedEmptyState />
           ) : (
-            <div className="grid grid-cols-3 gap-[2px]">
-              {savedPosts.map((post) => (
-                <Link
-                  key={post.id}
-                  to={`/posts/${post.id}`}
-                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-ig-elevated-bg"
-                >
-                  {post.imageUrl ? (
-                    <img
-                      src={post.imageUrl}
-                      alt={post.content}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center p-3">
-                      <span className="text-xs text-ig-secondary-text line-clamp-3 text-center">
-                        {post.content}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                    <div className="flex items-center gap-2 font-semibold text-white">
-                      <Heart size={20} fill="white" />
-                      <span>{post._count?.likes ?? 0}</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-semibold text-white">
-                      <MessageCircle size={20} fill="white" />
-                      <span>{post._count?.comments ?? 0}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <PostGrid posts={savedPosts} emptyMessage="Belum ada postingan disimpan" />
           )
         )}
       </div>
