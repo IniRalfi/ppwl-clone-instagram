@@ -85,10 +85,11 @@ export class FollowService {
     });
     const followingIds = alreadyFollowing.map((f: { followingId: string }) => f.followingId);
 
-    // Ambil 5 user selain diri sendiri & yang sudah di-follow
+    // Ambil 5 user selain diri sendiri, yang belum di-follow, dan bersedia disarankan (suggestions: true)
     const suggestions = await db.user.findMany({
       where: {
         id: { notIn: [userId, ...followingIds] },
+        suggestions: true,
       },
       select: {
         id: true,
