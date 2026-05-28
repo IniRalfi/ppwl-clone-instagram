@@ -1,6 +1,8 @@
 import { db } from "@/db/client";
 import { localCache } from "@/utils/cache";
 import { Prisma } from "@prisma/client";
+import { NotificationService } from "@/modules/notification/notification.service";
+import { triggerPublicRealtime } from "@/config/pusher";
 
 export class LikeService {
   // 1. Toggle Like/Unlike
@@ -19,14 +21,12 @@ export class LikeService {
 
       // Buat notifikasi jika bukan menyukai postingan sendiri
       if (post.authorId !== userId) {
-        await db.notification.create({
-          data: {
-            type: "like",
-            message: "Seseorang menyukai postingan Anda.",
-            receiverId: post.authorId,
-            senderId: userId,
-            refId: postId,
-          },
+        await NotificationService.createNotification({
+          type: "like",
+          message: "menyukai postinganmu.",
+          receiverId: post.authorId,
+          senderId: userId,
+          refId: postId,
         });
       }
     } catch (error: any) {
@@ -48,6 +48,7 @@ export class LikeService {
     localCache.deletePattern("posts:feed:");
 
     const likeCount = await db.like.count({ where: { postId } });
+    await triggerPublicRealtime("post-engagement-updated", { postId, likeCount });
     return { liked, likeCount };
   }
 

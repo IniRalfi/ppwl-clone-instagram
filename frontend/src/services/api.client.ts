@@ -1,7 +1,7 @@
 import { useAuthStore } from "../store/auth.store";
 
 // Base URL backend — sesuaikan dengan environment variable Vite
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 // Helper: ambil token dari Zustand persist store (key: "auth-storage")
 function getToken(): string | null {
@@ -45,7 +45,7 @@ async function request<T>(
     ...((options.headers as Record<string, string>) ?? {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
@@ -72,7 +72,7 @@ async function requestForm<T>(path: string, formData: FormData, method: string =
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     body: formData,
     headers,
@@ -105,4 +105,3 @@ export const apiClient = {
   postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "POST"),
   putForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "PUT"),
 };
-

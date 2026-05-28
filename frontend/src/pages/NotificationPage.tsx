@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Notification } from "../../../shared/src/types/notification";
 import { apiClient } from "../services/api.client";
 import { useAuthStore } from "../store/auth.store";
+import { useNotificationStore } from "../store/notification.store";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -53,26 +54,15 @@ function groupNotifications(notifs: Notification[]) {
 }
 
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const setNotifications = useNotificationStore((state) => state.setNotifications);
+  const isLoading = useNotificationStore((state) => state.isLoading);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const [filter, setFilter] = useState<'all' | 'following' | 'comments' | 'follows'>('all');
   const { user } = useAuthStore();
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await apiClient.get<{ data: Notification[] }>("/notifications");
-      if (res && res.data) {
-        setNotifications(res.data);
-      }
-    } catch (error) {
-      console.error("Gagal memuat notifikasi:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications().catch((error) => console.error("Gagal memuat notifikasi:", error));
   }, []);
 
   const handleFollowToggle = async (notifId: string, isNowFollowing: boolean) => {
@@ -96,8 +86,8 @@ export default function NotificationPage() {
         toast.success("Batal mengikuti pengguna.");
       }
 
-      setNotifications((prev) =>
-        prev.map((n) =>
+      setNotifications(
+        notifications.map((n) =>
           n.id === notifId
             ? { ...n, isFollowingSender: isNowFollowing }
             : n
@@ -111,7 +101,7 @@ export default function NotificationPage() {
   const filteredNotifs = notifications.filter((n) => {
     if (filter === "all") return true;
     if (filter === "following") return n.isFollowingSender === true;
-    if (filter === "comments") return n.type === "comment" || n.type === "reply";
+    if (filter === "comments") return n.type === "comment" || n.type === "reply" || n.type === "mention" || n.type === "comment_like";
     if (filter === "follows") return n.type === "follow";
     return true;
   });
@@ -324,7 +314,7 @@ function NotificationItem({ notif, onFollowToggle }: NotificationItemProps) {
           </button>
         )}
 
-        {(notif.type === "like" || notif.type === "comment" || notif.type === "reply") && post && (
+        {(notif.type === "like" || notif.type === "comment" || notif.type === "reply" || notif.type === "mention" || notif.type === "comment_like") && post && (
           <div
             onClick={handlePostClick}
             className="w-11 h-11 rounded-[4px] overflow-hidden border border-ig-border bg-neutral-800 cursor-pointer hover:opacity-90 active:scale-95 transition-all shadow-sm flex-shrink-0"

@@ -98,6 +98,7 @@ AWS Credit $100:         ≈ 5-6 bulan gratis
 ## 🔔 FASE 4 — Real-time Notifications
 
 > Notifikasi realtime tanpa refresh + browser push notification (muncul walaupun tab tertutup).
+> Implementasi kode sudah aman untuk local: Pusher/Web Push akan nonaktif otomatis jika env key belum diisi.
 
 ### Arsitektur: Pusher + Web Push API
 
@@ -122,23 +123,23 @@ User A like postingan User B
 | Status | Task | File Target | Estimasi |
 |---|---|---|---|
 | 🔴 | Daftar akun Pusher free tier → dapat APP_ID, KEY, SECRET, CLUSTER | — | 10 menit |
-| 🔴 | Install `pusher` di backend + buat `config/pusher.ts` | `backend/package.json` | 20 menit |
-| 🔴 | Tambahkan `pusher.trigger()` di setiap service yang create notifikasi | `like.service.ts`, `follow.service.ts`, `comment.service.ts` | 1 jam |
+| ✅ | Install `pusher` di backend + buat `config/pusher.ts` | `backend/package.json` | 20 menit |
+| ✅ | Tambahkan `pusher.trigger()` di setiap service yang create notifikasi | `like.service.ts`, `follow.service.ts`, `comment.service.ts` | 1 jam |
 | 🔴 | Generate VAPID keys: `npx web-push generate-vapid-keys` | — | 5 menit |
-| 🔴 | Buat endpoint `POST /notifications/subscribe` untuk simpan push subscription | `notification.routes.ts`, `schema.prisma` | 1 jam |
-| 🔴 | Implement Web Push trigger saat notifikasi dibuat | `notification.service.ts` | 1 jam |
+| ✅ | Buat endpoint `POST /notifications/subscribe` untuk simpan push subscription | `notification.routes.ts`, `schema.prisma` | 1 jam |
+| ✅ | Implement Web Push trigger saat notifikasi dibuat | `notification.service.ts` | 1 jam |
 
 ### Frontend
 
 | Status | Task | File Target | Estimasi |
 |---|---|---|---|
-| 🔴 | Install `pusher-js` di frontend | `frontend/package.json` | 5 menit |
-| 🔴 | Buat `useRealtimeNotifications.ts` hook | `frontend/src/hooks/` | 2 jam |
-| 🔴 | Update `NotificationDrawer` — append notif baru realtime ke state | `NotificationDrawer.tsx` | 1 jam |
-| 🔴 | Update badge count notifikasi di Sidebar secara realtime | `Sidebar.tsx` | 30 menit |
-| 🔴 | Buat `useWebPush.ts` hook — minta izin browser + kirim subscription ke server | `frontend/src/hooks/` | 1.5 jam |
-| 🔴 | Buat `PushPermissionModal.tsx` — UI prompt "Aktifkan Notifikasi?" | `frontend/src/components/notification/` | 1 jam |
-| 🔴 | Buat `public/sw.js` (Service Worker) untuk handle background push | `frontend/public/` | 2 jam |
+| ✅ | Install `pusher-js` di frontend | `frontend/package.json` | 5 menit |
+| ✅ | Buat `useRealtimeNotifications.ts` hook | `frontend/src/hooks/` | 2 jam |
+| ✅ | Update `NotificationDrawer` — append notif baru realtime ke state | `NotificationDrawer.tsx` | 1 jam |
+| ✅ | Update badge count notifikasi di Sidebar secara realtime | `Sidebar.tsx` | 30 menit |
+| ✅ | Buat `useWebPush.ts` hook — minta izin browser + kirim subscription ke server | `frontend/src/hooks/` | 1.5 jam |
+| ✅ | Buat `PushPermissionModal.tsx` — UI prompt "Aktifkan Notifikasi?" | `frontend/src/components/notification/` | 1 jam |
+| ✅ | Buat `public/sw.js` (Service Worker) untuk handle background push | `frontend/public/` | 2 jam |
 
 ---
 

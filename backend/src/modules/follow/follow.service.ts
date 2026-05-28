@@ -1,5 +1,6 @@
 import { db } from "@/db/client";
 import { Prisma } from "@prisma/client";
+import { NotificationService } from "@/modules/notification/notification.service";
 
 export class FollowService {
   // 1. Ambil statistik follower & following + status follow
@@ -110,14 +111,12 @@ export class FollowService {
       await db.follow.create({ data: { followerId, followingId } });
 
       // Buat notifikasi follow
-      await db.notification.create({
-        data: {
-          type: "follow",
-          message: "Seseorang mulai mengikuti Anda.",
-          receiverId: followingId,
-          senderId: followerId,
-          refId: followerId,
-        },
+      await NotificationService.createNotification({
+        type: "follow",
+        message: "mulai mengikuti kamu.",
+        receiverId: followingId,
+        senderId: followerId,
+        refId: followerId,
       });
     } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

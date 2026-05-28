@@ -31,7 +31,7 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         authorId,
       });
 
-      return newComment;
+      return { data: newComment };
     } catch (error: any) {
       console.error("Error creating comment:", error);
       set.status = 500;

@@ -31,6 +31,7 @@ model User {
   likes         Like[]
   notifications Notification[] @relation("NotifReceiver")
   notificationsSent Notification[] @relation("NotifSender")
+  pushSubscriptions PushSubscription[]
   stories       Story[]
   bookmarks     Bookmark[]
   messagesSent     Message[]
@@ -133,6 +134,20 @@ model Notification {
 
   @@index([receiverId])
   @@index([senderId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Story {

@@ -1,4 +1,24 @@
 import { db } from "@/db/client";
+import { pusher } from "@/config/pusher";
+import { sendWebPushToUser } from "@/config/web-push";
+
+const POST_NOTIFICATION_TYPES = ["like", "comment", "reply", "mention", "comment_like"];
+
+type CreateNotificationInput = {
+  type: string;
+  message: string;
+  receiverId: string;
+  senderId?: string | null;
+  refId?: string | null;
+};
+
+type PushSubscriptionInput = {
+  endpoint?: string;
+  keys?: {
+    p256dh?: string;
+    auth?: string;
+  };
+};
 
 export class NotificationService {
   // 1. Ambil notifikasi milik user tertentu
@@ -19,9 +39,64 @@ export class NotificationService {
       },
     });
 
+    return this.enrichNotifications(userId, notifications);
+  }
+
+  static async getUnreadCount(userId: string) {
+    return db.notification.count({ where: { receiverId: userId, isRead: false } });
+  }
+
+  static async createNotification(data: CreateNotificationInput) {
+    const notification = await db.notification.create({
+      data,
+      include: {
+        sender: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+      },
+    });
+
+    const [enrichedNotification] = await this.enrichNotifications(data.receiverId, [notification]);
+
+    await Promise.all([
+      this.triggerRealtimeNotification(data.receiverId, enrichedNotification),
+      sendWebPushToUser(data.receiverId, {
+        title: "Instafy",
+        body: enrichedNotification.message,
+        url: this.getNotificationUrl(enrichedNotification),
+        notification: enrichedNotification,
+      }),
+    ]).catch((error) => {
+      console.error("❌ Gagal mengirim realtime notification:", error);
+    });
+
+    return enrichedNotification;
+  }
+
+  static async savePushSubscription(userId: string, subscription: PushSubscriptionInput, userAgent?: string) {
+    const endpoint = subscription.endpoint;
+    const p256dh = subscription.keys?.p256dh;
+    const auth = subscription.keys?.auth;
+
+    if (!endpoint || !p256dh || !auth) {
+      throw new Error("Push subscription tidak valid");
+    }
+
+    return db.pushSubscription.upsert({
+      where: { endpoint },
+      update: { userId, p256dh, auth, userAgent },
+      create: { userId, endpoint, p256dh, auth, userAgent },
+    });
+  }
+
+  static async deletePushSubscription(userId: string, endpoint: string) {
+    await db.pushSubscription.deleteMany({ where: { userId, endpoint } });
+  }
+
+  private static async enrichNotifications(userId: string, notifications: any[]) {
     // Kumpulkan semua postId yang unik untuk di-fetch sekali (hindari N+1)
     const postIds = notifications
-      .filter((n) => ["like", "comment", "reply"].includes(n.type) && n.refId)
+      .filter((n) => POST_NOTIFICATION_TYPES.includes(n.type) && n.refId)
       .map((n) => n.refId as string);
 
     const uniquePostIds = [...new Set(postIds)];
@@ -51,12 +126,34 @@ export class NotificationService {
 
     return notifications.map((notif) => ({
       ...notif,
-      post: notif.refId && ["like", "comment", "reply"].includes(notif.type)
+      post: notif.refId && POST_NOTIFICATION_TYPES.includes(notif.type)
         ? postMap.get(notif.refId) ?? null
         : null,
       isFollowingSender: notif.type === "follow" && notif.refId
         ? followingSet.has(notif.refId)
         : false,
     }));
+  }
+
+  private static async triggerRealtimeNotification(receiverId: string, notification: any) {
+    if (!pusher) return;
+
+    await pusher.trigger(`private-user-${receiverId}`, "new-notification", notification);
+  }
+
+  private static getNotificationUrl(notification: any) {
+    if (notification.type === "follow" && notification.sender?.username) {
+      return `/profile/${notification.sender.username}`;
+    }
+
+    if (notification.type === "message") {
+      return "/messages";
+    }
+
+    if (notification.post?.id) {
+      return `/posts/${notification.post.id}`;
+    }
+
+    return "/notifications";
   }
 }

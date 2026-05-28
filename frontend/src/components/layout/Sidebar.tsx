@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { useThemeStore } from "../../store/theme.store";
 import { useNotificationDrawerStore } from "../../store/notification-drawer.store";
+import { useNotificationStore } from "../../store/notification.store";
 import { toast } from "sonner";
 
 const navItems = [
@@ -19,6 +20,7 @@ export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const { theme, toggleTheme } = useThemeStore();
   const { isOpen: isNotifOpen, toggle: toggleNotif } = useNotificationDrawerStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   const isAdmin = user?.role === "ADMIN";
 
@@ -78,10 +80,17 @@ export function Sidebar() {
                     : "text-ig-secondary-text hover:text-ig-text"
                 }`}
               >
-                <Icon
-                  className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
-                  strokeWidth={isNotifOpen ? 2.2 : 1.5}
-                />
+                <span className="relative flex-shrink-0">
+                  <Icon
+                    className="w-6 h-6 transition-transform group-hover:scale-105"
+                    strokeWidth={isNotifOpen ? 2.2 : 1.5}
+                  />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 min-w-[16px] rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
                 <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
                   {label}
                 </span>

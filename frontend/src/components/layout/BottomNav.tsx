@@ -1,6 +1,6 @@
 import { Home, Search, PlusSquare, Heart, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useNotificationDrawerStore } from "../../store/notification-drawer.store";
+import { useNotificationStore } from "../../store/notification.store";
 import { toast } from "sonner";
 
 const navItems = [
@@ -12,7 +12,7 @@ const navItems = [
 ];
 
 export function BottomNav() {
-  const { isOpen: isNotifOpen, toggle: toggleNotif } = useNotificationDrawerStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-ig-background border-t border-ig-border flex md:hidden items-center justify-around h-[49px] z-50 px-1">
@@ -32,6 +32,32 @@ export function BottomNav() {
             >
               <Icon className="w-6 h-6" strokeWidth={1.5} />
             </button>
+          );
+        }
+
+        if (to === "/notifications") {
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex-1 flex items-center justify-center h-full transition-colors ${
+                  isActive ? "text-ig-text" : "text-ig-secondary-text"
+                }`
+              }
+              aria-label={label}
+            >
+              {({ isActive }) => (
+                <span className="relative">
+                  <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 1.5} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-2 -top-2 min-w-[16px] rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+              )}
+            </NavLink>
           );
         }
 

@@ -17,4 +17,12 @@ export const env = {
   // AWS S3 (Opsional untuk fallback dan upload media)
   AWS_S3_BUCKET: process.env.AWS_S3_BUCKET ?? "ppwl-instagram-fe-team-3",
   AWS_S3_REGION: process.env.AWS_S3_REGION ?? "us-east-1",
+  // Realtime notifications (opsional untuk local development)
+  PUSHER_APP_ID: process.env.PUSHER_APP_ID,
+  PUSHER_KEY: process.env.PUSHER_KEY,
+  PUSHER_SECRET: process.env.PUSHER_SECRET,
+  PUSHER_CLUSTER: process.env.PUSHER_CLUSTER,
+  WEB_PUSH_PUBLIC_KEY: process.env.WEB_PUSH_PUBLIC_KEY,
+  WEB_PUSH_PRIVATE_KEY: process.env.WEB_PUSH_PRIVATE_KEY,
+  WEB_PUSH_SUBJECT: process.env.WEB_PUSH_SUBJECT ?? "mailto:admin@instafy.local",
 };

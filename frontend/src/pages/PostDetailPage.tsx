@@ -8,6 +8,7 @@ import { apiClient } from "../services/api.client";
 import { Smile, Loader2, MoreHorizontal } from "lucide-react";
 import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
 import { useThemeStore } from "../store/theme.store";
+import { usePublicRealtime } from "../hooks/usePublicRealtime";
 
 interface Post {
   id: string;
@@ -105,6 +106,17 @@ export function PostDetailPage() {
     };
     if (id) fetchPostData();
   }, [id, navigate]);
+
+  usePublicRealtime({
+    onCommentCreated: ({ postId, comment }) => {
+      if (postId !== id) return;
+
+      setComments((prev) => {
+        if (prev.some((item) => item.id === comment.id)) return prev;
+        return [comment, ...prev];
+      });
+    },
+  });
 
   // Dipanggil saat klik "Balas" di CommentItem
   const handleReplyClick = (parentId: string, username: string) => {

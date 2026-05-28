@@ -7,6 +7,7 @@ import { apiClient } from '../services/api.client';
 import { StoriesRow } from "../components/story/StoriesRow";
 import { PostSkeleton } from '../components/ui/Skeleton';
 import { Loader2 } from 'lucide-react';
+import { usePublicRealtime } from '../hooks/usePublicRealtime';
 
 interface Post {
   id: string;
@@ -39,6 +40,7 @@ const HomePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
 
   const fetchPosts = async (cursorValue?: string | null) => {
     const isInitial = !cursorValue;
@@ -77,6 +79,42 @@ const HomePage: React.FC = () => {
     fetchPosts();
   }, []);
 
+  usePublicRealtime({
+    onPostCreated: (post: Post) => {
+      if (post.author.id === user?.id) return;
+
+      setPendingPosts((prev) => {
+        const exists = prev.some((item) => item.id === post.id) || posts.some((item) => item.id === post.id);
+        return exists ? prev : [post, ...prev];
+      });
+    },
+    onPostEngagementUpdated: ({ postId, likeCount, commentCount }) => {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                _count: {
+                  ...post._count,
+                  likes: likeCount ?? post._count.likes,
+                  comments: commentCount ?? post._count.comments,
+                },
+              }
+            : post
+        )
+      );
+    },
+  });
+
+  const showPendingPosts = () => {
+    setPosts((prev) => {
+      const existingIds = new Set(prev.map((post) => post.id));
+      const newPosts = pendingPosts.filter((post) => !existingIds.has(post.id));
+      return [...newPosts, ...prev];
+    });
+    setPendingPosts([]);
+  };
+
   return (
     <div className="min-h-screen bg-ig-background text-ig-text">
       {/* 
@@ -92,6 +130,16 @@ const HomePage: React.FC = () => {
           <StoriesRow />
 
           {/* Feed postingan */}
+          {pendingPosts.length > 0 && !isLoading && (
+            <button
+              type="button"
+              onClick={showPendingPosts}
+              className="sticky top-4 z-10 mx-auto rounded-full bg-ig-primary px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-ig-primary-hover"
+            >
+              Lihat {pendingPosts.length} postingan baru
+            </button>
+          )}
+
           {isLoading ? (
             <div className="flex flex-col gap-6">
               <PostSkeleton />

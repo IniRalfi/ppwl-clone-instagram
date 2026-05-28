@@ -131,6 +131,10 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
   }, [currentUserId, authorId]);
 
+  useEffect(() => {
+    setCurrentLikeCount(likesCount);
+  }, [likesCount]);
+
   // Fetch daftar pengguna untuk dishare
   useEffect(() => {
     if (showShareModal && currentUserId) {

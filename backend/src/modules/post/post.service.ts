@@ -3,6 +3,7 @@ import { localCache } from "@/utils/cache";
 import { uploadMedia, deleteMedia } from "@/config/s3";
 import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
 import { Prisma } from "@prisma/client";
+import { triggerPublicRealtime } from "@/config/pusher";
 
 export const AUTHOR_SELECT = {
   id: true,
@@ -239,6 +240,8 @@ export class PostService {
 
     // Invalidate feed cache
     localCache.deletePattern("posts:feed:");
+
+    await triggerPublicRealtime("post-created", post);
 
     return post;
   }

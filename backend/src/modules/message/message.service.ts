@@ -1,4 +1,10 @@
 import { db } from "@/db/client";
+import { NotificationService } from "@/modules/notification/notification.service";
+
+function truncateMessagePreview(text: string) {
+  const cleanText = text.trim().replace(/\s+/g, " ");
+  return cleanText.length > 80 ? `${cleanText.slice(0, 77)}...` : cleanText;
+}
 
 export class MessageService {
   // 1. Ambil daftar room chat yang diikuti user
@@ -139,6 +145,14 @@ export class MessageService {
         data: { updatedAt: new Date() },
       }),
     ]);
+
+    await NotificationService.createNotification({
+      type: "message",
+      message: `mengirim pesan: "${truncateMessagePreview(newMessage.text)}"`,
+      receiverId,
+      senderId: currentUserId,
+      refId: room.id,
+    });
 
     return {
       id: newMessage.id,

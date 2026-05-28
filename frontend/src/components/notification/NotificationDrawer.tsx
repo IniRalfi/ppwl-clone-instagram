@@ -3,6 +3,7 @@ import type { Notification } from "../../../../shared/src/types/notification";
 import { apiClient } from "../../services/api.client";
 import { useAuthStore } from "../../store/auth.store";
 import { useNotificationDrawerStore } from "../../store/notification-drawer.store";
+import { useNotificationStore } from "../../store/notification.store";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -55,28 +56,17 @@ function groupNotifications(notifs: Notification[]) {
 
 export function NotificationDrawer() {
   const { isOpen, setIsOpen } = useNotificationDrawerStore();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const setNotifications = useNotificationStore((state) => state.setNotifications);
+  const isLoading = useNotificationStore((state) => state.isLoading);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const [filter, setFilter] = useState<'all' | 'following' | 'comments' | 'follows'>('all');
   const { user } = useAuthStore();
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await apiClient.get<{ data: Notification[] }>("/notifications");
-      if (res && res.data) {
-        setNotifications(res.data);
-      }
-    } catch (error) {
-      console.error("Gagal memuat notifikasi:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (isOpen) {
-      fetchNotifications();
+      fetchNotifications().catch((error) => console.error("Gagal memuat notifikasi:", error));
     }
   }, [isOpen]);
 
@@ -122,8 +112,8 @@ export function NotificationDrawer() {
         toast.success("Batal mengikuti pengguna.");
       }
 
-      setNotifications((prev) =>
-        prev.map((n) =>
+      setNotifications(
+        notifications.map((n) =>
           n.id === notifId
             ? { ...n, isFollowingSender: isNowFollowing }
             : n
@@ -137,7 +127,7 @@ export function NotificationDrawer() {
   const filteredNotifs = notifications.filter((n) => {
     if (filter === "all") return true;
     if (filter === "following") return n.isFollowingSender === true;
-    if (filter === "comments") return n.type === "comment" || n.type === "reply";
+    if (filter === "comments") return n.type === "comment" || n.type === "reply" || n.type === "mention" || n.type === "comment_like";
     if (filter === "follows") return n.type === "follow";
     return true;
   });
@@ -177,9 +167,11 @@ export function NotificationDrawer() {
         <h1 className="text-ig-text text-xl font-bold tracking-tight">Notifikasi</h1>
         <button
           onClick={() => setIsOpen(false)}
-          className="text-ig-text hover:opacity-60 transition-opacity cursor-pointer flex items-center justify-center p-1 rounded-full hover:bg-ig-elevated-bg"
+          className="text-ig-text transition-opacity cursor-pointer flex items-center gap-1.5 px-2.5 py-1.5 rounded-full hover:bg-ig-elevated-bg hover:opacity-80 border border-transparent hover:border-ig-border"
         >
-          <X size={20} />
+          <span className="sr-only">Tutup notifikasi</span>
+          <span className="hidden text-xs font-semibold md:inline">Tutup</span>
+          <X size={22} />
         </button>
       </div>
 
@@ -369,7 +361,7 @@ function NotificationItem({ notif, onFollowToggle, onCloseDrawer }: Notification
           </button>
         )}
 
-        {(notif.type === "like" || notif.type === "comment" || notif.type === "reply") && post && (
+        {(notif.type === "like" || notif.type === "comment" || notif.type === "reply" || notif.type === "mention" || notif.type === "comment_like") && post && (
           <div
             onClick={handlePostClick}
             className="w-9 h-9 rounded-[4px] overflow-hidden border border-ig-border bg-neutral-800 cursor-pointer hover:opacity-90 active:scale-95 transition-all shadow-sm flex-shrink-0"
