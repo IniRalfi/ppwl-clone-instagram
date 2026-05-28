@@ -60,7 +60,11 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-ig-background text-ig-text">
-      <div className="max-w-[975px] mx-auto flex gap-8 px-4 pt-6 pb-20">
+      {/* 
+        Geser feed ke kanan sebesar 397px secara default pada layar desktop (md ke atas)
+        untuk menyisakan ruang bagi Laci Notifikasi di sebelah kiri feed.
+      */}
+      <div className="max-w-[975px] mx-auto md:mx-0 md:pl-[397px] flex gap-8 px-4 pt-6 pb-20 transition-all duration-300">
 
         {/* ── KOLOM KIRI: Stories + Feed Postingan ── */}
         <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">

@@ -2,6 +2,7 @@ import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun, Activity } fr
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { useThemeStore } from "../../store/theme.store";
+import { useNotificationDrawerStore } from "../../store/notification-drawer.store";
 import { toast } from "sonner";
 
 const navItems = [
@@ -17,6 +18,7 @@ export function Sidebar() {
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const { theme, toggleTheme } = useThemeStore();
+  const { isOpen: isNotifOpen, toggle: toggleNotif } = useNotificationDrawerStore();
 
   const isAdmin =
     user?.username === "rafli_pratama" ||
@@ -44,27 +46,53 @@ export function Sidebar() {
 
       {/* Menu Navigasi (Mulai dari tengah) */}
       <nav className="flex flex-col gap-1.5 justify-center">
-        {visibleItems.map(({ icon: Icon, label, to, wip }) =>
-          wip ? (
-            <button
-              key={to}
-              onClick={() =>
-                toast.info("🚧 Masih dalam proses pengembangan", {
-                  description: `Fitur "${label}" belum tersedia saat ini.`,
-                  duration: 2500,
-                })
-              }
-              className="flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg text-ig-secondary-text w-full text-left group cursor-pointer"
-            >
-              <Icon
-                className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
-                strokeWidth={1.5}
-              />
-              <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
-                {label}
-              </span>
-            </button>
-          ) : (
+        {visibleItems.map(({ icon: Icon, label, to, wip }) => {
+          if (wip) {
+            return (
+              <button
+                key={to}
+                onClick={() =>
+                  toast.info("🚧 Masih dalam proses pengembangan", {
+                    description: `Fitur "${label}" belum tersedia saat ini.`,
+                    duration: 2500,
+                  })
+                }
+                className="flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg text-ig-secondary-text w-full text-left group cursor-pointer"
+              >
+                <Icon
+                  className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
+                  strokeWidth={1.5}
+                />
+                <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+                  {label}
+                </span>
+              </button>
+            );
+          }
+
+          if (to === "/notifications") {
+            return (
+              <button
+                key={to}
+                onClick={toggleNotif}
+                className={`flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg group w-full text-left cursor-pointer ${
+                  isNotifOpen
+                    ? "text-ig-text font-semibold bg-ig-elevated-bg/55"
+                    : "text-ig-secondary-text hover:text-ig-text"
+                }`}
+              >
+                <Icon
+                  className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
+                  strokeWidth={isNotifOpen ? 2.2 : 1.5}
+                />
+                <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+                  {label}
+                </span>
+              </button>
+            );
+          }
+
+          return (
             <NavLink
               key={to}
               to={to}
@@ -88,8 +116,8 @@ export function Sidebar() {
                 </>
               )}
             </NavLink>
-          )
-        )}
+          );
+        })}
       </nav>
 
       {/* Spacer bawah untuk keseimbangan menu tengah */}
