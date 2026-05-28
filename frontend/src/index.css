@@ -159,8 +159,15 @@
   }
 
   body {
-    @apply font-sans bg-ig-background text-ig-text antialiased;
-    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    @apply font-sans text-ig-text antialiased;
+    background: radial-gradient(circle at 50% 0%, #151515 0%, #020202 100%);
+    background-attachment: fixed;
+    transition: color 0.25s ease, border-color 0.25s ease;
+  }
+
+  html.light body {
+    background: radial-gradient(circle at 50% 0%, #ffffff 0%, #e8ecef 100%);
+    background-attachment: fixed;
   }
 
   /* Scrollbar khas IG — tersembunyi */

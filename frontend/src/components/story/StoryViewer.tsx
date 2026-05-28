@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { UserStoryGroup } from "./StoriesRow";
 
 function formatRelativeTime(isoString: string): string {
@@ -33,12 +34,12 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
     }
   }, [currentIndex, totalSlides, onClose]);
 
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setProgress(0);
     }
-  };
+  }, [currentIndex]);
 
   useEffect(() => {
     setProgress(0);
@@ -71,86 +72,141 @@ export default function StoryViewer({ group, onClose }: StoryViewerProps) {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [goNext, onClose]);
+  }, [goNext, goPrev, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
-      {/* Container story — lebar maksimal seperti mobile */}
-      <div className="relative w-full max-w-sm h-full max-h-[calc(100vh-2rem)] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-[#0d0d0d]/98 backdrop-blur-md flex items-center justify-center transition-all duration-300">
+      
+      {/* ── TOMBOL CLOSE GLOBAL (X) pojok kanan atas layar ── */}
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition-all duration-200 cursor-pointer z-50"
+        aria-label="Tutup story"
+      >
+        <X className="w-7 h-7" />
+      </button>
 
-        {/* ── PROGRESS BAR ── */}
-        <div className="flex gap-1 px-3 pt-3 pb-2">
-          {group.stories.map((_, idx) => (
-            <div
-              key={idx}
-              className="flex-1 h-[2px] bg-white/30 rounded-full overflow-hidden"
-            >
-              <div
-                className="h-full bg-white rounded-full transition-none"
-                style={{
-                  width:
-                    idx < currentIndex
-                      ? "100%"
-                      : idx === currentIndex
-                      ? `${progress}%`
-                      : "0%",
-                }}
-              />
+      {/* Wrapper Relatif Utama */}
+      <div className="relative flex items-center justify-center w-full max-w-4xl px-4">
+        
+        {/* ── PREVIEW SLIDE SEBELUMNYA (Desktop) ── */}
+        {currentIndex > 0 && (
+          <div 
+            onClick={goPrev}
+            className="absolute -left-48 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95"
+          >
+            <img
+              src={group.stories[currentIndex - 1].imageUrl}
+              alt="Preview sebelumnya"
+              className="w-[120px] h-[213px] object-cover rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
+            />
+            <span className="text-xs text-white/70 font-semibold tracking-wide uppercase">Sebelumnya</span>
+          </div>
+        )}
+
+        {/* ── TOMBOL NAVIGASI KIRI (Chevron) ── */}
+        {currentIndex > 0 && (
+          <button
+            onClick={goPrev}
+            className="absolute -left-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
+            aria-label="Story sebelumnya"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+        )}
+
+        {/* ── CENTRAL CONTAINER: Story Aktif (9:16 Aspect Ratio) ── */}
+        <div className="relative w-full max-w-[400px] aspect-[9/16] bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_10px_50px_rgba(0,0,0,0.8)] flex flex-col justify-between">
+          
+          {/* Progress Bar & Header Wrapper */}
+          <div className="absolute top-0 left-0 w-full z-10 bg-gradient-to-b from-black/80 via-black/40 to-transparent pt-3 pb-6">
+            
+            {/* PROGRESS BAR */}
+            <div className="flex gap-1.5 px-4 mb-3">
+              {group.stories.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="flex-1 h-[2.5px] bg-white/20 rounded-full overflow-hidden"
+                >
+                  <div
+                    className="h-full bg-white rounded-full transition-none"
+                    style={{
+                      width:
+                        idx < currentIndex
+                          ? "100%"
+                          : idx === currentIndex
+                          ? `${progress}%`
+                          : "0%",
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* ── HEADER: avatar + username + waktu ── */}
-        <div className="flex items-center gap-3 px-3 pb-3">
-          <img
-            src={group.avatarUrl}
-            alt={group.username}
-            className="w-9 h-9 rounded-full object-cover border-2 border-white/50"
-          />
-          <div className="flex-1">
-            <p className="text-white text-sm font-semibold leading-tight">
-              {group.username}
-            </p>
-            <p className="text-white/60 text-xs">
-              {formatRelativeTime(currentStory.createdAt)}
-            </p>
+            {/* HEADER: avatar + username + waktu */}
+            <div className="flex items-center gap-3 px-4">
+              <img
+                src={group.avatarUrl}
+                alt={group.username}
+                className="w-9 h-9 rounded-full object-cover border-2 border-white/60 shadow"
+              />
+              <div className="flex-1">
+                <p className="text-white text-sm font-semibold leading-none drop-shadow">
+                  {group.username}
+                </p>
+                <p className="text-white/60 text-[11px] mt-0.5 drop-shadow">
+                  {formatRelativeTime(currentStory.createdAt)}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Tombol Close (X) */}
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white text-2xl leading-none p-1"
-            aria-label="Tutup story"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* ── GAMBAR STORY ── */}
-        <div className="flex-1 relative overflow-hidden rounded-xl mx-2">
+          {/* GAMBAR UTAMA STORY */}
           <img
             src={currentStory.imageUrl}
-            alt={`Story ${currentIndex + 1}`}
+            alt={`Story slide ${currentIndex + 1}`}
             className="w-full h-full object-cover"
           />
 
-          {/* Area tap kiri — mundur */}
-          <button
-            onClick={goPrev}
-            className="absolute left-0 top-0 w-1/3 h-full opacity-0"
-            aria-label="Story sebelumnya"
-          />
-
-          {/* Area tap kanan — maju */}
-          <button
-            onClick={goNext}
-            className="absolute right-0 top-0 w-1/3 h-full opacity-0"
-            aria-label="Story berikutnya"
-          />
+          {/* Area tap layar untuk navigasi sentuh (Mobile) */}
+          <div className="absolute inset-0 flex">
+            <div
+              onClick={goPrev}
+              className="w-1/3 h-full cursor-w-resize"
+              title="Story sebelumnya"
+            />
+            <div
+              onClick={goNext}
+              className="w-2/3 h-full cursor-e-resize"
+              title="Story berikutnya"
+            />
+          </div>
         </div>
 
-        {/* Padding bawah */}
-        <div className="h-4" />
+        {/* ── TOMBOL NAVIGASI KANAN (Chevron) ── */}
+        <button
+          onClick={goNext}
+          className="absolute -right-14 top-1/2 -translate-y-1/2 hidden md:flex w-10 h-10 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
+          aria-label="Story berikutnya"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+
+        {/* ── PREVIEW SLIDE BERIKUTNYA (Desktop) ── */}
+        {currentIndex < totalSlides - 1 && (
+          <div 
+            onClick={goNext}
+            className="absolute -right-48 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-2 opacity-35 hover:opacity-60 transition-all duration-300 cursor-pointer scale-90 hover:scale-95"
+          >
+            <img
+              src={group.stories[currentIndex + 1].imageUrl}
+              alt="Preview berikutnya"
+              className="w-[120px] h-[213px] object-cover rounded-2xl border border-white/20 shadow-2xl blur-[0.8px]"
+            />
+            <span className="text-xs text-white/70 font-semibold tracking-wide uppercase">Berikutnya</span>
+          </div>
+        )}
+
       </div>
     </div>
   );

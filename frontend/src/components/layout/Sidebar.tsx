@@ -26,15 +26,15 @@ export function Sidebar() {
   const visibleItems = navItems.filter((item) => item.to !== "/monitoring" || isAdmin);
 
   return (
-    <aside className="flex flex-col h-screen w-[72px] md:w-[244px] bg-ig-background border-r border-ig-border px-3 py-6 transition-all duration-300">
+    <aside className="fixed top-0 left-0 h-screen w-[72px] hover:w-[244px] bg-ig-background/95 backdrop-blur-md border-r border-ig-border px-3 py-6 transition-all duration-300 ease-in-out z-50 group/sidebar shadow-sm hover:shadow-[5px_0_25px_rgba(0,0,0,0.15)] flex flex-col">
       {/* Logo Instafy */}
-      <div className="mb-8 px-3 h-10 flex items-center gap-3 justify-center md:justify-start">
+      <div className="mb-8 px-3 h-10 flex items-center justify-start overflow-hidden">
         <img
           src="/favicon/favicon.svg"
           alt="Instafy Logo"
-          className="w-7 h-7 object-contain"
+          className="w-7 h-7 object-contain flex-shrink-0 transition-transform duration-300 group-hover/sidebar:rotate-12"
         />
-        <span className="text-ig-text font-bold text-xl font-[var(--font-outfit)] hidden md:block tracking-wide">
+        <span className="text-ig-text font-bold text-xl font-[var(--font-outfit)] tracking-wide opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 ease-in-out whitespace-nowrap ml-0 group-hover/sidebar:ml-3">
           Instafy
         </span>
       </div>
@@ -51,22 +51,24 @@ export function Sidebar() {
                   duration: 2500,
                 })
               }
-              className="flex items-center gap-4 px-3 py-2.5 rounded-lg transition-colors hover:bg-ig-elevated-bg text-ig-secondary-text w-full text-left group"
+              className="flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg text-ig-secondary-text w-full text-left group cursor-pointer"
             >
               <Icon
                 className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
                 strokeWidth={1.5}
               />
-              <span className="hidden md:block text-[14px] tracking-wide">{label}</span>
+              <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+                {label}
+              </span>
             </button>
           ) : (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-3 py-2.5 rounded-lg transition-colors hover:bg-ig-elevated-bg group ${
+                `flex items-center px-3 py-2.5 rounded-lg transition-all hover:bg-ig-elevated-bg group ${
                   isActive
-                    ? "text-ig-text font-semibold"
+                    ? "text-ig-text font-semibold bg-ig-elevated-bg/55"
                     : "text-ig-secondary-text hover:text-ig-text"
                 }`
               }
@@ -75,9 +77,11 @@ export function Sidebar() {
                 <>
                   <Icon
                     className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
-                    strokeWidth={isActive ? 2.5 : 1.5}
+                    strokeWidth={isActive ? 2.2 : 1.5}
                   />
-                  <span className="hidden md:block text-[14px] tracking-wide">{label}</span>
+                  <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+                    {label}
+                  </span>
                 </>
               )}
             </NavLink>
@@ -86,10 +90,10 @@ export function Sidebar() {
       </nav>
 
       {/* Bagian Bawah: Tema + Logout */}
-      <div className="flex flex-col gap-1 pt-3 border-t border-ig-border">
+      <div className="flex flex-col gap-1 pt-3 border-t border-ig-separator">
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-colors w-full text-left group"
+          className="flex items-center px-3 py-2.5 rounded-lg hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-all w-full text-left group cursor-pointer"
         >
           {theme === "dark" ? (
             <Sun
@@ -102,18 +106,22 @@ export function Sidebar() {
               strokeWidth={1.5}
             />
           )}
-          <span className="hidden md:block text-[14px] tracking-wide">Tampilan</span>
+          <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+            Tampilan
+          </span>
         </button>
 
         <button
           onClick={logout}
-          className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-colors w-full text-left group"
+          className="flex items-center px-3 py-2.5 rounded-lg hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-all w-full text-left group cursor-pointer"
         >
           <LogOut
             className="w-6 h-6 flex-shrink-0 transition-transform group-hover:scale-105"
             strokeWidth={1.5}
           />
-          <span className="hidden md:block text-[14px] tracking-wide">Keluar</span>
+          <span className="opacity-0 w-0 group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto transition-all duration-300 text-[14px] tracking-wide whitespace-nowrap overflow-hidden ml-0 group-hover/sidebar:ml-4">
+            Keluar
+          </span>
         </button>
       </div>
     </aside>

@@ -142,7 +142,7 @@ export function StoriesRow() {
 
   return (
     <>
-      <div className="w-full bg-ig-secondary-bg rounded-xl border border-neutral-800 px-4 py-3 mb-6">
+      <div className="w-full bg-ig-secondary-bg/60 backdrop-blur-md rounded-2xl border border-ig-border px-5 py-4 mb-6 shadow-card transition-all duration-300">
         <div className="flex gap-4 overflow-x-auto scrollbar-none">
           <MyStoryAvatar onUploadSuccess={fetchStoriesData} />
           
@@ -156,8 +156,8 @@ export function StoriesRow() {
 
           {isLoading ? (
             <div className="flex gap-4 animate-pulse">
-              <div className="w-12 h-12 bg-neutral-800 rounded-full" />
-              <div className="w-12 h-12 bg-neutral-800 rounded-full" />
+              <div className="w-12 h-12 bg-ig-elevated-bg rounded-full" />
+              <div className="w-12 h-12 bg-ig-elevated-bg rounded-full" />
             </div>
           ) : (
             otherStories.map((group) => (
