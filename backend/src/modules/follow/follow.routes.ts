@@ -1,219 +1,135 @@
-import { Elysia, t } from "elysia";
-import { db } from "@/db/client";
+import { Elysia } from "elysia";
+import { FollowService } from "./follow.service";
 import { authPlugin } from "@/plugins/auth.plugin";
+import {
+  getFollowStatsSchema,
+  getFollowersSchema,
+  getFollowingSchema,
+  getSuggestionsSchema,
+  followActionSchema,
+  unfollowActionSchema,
+} from "./follow.schema";
 
 export const followRoutes = new Elysia({ prefix: "/follow" })
   .use(authPlugin)
 
   /** GET /follow/stats/:userId?currentUserId=xxx — Jumlah followers & following + status follow */
   .get("/stats/:userId", async ({ params: { userId }, query, getCurrentUser, set }) => {
-    const user = await getCurrentUser();
-    const currentUserId = user?.id || (query as { currentUserId?: string }).currentUserId;
+    try {
+      const user = await getCurrentUser();
+      const currentUserId = user?.id || query.currentUserId;
 
-    const dbUser = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        _count: {
-          select: {
-            followers: true,
-            following: true,
-          },
-        },
-      },
-    });
-
-    if (!dbUser) {
-      set.status = 404;
-      return { message: "User tidak ditemukan" };
+      const stats = await FollowService.getFollowStats(userId, currentUserId);
+      return stats;
+    } catch (error: any) {
+      console.error("❌ Gagal mengambil stats follow:", error);
+      if (error.message === "User tidak ditemukan") {
+        set.status = 404;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server" };
     }
-
-    // Cek apakah currentUser sudah follow userId ini
-    let isFollowing = false;
-    if (currentUserId && currentUserId !== userId) {
-      const followRecord = await db.follow.findUnique({
-        where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
-      });
-      isFollowing = !!followRecord;
-    }
-
-    return {
-      followers: dbUser._count.followers,
-      following: dbUser._count.following,
-      isFollowing,
-    };
-  })
+  }, getFollowStatsSchema)
 
   /** GET /follow/followers/:userId — Ambil daftar followers dari userId */
   .get("/followers/:userId", async ({ params: { userId }, set }) => {
     try {
-      const followersList = await db.follow.findMany({
-        where: { followingId: userId },
-        include: {
-          follower: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-              bio: true,
-            }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      });
-
-      const mapped = followersList.map(f => f.follower);
-      return { data: mapped };
+      const followers = await FollowService.getFollowers(userId);
+      return { data: followers };
     } catch (error) {
       console.error("❌ Gagal mengambil followers:", error);
       set.status = 500;
       return { message: "Terjadi kesalahan server" };
     }
-  })
+  }, getFollowersSchema)
 
   /** GET /follow/following/:userId — Ambil daftar following dari userId */
   .get("/following/:userId", async ({ params: { userId }, set }) => {
     try {
-      const followingList = await db.follow.findMany({
-        where: { followerId: userId },
-        include: {
-          following: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-              bio: true,
-            }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      });
-
-      const mapped = followingList.map(f => f.following);
-      return { data: mapped };
+      const following = await FollowService.getFollowing(userId);
+      return { data: following };
     } catch (error) {
       console.error("❌ Gagal mengambil following:", error);
       set.status = 500;
       return { message: "Terjadi kesalahan server" };
     }
-  })
+  }, getFollowingSchema)
 
   /** GET /follow/suggestions?userId=xxx — Ambil 5 user yang belum di-follow */
-  .get(
-    "/suggestions",
-    async ({ query, getCurrentUser, set }) => {
+  .get("/suggestions", async ({ query, getCurrentUser, set }) => {
+    try {
       const user = await getCurrentUser();
-      const userId = user?.id || (query as { userId?: string }).userId;
+      const userId = user?.id || query.userId;
 
       if (!userId) {
         set.status = 400;
         return { message: "userId wajib diisi" };
       }
 
-      // Ambil daftar ID yang sudah di-follow oleh user ini
-      const alreadyFollowing = await db.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
-      const followingIds = alreadyFollowing.map((f: { followingId: string }) => f.followingId);
-
-      // Ambil 5 user selain diri sendiri & yang sudah di-follow
-      const suggestions = await db.user.findMany({
-        where: {
-          id: { notIn: [userId, ...followingIds] },
-        },
-        select: {
-          id: true,
-          username: true,
-          name: true,
-          avatarUrl: true,
-          _count: { select: { followers: true } },
-        },
-        take: 5,
-        orderBy: { createdAt: "desc" },
-      });
-
+      const suggestions = await FollowService.getSuggestions(userId);
       return { data: suggestions };
+    } catch (error) {
+      console.error("❌ Gagal mengambil suggestions:", error);
+      set.status = 500;
+      return { message: "Terjadi kesalahan server" };
     }
-  )
+  }, getSuggestionsSchema)
 
   /** POST /follow — Follow user */
-  .post(
-    "/",
-    async ({ body, getCurrentUser, set }) => {
+  .post("/", async ({ body, getCurrentUser, set }) => {
+    try {
       const user = await getCurrentUser();
       if (!user) {
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const { followerId, followingId } = body as { followerId: string; followingId: string };
+      const { followerId, followingId } = body;
 
       if (followerId !== user.id) {
         set.status = 403;
         return { message: "Forbidden: You cannot follow on behalf of another user" };
       }
 
-      if (followerId === followingId) {
-        set.status = 400;
-        return { message: "Tidak bisa follow diri sendiri" };
-      }
-
-      const existing = await db.follow.findUnique({
-        where: { followerId_followingId: { followerId, followingId } },
-      });
-
-      if (existing) {
-        set.status = 409;
-        return { message: "Sudah di-follow" };
-      }
-
-      await db.follow.create({ data: { followerId, followingId } });
+      await FollowService.followUser(followerId, followingId);
       return { message: "Berhasil follow" };
-    },
-    {
-      body: t.Object({
-        followerId: t.String(),
-        followingId: t.String(),
-      }),
+    } catch (error: any) {
+      console.error("❌ Gagal follow:", error);
+      if (error.message === "Tidak bisa follow diri sendiri") {
+        set.status = 400;
+      } else if (error.message === "Sudah di-follow") {
+        set.status = 409;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server" };
     }
-  )
+  }, followActionSchema)
 
   /** DELETE /follow — Unfollow user */
-  .delete(
-    "/",
-    async ({ body, getCurrentUser, set }) => {
+  .delete("/", async ({ body, getCurrentUser, set }) => {
+    try {
       const user = await getCurrentUser();
       if (!user) {
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const { followerId, followingId } = body as { followerId: string; followingId: string };
+      const { followerId, followingId } = body;
 
       if (followerId !== user.id) {
         set.status = 403;
         return { message: "Forbidden: You cannot unfollow on behalf of another user" };
       }
 
-      const existing = await db.follow.findUnique({
-        where: { followerId_followingId: { followerId, followingId } },
-      });
-
-      if (!existing) {
-        set.status = 404;
-        return { message: "Belum di-follow" };
-      }
-
-      await db.follow.delete({
-        where: { followerId_followingId: { followerId, followingId } },
-      });
-
+      await FollowService.unfollowUser(followerId, followingId);
       return { message: "Berhasil unfollow" };
-    },
-    {
-      body: t.Object({
-        followerId: t.String(),
-        followingId: t.String(),
-      }),
+    } catch (error: any) {
+      console.error("❌ Gagal unfollow:", error);
+      if (error.message === "Belum di-follow") {
+        set.status = 404;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server" };
     }
-  );
+  }, unfollowActionSchema);
