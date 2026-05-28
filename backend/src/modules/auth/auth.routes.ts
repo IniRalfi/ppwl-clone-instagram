@@ -1,11 +1,14 @@
 import { Elysia } from "elysia";
-import { requireAuth } from "@/plugins/require-auth.plugin";
+import { jwt } from "@elysiajs/jwt";
+import { env } from "@/config/env";
 import { AuthService } from "./auth.service";
 import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
-  .use(requireAuth)
-  
+  // Auth routes adalah PUBLIC endpoint (login/register tidak butuh token)
+  // Hanya perlu jwt plugin untuk jwt.sign() saat login berhasil
+  .use(jwt({ name: "jwt", secret: env.JWT_SECRET, exp: "7d" }))
+
   // 1. Registrasi Akun
   .post("/register", async ({ body, set }) => {
     try {
