@@ -10,6 +10,7 @@ export const authPlugin = new Elysia()
     jwt({
       name: "jwt",
       secret: env.JWT_SECRET,
+      exp: "7d",
     })
   )
   .derive({ as: "global" }, ({ bearer, jwt, set }) => {

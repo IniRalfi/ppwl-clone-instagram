@@ -2,6 +2,7 @@ import { db } from "@/db/client";
 import { localCache } from "@/utils/cache";
 import { uploadMedia, deleteMedia } from "@/config/s3";
 import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
+import { Prisma } from "@prisma/client";
 
 export const AUTHOR_SELECT = {
   id: true,
@@ -264,24 +265,27 @@ export class PostService {
       throw new Error("Postingan tidak ditemukan");
     }
 
-    const existingBookmark = await db.bookmark.findUnique({
-      where: {
-        userId_postId: { userId, postId },
-      },
-    });
-
     let bookmarked = false;
-    if (existingBookmark) {
-      await db.bookmark.delete({
-        where: {
-          userId_postId: { userId, postId },
-        },
-      });
-    } else {
+    try {
       await db.bookmark.create({
         data: { userId, postId },
       });
       bookmarked = true;
+    } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        try {
+          await db.bookmark.delete({
+            where: {
+              userId_postId: { userId, postId },
+            },
+          });
+          bookmarked = false;
+        } catch (deleteError) {
+          // Jika sudah dihapus oleh request paralel lain, abaikan
+        }
+      } else {
+        throw error;
+      }
     }
 
     // Invalidate feed cache

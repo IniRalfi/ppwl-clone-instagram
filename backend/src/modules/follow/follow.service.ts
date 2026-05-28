@@ -1,4 +1,5 @@
 import { db } from "@/db/client";
+import { Prisma } from "@prisma/client";
 
 export class FollowService {
   // 1. Ambil statistik follower & following + status follow
@@ -111,43 +112,38 @@ export class FollowService {
       throw new Error("Tidak bisa follow diri sendiri");
     }
 
-    const existing = await db.follow.findUnique({
-      where: { followerId_followingId: { followerId, followingId } },
-    });
+    try {
+      await db.follow.create({ data: { followerId, followingId } });
 
-    if (existing) {
-      throw new Error("Sudah di-follow");
+      // Buat notifikasi follow
+      await db.notification.create({
+        data: {
+          type: "follow",
+          message: "Seseorang mulai mengikuti Anda.",
+          receiverId: followingId,
+          senderId: followerId,
+          refId: followerId,
+        },
+      });
+    } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new Error("Sudah di-follow");
+      }
+      throw error;
     }
-
-    await db.follow.create({ data: { followerId, followingId } });
-
-    // Buat notifikasi follow
-    const follower = await db.user.findUnique({
-      where: { id: followerId },
-      select: { username: true }
-    });
-    await db.notification.create({
-      data: {
-        type: "follow",
-        message: `${follower?.username || "Seseorang"} mulai mengikuti Anda.`,
-        receiverId: followingId,
-        refId: followerId,
-      },
-    });
   }
 
   // 6. Unfollow user
   static async unfollowUser(followerId: string, followingId: string) {
-    const existing = await db.follow.findUnique({
-      where: { followerId_followingId: { followerId, followingId } },
-    });
-
-    if (!existing) {
-      throw new Error("Belum di-follow");
+    try {
+      await db.follow.delete({
+        where: { followerId_followingId: { followerId, followingId } },
+      });
+    } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        throw new Error("Belum di-follow");
+      }
+      throw error;
     }
-
-    await db.follow.delete({
-      where: { followerId_followingId: { followerId, followingId } },
-    });
   }
 }

@@ -12,6 +12,7 @@ export class UserService {
             ],
           }
         : undefined,
+      take: 20,
       select: {
         id: true,
         username: true,

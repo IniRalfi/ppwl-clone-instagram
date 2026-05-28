@@ -1,8 +1,10 @@
 import { db } from "@/db/client";
+import { nanoid } from "nanoid";
 
 export class AuthService {
   // 1. Mendaftarkan user baru ke database
   static async register(data: { name: string; username: string; email: string; passwordHash: string }) {
+    const isOwner = data.username === "rafli_pratama" || data.email === "rflipratm@gmail.com";
     return await db.user.create({
       data: {
         name: data.name,
@@ -10,6 +12,7 @@ export class AuthService {
         email: data.email,
         passwordHash: data.passwordHash,
         provider: "email",
+        role: isOwner ? "ADMIN" : "USER",
       },
     });
   }
@@ -42,14 +45,16 @@ export class AuthService {
     let user = await db.user.findUnique({ where: { email: data.email } });
     
     if (!user) {
+      const isOwner = data.email === "rflipratm@gmail.com";
       user = await db.user.create({
         data: {
           email: data.email,
           name: data.name,
-          username: data.name.toLowerCase().replace(/[^a-z0-9]/g, "") + Math.floor(Math.random() * 1000),
+          username: data.name.toLowerCase().replace(/[^a-z0-9]/g, "") + "_" + nanoid(6),
           avatarUrl: data.avatarUrl,
           passwordHash: "", // Google Auth tidak memakai password
           provider: "google",
+          role: isOwner ? "ADMIN" : "USER",
         },
       });
     }

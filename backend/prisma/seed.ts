@@ -25,7 +25,12 @@ async function main() {
   const createdUsers = [];
   for (const u of usersData) {
     const user = await prisma.user.create({
-      data: { ...u, passwordHash: "dummyhash", provider: "email" },
+      data: {
+        ...u,
+        passwordHash: "dummyhash",
+        provider: "email",
+        role: u.username === "rafli_pratama" ? "ADMIN" : "USER"
+      },
     });
     createdUsers.push(user);
   }

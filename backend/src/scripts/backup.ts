@@ -13,7 +13,25 @@ export async function runDatabaseBackup() {
   console.log("⏱️ Memulai backup database PostgreSQL...");
   try {
     // Mengambil seluruh data dari tabel
-    const users = await db.user.findMany();
+    const users = await db.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        website: true,
+        gender: true,
+        showThreads: true,
+        suggestions: true,
+        provider: true,
+        postCount: true,
+        commentCount: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
     const posts = await db.post.findMany();
     const comments = await db.comment.findMany();
     const likes = await db.like.findMany();

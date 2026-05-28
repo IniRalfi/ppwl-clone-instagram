@@ -20,10 +20,7 @@ export function Sidebar() {
   const { theme, toggleTheme } = useThemeStore();
   const { isOpen: isNotifOpen, toggle: toggleNotif } = useNotificationDrawerStore();
 
-  const isAdmin =
-    user?.username === "rafli_pratama" ||
-    user?.email === "rflipratm@gmail.com" ||
-    user?.username?.includes("admin");
+  const isAdmin = user?.role === "ADMIN";
 
   const visibleItems = navItems.filter((item) => item.to !== "/monitoring" || isAdmin);
 

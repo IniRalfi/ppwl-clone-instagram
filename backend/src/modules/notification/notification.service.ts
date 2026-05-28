@@ -10,67 +10,53 @@ export class NotificationService {
     });
 
     const notifications = await db.notification.findMany({
-      where: {
-        receiverId: userId,
-      },
-      orderBy: {
-        createdAt: "desc",
+      where: { receiverId: userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        sender: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
       },
     });
 
-    const enriched = [];
+    // Kumpulkan semua postId yang unik untuk di-fetch sekali (hindari N+1)
+    const postIds = notifications
+      .filter((n) => ["like", "comment", "reply"].includes(n.type) && n.refId)
+      .map((n) => n.refId as string);
 
-    for (const notif of notifications) {
-      let sender: { id: string; username: string; avatarUrl: string | null } | null = null;
-      let post: { id: string; imageUrl: string | null; content: string } | null = null;
-      let isFollowingSender = false;
+    const uniquePostIds = [...new Set(postIds)];
+    const posts = uniquePostIds.length > 0
+      ? await db.post.findMany({
+          where: { id: { in: uniquePostIds } },
+          select: { id: true, imageUrl: true, content: true },
+        })
+      : [];
+    const postMap = new Map(posts.map((p) => [p.id, p]));
 
-      // Ekstrak username pengirim dari awal pesan (ex: "user123 menyukai...")
-      const firstWord = notif.message.split(" ")[0];
-      if (firstWord && firstWord !== "Seseorang") {
-        sender = await db.user.findUnique({
-          where: { username: firstWord },
-          select: {
-            id: true,
-            username: true,
-            avatarUrl: true,
-          },
-        });
-      }
+    // Untuk notifikasi follow, cek status isFollowing sekali saja
+    const followRefIds = notifications
+      .filter((n) => n.type === "follow" && n.refId)
+      .map((n) => n.refId as string);
 
-      // Jika type adalah follow, refId adalah followerId
-      if (notif.type === "follow" && notif.refId) {
-        const followRecord = await db.follow.findUnique({
+    const followRecords = followRefIds.length > 0
+      ? await db.follow.findMany({
           where: {
-            followerId_followingId: {
-              followerId: userId,
-              followingId: notif.refId,
-            },
+            followerId: userId,
+            followingId: { in: followRefIds },
           },
-        });
-        isFollowingSender = !!followRecord;
-      }
+          select: { followingId: true },
+        })
+      : [];
+    const followingSet = new Set(followRecords.map((f) => f.followingId));
 
-      // Jika type adalah like atau comment, refId adalah postId
-      if ((notif.type === "like" || notif.type === "comment" || notif.type === "reply") && notif.refId) {
-        post = await db.post.findUnique({
-          where: { id: notif.refId },
-          select: {
-            id: true,
-            imageUrl: true,
-            content: true,
-          },
-        });
-      }
-
-      enriched.push({
-        ...notif,
-        sender,
-        post,
-        isFollowingSender,
-      });
-    }
-
-    return enriched;
+    return notifications.map((notif) => ({
+      ...notif,
+      post: notif.refId && ["like", "comment", "reply"].includes(notif.type)
+        ? postMap.get(notif.refId) ?? null
+        : null,
+      isFollowingSender: notif.type === "follow" && notif.refId
+        ? followingSet.has(notif.refId)
+        : false,
+    }));
   }
 }

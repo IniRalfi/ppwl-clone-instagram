@@ -57,10 +57,9 @@ export class CommentService {
       await db.notification.create({
         data: {
           type: "comment",
-          message: `${newComment.author?.username || "Seseorang"} mengomentari postinganmu: "${
-            data.content.length > 20 ? data.content.substring(0, 20) + "..." : data.content
-          }"`,
+          message: "Seseorang mengomentari postinganmu.",
           receiverId: post.authorId,
+          senderId: data.authorId,
           refId: data.postId,
         },
       });
@@ -108,21 +107,14 @@ export class CommentService {
       });
       liked = true;
 
-      // Ambil username user yang menyukai
-      const liker = await db.user.findUnique({
-        where: { id: userId },
-        select: { username: true },
-      });
-
       // Buat notifikasi jika yang menyukai bukan pembuat komentar itu sendiri
-      if (comment.authorId !== userId && liker) {
+      if (comment.authorId !== userId) {
         await db.notification.create({
           data: {
             type: "comment_like",
-            message: `${liker.username} menyukai komentar Anda: "${
-              comment.content.length > 20 ? comment.content.substring(0, 20) + "..." : comment.content
-            }"`,
+            message: "Seseorang menyukai komentar Anda.",
             receiverId: comment.authorId,
+            senderId: userId,
             refId: comment.postId,
           },
         });

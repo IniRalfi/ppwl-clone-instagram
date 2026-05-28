@@ -20,10 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
-  const isAdmin =
-    user?.username === "rafli_pratama" ||
-    user?.email === "rflipratm@gmail.com" ||
-    user?.username?.includes("admin");
+  const isAdmin = user?.role === "ADMIN";
 
   if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;

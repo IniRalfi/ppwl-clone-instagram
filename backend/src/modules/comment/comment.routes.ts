@@ -35,7 +35,7 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
     } catch (error: any) {
       console.error("Error creating comment:", error);
       set.status = 500;
-      return { message: "Gagal menyimpan komentar", error: error?.message || String(error) };
+      return { message: "Gagal menyimpan komentar" };
     }
   }, createCommentSchema)
 

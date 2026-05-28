@@ -79,3 +79,54 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
   - Membuat grid postingan dinamis pada halaman `ExplorePage` yang terintegrasi dengan API data riil dari database.
 - **Dasbor Pemantauan Layanan (Monitoring Page)**:
   - Membuat dasbor status kesehatan server, latency koneksi database PostgreSQL, AWS S3 bucket, dan Cloudinary API.
+
+---
+
+## [v1.3.0] - 2026-05-28
+
+### Added (Ditambahkan)
+
+- **Instafy Story Editor** (`StoryEditorModal.tsx`):
+  - Editor kanvas HTML5 sebelum upload cerita: drag & slider posisi foto, zoom skala, pilihan warna/gradien latar, preset filter dengan live preview, kuas lukis (undo support), dan teks kustom 5 gaya font dengan drag-to-reposition.
+- **Instafy Post Editor** (canvas di `CreatePostPage.tsx`):
+  - Multi-image carousel, filter preset, aspek rasio kustom (1:1, 4:5, 16:9).
+- **Profile Image Editor Modal** (`ProfileImageEditorModal.tsx`):
+  - Crop, zoom, dan filter preset untuk foto profil.
+- **Emoji Picker Komentar**:
+  - Integrasi `emoji-picker-react` dengan tema gelap/terang otomatis.
+- **Infinite Scroll Komentar**:
+  - Cursor-based infinite scroll di `PostDetailPage`.
+- **Comment Likes**:
+  - Like komentar dengan trigger notifikasi dan update UI realtime.
+- **Code Audit Report** (`docs/CODE_AUDIT_REPORT.md`):
+  - Dokumentasi 29 temuan dari 4 putaran audit keamanan & performa.
+- **Roadmap Pengembangan** (`docs/ROADMAP.md`):
+  - Rencana kerja 5 fase ke depan (Security → Performance → DB Migration → Realtime → Refactor).
+
+### Optimized (Dioptimalkan)
+
+- **Backend Caching In-Memory (`MemoryCache`)**:
+  - Cache aktif pada `GET /posts` dan `GET /posts/:id` → latensi <5ms.
+  - Pattern-based invalidation: feed cache dan single post cache diinvalidasi terpisah.
+  - Endpoint monitoring: `GET /data/cache/metrics`, `POST /data/cache/reset`, `POST /data/cache/clear`.
+- **Optimasi Indeks PostgreSQL**:
+  - `@@index` pada seluruh kolom foreign key di `schema.prisma` untuk mempercepat JOIN.
+- **Granular Cache Invalidation**:
+  - Auto-invalidate pada setiap mutasi data (post, like, komentar, bookmark).
+
+### Fixed & Refactored (Diperbaiki & Direfaktor)
+
+- **Auto-Logout Global (401 Interceptor)** di `api.client.ts`.
+- **Refactoring seluruh modul backend** (Auth, Comment, Post, Like, Follow, Story, Data, Monitoring, User, Notification, Message) — pemisahan routes/schema/service.
+- **Middleware terpusat** `error.plugin.ts` untuk error handling seragam.
+- **Refactoring struktur frontend** — pemisahan components, hooks, services, state.
+- **UI Alignment Instagram**:
+  - PostCard dan PostSkeleton menggunakan rasio standar **4:5** (`aspect-[4/5]`).
+  - Font sidebar `14px`, spacing dan padding diperbaiki.
+- **Navigasi Cerita Lintas Akun** dengan preview tetangga antar-akun.
+- **Suggestions API** limit 5 → 30 untuk modal *See All*.
+- **Share Modal** — user yang di-follow diprioritaskan, tombol jadi "Terkirim" setelah diklik.
+- **Options Menu Postingan** — menu berbeda untuk pemilik vs bukan pemilik post.
+- **Comment Author Clickable** — klik nama penulis navigasi ke profil.
+- **Tombol Log Out di Sidebar** menggantikan tombol Switch yang tidak fungsional.
+- **Ikon Interaksi 2x Lebih Besar** (`h-11 w-11`, SVG 36px).

@@ -1,31 +1,32 @@
 import { Elysia } from "elysia";
 import { DataService } from "./data.service";
+import { authPlugin } from "@/plugins/auth.plugin";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
+  .use(authPlugin)
   // Middleware khusus untuk grup /data
-  .onBeforeHandle(({ request, set }) => {
+  .onBeforeHandle(async ({ request, set, getCurrentUser }) => {
+    // Lewati preflight OPTIONS
+    if (request.method === "OPTIONS") return;
+
     const url = new URL(request.url);
-    console.log(`[DEBUG] [${request.method}] ${url.pathname}`);
-    console.log("[DEBUG] AWS_LAMBDA_FUNCTION_NAME ", process.env.AWS_LAMBDA_FUNCTION_NAME);
 
-    // Hanya terapkan proteksi ini di Production (Lambda)
-    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-      // Lewati preflight OPTIONS
-      if (request.method === "OPTIONS") return;
+    // 1. Cek API Key
+    const key = url.searchParams.get("key") || request.headers.get("x-api-key");
+    const apiKey = process.env.API_SECRET_KEY;
 
-      const origin = request.headers.get("origin");
-      const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+    // Jika API_SECRET_KEY diset dan key cocok, izinkan lewat
+    if (apiKey && key === apiKey) {
+      return;
+    }
 
-      // Jika request datang dari Frontend kita, biarkan lewat
-      if (origin === frontendUrl) return;
+    // 2. Jika tidak ada/tidak cocok, cek session user (JWT token)
+    const user = await getCurrentUser();
+    const isAdmin = user && user.role === "ADMIN";
 
-      // Jika diakses manual (contoh via browser), cek parameter "key"
-      const key = url.searchParams.get("key");
-      const apiKey = process.env.API_SECRET_KEY || "ok";
-      if (key !== apiKey) {
-        set.status = 401;
-        return { message: "Unauthorized: Access denied without valid API Key" };
-      }
+    if (!isAdmin) {
+      set.status = 401;
+      return { message: "Unauthorized: Access denied. Valid API Key or Admin session required." };
     }
   })
 

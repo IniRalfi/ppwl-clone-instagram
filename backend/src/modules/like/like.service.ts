@@ -1,5 +1,6 @@
 import { db } from "@/db/client";
 import { localCache } from "@/utils/cache";
+import { Prisma } from "@prisma/client";
 
 export class LikeService {
   // 1. Toggle Like/Unlike
@@ -9,16 +10,8 @@ export class LikeService {
       throw new Error("Postingan tidak ditemukan");
     }
 
-    const existingLike = await db.like.findUnique({
-      where: { userId_postId: { userId, postId } },
-    });
-
     let liked = false;
-    if (existingLike) {
-      await db.like.delete({
-        where: { userId_postId: { userId, postId } },
-      });
-    } else {
+    try {
       await db.like.create({
         data: { userId, postId },
       });
@@ -26,18 +19,28 @@ export class LikeService {
 
       // Buat notifikasi jika bukan menyukai postingan sendiri
       if (post.authorId !== userId) {
-        const liker = await db.user.findUnique({
-          where: { id: userId },
-          select: { username: true }
-        });
         await db.notification.create({
           data: {
             type: "like",
-            message: `${liker?.username || "Seseorang"} menyukai postingan Anda.`,
+            message: "Seseorang menyukai postingan Anda.",
             receiverId: post.authorId,
+            senderId: userId,
             refId: postId,
           },
         });
+      }
+    } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        try {
+          await db.like.delete({
+            where: { userId_postId: { userId, postId } },
+          });
+          liked = false;
+        } catch (deleteError) {
+          // Jika sudah dihapus oleh request paralel lain, abaikan
+        }
+      } else {
+        throw error;
       }
     }
 

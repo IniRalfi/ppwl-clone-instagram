@@ -23,6 +23,7 @@
         "@scalar/types": "^0.12.2",
         "cloudinary": "^2.10.0",
         "elysia": "latest",
+        "nanoid": "^5.1.11",
       },
       "devDependencies": {
         "@types/bun": "latest",

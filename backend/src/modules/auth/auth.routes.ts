@@ -25,7 +25,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       };
     } catch (error) {
       set.status = 400;
-      return { message: "Gagal register, mungkin email/username sudah dipakai", error };
+      return { message: "Gagal register, mungkin email atau username sudah dipakai." };
     }
   }, registerSchema)
 
@@ -54,6 +54,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
             name: user.name,
             username: user.username,
             email: user.email,
+            role: user.role,
             avatarUrl: user.avatarUrl,
           },
           accessToken,
@@ -90,6 +91,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
             name: user.name,
             username: user.username,
             email: user.email,
+            role: user.role,
             avatarUrl: user.avatarUrl,
           },
           accessToken,

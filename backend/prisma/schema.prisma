@@ -14,6 +14,7 @@ model User {
   username     String  @unique
   name         String
   passwordHash String?
+  role         String  @default("USER")
   avatarUrl    String?
   bio          String?
   website      String?
@@ -29,6 +30,7 @@ model User {
   comments      Comment[]
   likes         Like[]
   notifications Notification[] @relation("NotifReceiver")
+  notificationsSent Notification[] @relation("NotifSender")
   stories       Story[]
   bookmarks     Bookmark[]
   messagesSent     Message[]
@@ -124,10 +126,13 @@ model Notification {
   refId      String?
   receiverId String
   receiver   User    @relation("NotifReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  senderId   String?
+  sender     User?   @relation("NotifSender", fields: [senderId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
   @@index([receiverId])
+  @@index([senderId])
 }
 
 model Story {

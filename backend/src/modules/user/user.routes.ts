@@ -9,9 +9,14 @@ import {
 } from "./user.schema";
 
 export const userRoutes = new Elysia({ prefix: "/users" })
-  // 1. GET /users — Cari pengguna
-  .get("/", async ({ query }) => {
+  .use(authPlugin)
+  // 1. GET /users — Cari pengguna (wajib auth + minimal 2 karakter)
+  .get("/", async ({ query, set }) => {
     const { search } = query;
+    if (!search || search.trim().length < 2) {
+      set.status = 400;
+      return { message: "Parameter 'search' wajib diisi minimal 2 karakter." };
+    }
     const users = await UserService.searchUsers(search);
     return { data: users };
   }, searchUsersSchema)
@@ -26,7 +31,6 @@ export const userRoutes = new Elysia({ prefix: "/users" })
     return { data: user };
   }, getUserByUsernameSchema)
 
-  .use(authPlugin)
   // 3. PUT /users/profile — Update profil user aktif
   .put("/profile", async ({ body, getCurrentUser, set }) => {
     try {
