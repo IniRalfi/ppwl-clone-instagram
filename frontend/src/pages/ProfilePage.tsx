@@ -1,11 +1,11 @@
 // frontend/src/pages/ProfilePage.tsx
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { Avatar } from "../components/common/Avatar";
 import { deletePost } from "../services/post.service";
 import { toast } from "sonner";
-import { Trash2, Loader2, UserPlus, Check, MessageSquare } from "lucide-react";
+import { Trash2, Loader2, UserPlus, Check, MessageSquare, Grid3X3, Bookmark } from "lucide-react";
 import { apiClient } from "../services/api.client";
 import { ProfileGridSkeleton } from "../components/ui/Skeleton";
 
@@ -42,6 +42,24 @@ interface ProfileUser {
 }
 
 // ─────────────────────────────────────────────
+// Sub-komponen: Empty state saved
+// ─────────────────────────────────────────────
+function SavedEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-3">
+      {/* Ikon Bookmark besar */}
+      <div className="w-16 h-16 rounded-full border-2 border-ig-text flex items-center justify-center mb-2">
+        <Bookmark className="w-8 h-8 text-ig-text" />
+      </div>
+      <p className="text-ig-text text-xl font-semibold">Simpan Postingan</p>
+      <p className="text-ig-secondary-text text-sm text-center max-w-[260px]">
+        Simpan foto yang ingin kamu lihat lagi. Tidak ada yang akan diberi tahu.
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Halaman Utama Profile
 // ─────────────────────────────────────────────
 export default function ProfilePage() {
@@ -57,6 +75,11 @@ export default function ProfilePage() {
   const [followStats, setFollowStats] = useState<FollowStats>({ followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  // Tab State untuk Disimpan (Saved Posts)
+  const [activeTab, setActiveTab] = useState<"posts" | "saved">("posts");
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [isSavedLoading, setIsSavedLoading] = useState(false);
 
   // Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -129,6 +152,29 @@ export default function ProfilePage() {
     loadProfile();
   }, [username, loggedInUser, isOwnProfile]);
 
+  // Fetch saved posts secara dinamis saat tab saved aktif
+  useEffect(() => {
+    if (activeTab === "saved" && isOwnProfile) {
+      const fetchSavedPosts = async () => {
+        setIsSavedLoading(true);
+        try {
+          const res = await apiClient.get<{ data: Post[] }>("/posts/saved");
+          if (res && res.data) {
+            setSavedPosts(res.data);
+          } else {
+            setSavedPosts([]);
+          }
+        } catch (error) {
+          console.error("Gagal mengambil saved posts:", error);
+          toast.error("Gagal memuat postingan yang disimpan.");
+        } finally {
+          setIsSavedLoading(false);
+        }
+      };
+      fetchSavedPosts();
+    }
+  }, [activeTab, isOwnProfile]);
+
   // ── Handler Simpan Edit Profil ──
   const handleSaveProfile = async (data: {
     name: string;
@@ -155,10 +201,11 @@ export default function ProfilePage() {
     } catch (err) {
       toast.error("Gagal memperbarui profil.");
       throw err;
+    } finally {
+      setIsEditModalOpen(false);
     }
   };
 
-  // ── Handler hapus postingan ──
   const handleDeletePost = async (postId: string) => {
     if (!loggedInUser) return;
     const confirmed = window.confirm("Yakin ingin menghapus postingan ini?");
@@ -235,8 +282,6 @@ export default function ProfilePage() {
 
         {/* Info Profil */}
         <div className="flex-1">
-
-          {/* Username + Tombol */}
           <div className="flex items-center gap-4 mb-4">
             <h1 className="text-ig-text text-xl font-semibold">
               {profileUser.username}
@@ -261,27 +306,32 @@ export default function ProfilePage() {
                 <button
                   onClick={handleFollowToggle}
                   disabled={isFollowLoading}
-                  className={`px-6 py-1.5 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-all border-none cursor-pointer ${
+                  className={`px-6 py-1.5 text-sm font-semibold rounded-lg transition-all border-none cursor-pointer flex items-center gap-1.5 ${
                     isFollowing
-                      ? "bg-ig-elevated-bg text-ig-text hover:bg-neutral-800"
-                      : "bg-ig-primary hover:bg-blue-600 text-white"
-                  } disabled:opacity-60`}
+                      ? "bg-ig-elevated-bg hover:opacity-80 text-ig-text"
+                      : "bg-ig-primary hover:bg-ig-primary-hover text-white"
+                  }`}
                 >
-                  {isFollowing ? (
+                  {isFollowLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isFollowing ? (
                     <>
-                      <Check className="h-4 w-4" /> Mengikuti
+                      <Check className="h-4 w-4" />
+                      Mengikuti
                     </>
                   ) : (
                     <>
-                      <UserPlus className="h-4 w-4" /> Ikuti
+                      <UserPlus className="h-4 w-4" />
+                      Ikuti
                     </>
                   )}
                 </button>
                 <Link
-                  to={`/messages`}
-                  className="p-1.5 bg-ig-elevated-bg hover:opacity-85 text-ig-text rounded-lg transition-opacity border-none cursor-pointer flex items-center justify-center"
+                  to="/messages"
+                  className="px-4 py-1.5 text-sm font-semibold bg-ig-elevated-bg text-ig-text rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1.5"
                 >
-                  <MessageSquare size={18} />
+                  <MessageSquare className="h-4 w-4" />
+                  Kirim Pesan
                 </Link>
               </div>
             )}
@@ -323,79 +373,161 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Grid Postingan ── */}
+      {/* ── Tab Navigation (Hanya jika milik sendiri) ── */}
+      {isOwnProfile && (
+        <div className="flex border-b border-neutral-850 justify-center">
+          {/* Tab: POSTINGAN */}
+          <button
+            onClick={() => setActiveTab("posts")}
+            className={`flex items-center gap-2 px-6 py-3 text-xs font-semibold tracking-widest uppercase transition-colors -mb-px ${
+              activeTab === "posts"
+                ? "text-ig-text border-t border-ig-text"
+                : "text-ig-secondary-text hover:text-ig-text border-t border-transparent"
+            }`}
+          >
+            <Grid3X3 className="w-3.5 h-3.5" />
+            Postingan
+          </button>
+
+          {/* Tab: DISIMPAN */}
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={`flex items-center gap-2 px-6 py-3 text-xs font-semibold tracking-widest uppercase transition-colors -mb-px ${
+              activeTab === "saved"
+                ? "text-ig-text border-t border-ig-text"
+                : "text-ig-secondary-text hover:text-ig-text border-t border-transparent"
+            }`}
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            Disimpan
+          </button>
+        </div>
+      )}
+
+      {/* ── Konten Tab ── */}
       <div className="py-4">
-        {myPosts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <span className="text-4xl">📷</span>
-            <p className="text-ig-text font-semibold">Belum Ada Postingan</p>
-            {isOwnProfile && (
-              <>
-                <p className="text-ig-secondary-text text-sm">
-                  Mulai bagikan foto pertamamu!
-                </p>
-                <Link
-                  to="/create"
-                  className="mt-2 text-ig-primary text-sm font-semibold hover:opacity-80"
+        {/* TAB: POSTINGAN */}
+        {activeTab === "posts" && (
+          myPosts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <span className="text-4xl">📷</span>
+              <p className="text-ig-text font-semibold">Belum Ada Postingan</p>
+              {isOwnProfile && (
+                <>
+                  <p className="text-ig-secondary-text text-sm">
+                    Mulai bagikan foto pertamamu!
+                  </p>
+                  <Link
+                    to="/create"
+                    className="mt-2 text-ig-primary text-sm font-semibold hover:opacity-80"
+                  >
+                    Buat Postingan
+                  </Link>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-[2px]">
+              {myPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="relative aspect-square overflow-hidden group"
                 >
-                  Buat Postingan
-                </Link>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-[2px]">
-            {myPosts.map((post) => (
-              <div
-                key={post.id}
-                className="relative aspect-square overflow-hidden group"
-              >
-                {/* Thumbnail */}
-                <Link to={`/posts/${post.id}`} className="block w-full h-full">
-                  {post.imageUrl ? (
-                    <img
-                      src={post.imageUrl}
-                      alt={post.content}
-                      className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
-                      <span className="text-ig-secondary-text text-xs text-center px-2 line-clamp-3">
-                        {post.content}
+                  {/* Thumbnail */}
+                  <Link to={`/posts/${post.id}`} className="block w-full h-full">
+                    {post.imageUrl ? (
+                      <img
+                        src={post.imageUrl}
+                        alt={post.content}
+                        className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
+                        <span className="text-ig-secondary-text text-xs text-center px-2 line-clamp-3">
+                          {post.content}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
+                  {/* Overlay Hover — stats + tombol hapus */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                    <div className="flex gap-4">
+                      <span className="text-white text-sm font-semibold">
+                        ❤️ {post._count?.likes ?? 0}
+                      </span>
+                      <span className="text-white text-sm font-semibold">
+                        💬 {post._count?.comments ?? 0}
                       </span>
                     </div>
-                  )}
-                </Link>
 
-                {/* Overlay Hover — stats + tombol hapus */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                  <div className="flex gap-4">
-                    <span className="text-white text-sm font-semibold">
-                      ❤️ {post._count?.likes ?? 0}
-                    </span>
-                    <span className="text-white text-sm font-semibold">
-                      💬 {post._count?.comments ?? 0}
-                    </span>
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        disabled={deletingId === post.id}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors border-none cursor-pointer disabled:opacity-60"
+                      >
+                        {deletingId === post.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        Hapus
+                      </button>
+                    )}
                   </div>
-
-                  {isOwnProfile && (
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      disabled={deletingId === post.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors border-none cursor-pointer disabled:opacity-60"
-                    >
-                      {deletingId === post.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3 w-3" />
-                      )}
-                      Hapus
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* TAB: DISIMPAN */}
+        {activeTab === "saved" && isOwnProfile && (
+          isSavedLoading ? (
+            <p className="text-ig-secondary-text text-sm text-center py-8">
+              Memuat postingan tersimpan...
+            </p>
+          ) : savedPosts.length === 0 ? (
+            <SavedEmptyState />
+          ) : (
+            <div className="grid grid-cols-3 gap-[2px]">
+              {savedPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="relative aspect-square overflow-hidden group cursor-pointer"
+                >
+                  <Link to={`/posts/${post.id}`} className="block w-full h-full">
+                    {post.imageUrl ? (
+                      <img
+                        src={post.imageUrl}
+                        alt={post.content}
+                        className="w-full h-full object-cover group-hover:opacity-75 transition-opacity duration-200"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
+                        <span className="text-ig-secondary-text text-xs text-center px-2 line-clamp-3">
+                          {post.content}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="flex gap-4">
+                      <span className="text-white text-sm font-semibold">
+                        ❤️ {post._count?.likes ?? 0}
+                      </span>
+                      <span className="text-white text-sm font-semibold">
+                        💬 {post._count?.comments ?? 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 

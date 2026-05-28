@@ -43,6 +43,7 @@ interface PostCardProps {
   tags?: PostTag[];
   currentUserId?: string;
   isLikedByMe?: boolean;
+  isBookmarkedByMe?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -62,6 +63,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   tags = [],
   currentUserId,
   isLikedByMe = false,
+  isBookmarkedByMe = false,
 }) => {
   const navigate = useNavigate();
   const [showTags, setShowTags] = useState(false);
@@ -69,7 +71,8 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isLiked, setIsLiked] = useState(isLikedByMe);
   const [currentLikeCount, setCurrentLikeCount] = useState(likesCount);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(isBookmarkedByMe);
+  const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
 
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [showHeartPop, setShowHeartPop] = useState(false);
@@ -120,6 +123,31 @@ export const PostCard: React.FC<PostCardProps> = ({
       toast.error("Gagal memberi like. Coba lagi.");
     } finally {
       setIsLikeLoading(false);
+    }
+  };
+
+  const handleBookmarkToggle = async () => {
+    if (!currentUserId) {
+      toast.error("Login dulu untuk menyimpan postingan!");
+      return;
+    }
+    if (isBookmarkLoading) return;
+    const newBookmarked = !isBookmarked;
+    setIsBookmarked(newBookmarked);
+    setIsBookmarkLoading(true);
+    try {
+      const res = await apiClient.post<{ bookmarked: boolean }>(`/posts/${id}/bookmark`, {});
+      setIsBookmarked(res.bookmarked);
+      if (res.bookmarked) {
+        toast.success("Postingan berhasil disimpan!");
+      } else {
+        toast.success("Batal menyimpan postingan.");
+      }
+    } catch {
+      setIsBookmarked(!newBookmarked);
+      toast.error("Gagal menyimpan postingan. Coba lagi.");
+    } finally {
+      setIsBookmarkLoading(false);
     }
   };
 
@@ -559,7 +587,8 @@ export const PostCard: React.FC<PostCardProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsBookmarked(!isBookmarked)}
+            onClick={handleBookmarkToggle}
+            disabled={isBookmarkLoading}
             className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 ${
               isBookmarked ? "text-ig-text" : "text-ig-text hover:text-ig-secondary-text"
             }`}
