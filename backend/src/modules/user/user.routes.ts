@@ -1,55 +1,32 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
+import { UserService } from "./user.service";
 import { authPlugin } from "@/plugins/auth.plugin";
+import {
+  searchUsersSchema,
+  getUserByUsernameSchema,
+  updateProfileSchema,
+} from "./user.schema";
 
 export const userRoutes = new Elysia({ prefix: "/users" })
+  // 1. GET /users — Cari pengguna
   .get("/", async ({ query }) => {
-    const { search } = query as { search?: string };
-
-    const users = await db.user.findMany({
-      where: search
-        ? {
-            OR: [
-              { username: { contains: search, mode: "insensitive" } },
-              { name: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : undefined,
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        avatarUrl: true,
-        bio: true,
-        createdAt: true,
-      }
-    });
-
+    const { search } = query;
+    const users = await UserService.searchUsers(search);
     return { data: users };
-  })
+  }, searchUsersSchema)
 
+  // 2. GET /users/username/:username — Dapatkan profil user berdasarkan username
   .get("/username/:username", async ({ params: { username }, set }) => {
-    const user = await db.user.findUnique({
-      where: { username },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        avatarUrl: true,
-        bio: true,
-        createdAt: true,
-      }
-    });
-
+    const user = await UserService.getUserByUsername(username);
     if (!user) {
       set.status = 404;
       return { message: "User tidak ditemukan" };
     }
-
     return { data: user };
-  })
+  }, getUserByUsernameSchema)
 
   .use(authPlugin)
+  // 3. PUT /users/profile — Update profil user aktif
   .put("/profile", async ({ body, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -58,25 +35,9 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         return { message: "Unauthorized" };
       }
 
-      const { name, bio, avatarUrl } = body as { name?: string; bio?: string; avatarUrl?: string };
+      const { name, bio, avatarUrl } = body;
 
-      const updatedUser = await db.user.update({
-        where: { id: user.id },
-        data: {
-          name: name ?? undefined,
-          bio: bio ?? undefined,
-          avatarUrl: avatarUrl ?? undefined,
-        },
-        select: {
-          id: true,
-          username: true,
-          name: true,
-          email: true,
-          avatarUrl: true,
-          bio: true,
-        }
-      });
-
+      const updatedUser = await UserService.updateProfile(user.id, { name, bio, avatarUrl });
       return {
         message: "Profil berhasil diperbarui",
         data: updatedUser,
@@ -86,4 +47,4 @@ export const userRoutes = new Elysia({ prefix: "/users" })
       set.status = 500;
       return { message: "Terjadi kesalahan server saat memperbarui profil" };
     }
-  });
+  }, updateProfileSchema);
