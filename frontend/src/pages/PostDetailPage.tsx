@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../store/auth.store";
 import { apiClient } from "../services/api.client";
-import { Smile } from "lucide-react";
+import { Smile, Loader2 } from "lucide-react";
 import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
 import { useThemeStore } from "../store/theme.store";
 
@@ -147,7 +147,12 @@ export function PostDetailPage() {
   const canSubmit = inputValue.trim().length > 0 && !isSubmitting;
 
   if (isLoading) {
-    return <div className="min-h-screen bg-ig-background text-ig-text flex justify-center items-center">Memuat postingan...</div>;
+    return (
+      <div className="min-h-screen bg-ig-background text-ig-text flex flex-col justify-center items-center gap-3">
+        <Loader2 className="w-10 h-10 text-ig-primary animate-spin" />
+        <span className="text-xs text-ig-secondary-text font-medium tracking-wide animate-pulse">Memuat postingan...</span>
+      </div>
+    );
   }
 
   if (!post) {

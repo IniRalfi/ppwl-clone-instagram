@@ -6,6 +6,7 @@ import loginHero from "../assets/login.webp";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { useGoogleLogin } from "@react-oauth/google";
 import { loginUser, registerUser, loginWithGoogle } from "../services/auth.service";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: boolean }) {
   const navigate = useNavigate();
@@ -191,9 +192,13 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-4 bg-gradient-to-r from-[#FF3040] via-[#D300C5] to-[#7638FA] text-white text-[15px] font-semibold py-3.5 rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(211,0,197,0.4)] disabled:opacity-70 flex justify-center cursor-pointer"
+                className="w-full mt-4 bg-gradient-to-r from-[#FF3040] via-[#D300C5] to-[#7638FA] text-white text-[15px] font-semibold py-3.5 rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(211,0,197,0.4)] disabled:opacity-70 flex justify-center items-center cursor-pointer"
               >
-                {isLoading ? "Loading..." : isLogin ? "Log in" : "Sign up"}
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  isLogin ? "Log in" : "Sign up"
+                )}
               </button>
             </form>
 

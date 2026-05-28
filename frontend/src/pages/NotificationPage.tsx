@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Notification } from "../../../shared/src/types/notification";
 import { formatRelativeTime } from "../../../shared/src/utils/date";
 import { getNotifications } from "../services/notification.service";
+import { Loader2 } from "lucide-react";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -24,8 +25,9 @@ export default function NotificationPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh]">
-        <p className="text-ig-text text-sm animate-pulse">Memuat...</p>
+      <div className="flex flex-col gap-3 justify-center items-center h-[50vh]">
+        <Loader2 className="w-8 h-8 text-ig-primary animate-spin" />
+        <p className="text-ig-secondary-text text-xs font-medium tracking-wide animate-pulse">Memuat...</p>
       </div>
     );
   }
