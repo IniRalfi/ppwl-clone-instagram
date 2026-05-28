@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ProfileImageEditorModal from "./ProfileImageEditorModal";
 
 interface EditProfileProps {
   initialName: string;
@@ -48,6 +49,7 @@ export function EditProfileModal({
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingFile, setEditingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,9 +59,7 @@ export function EditProfileModal({
         toast.error("Ukuran file maksimal 5 MB.");
         return;
       }
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-      toast.success("Foto profil dipilih! Klik Simpan untuk memperbarui.");
+      setEditingFile(file);
     }
   };
 
@@ -261,6 +261,18 @@ export function EditProfileModal({
           </button>
         </div>
 
+      {editingFile && (
+        <ProfileImageEditorModal
+          imageFile={editingFile}
+          onClose={() => setEditingFile(null)}
+          onSave={(editedFile) => {
+            setAvatarFile(editedFile);
+            setAvatarPreview(URL.createObjectURL(editedFile));
+            setEditingFile(null);
+            toast.success("Foto profil berhasil disunting! Klik Submit untuk menyimpan.");
+          }}
+        />
+      )}
       </div>
     </div>
   );

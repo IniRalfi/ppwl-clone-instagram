@@ -5,7 +5,7 @@ import { useAuthStore } from "../store/auth.store";
 import { Avatar } from "../components/common/Avatar";
 import { deletePost } from "../services/post.service";
 import { toast } from "sonner";
-import { Trash2, Loader2, UserPlus, Check, MessageSquare, Grid3X3, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Loader2, UserPlus, Check, Grid3X3, Bookmark } from "lucide-react";
 import { apiClient } from "../services/api.client";
 import { ProfileGridSkeleton } from "../components/ui/Skeleton";
 
@@ -396,11 +396,11 @@ export default function ProfilePage() {
             onClick={handleAvatarClick}
             className={`cursor-pointer rounded-full transition-transform active:scale-95 ${
               hasActiveStories
-                ? "p-[3px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]"
+                ? "p-[4.5px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]"
                 : ""
             }`}
           >
-            <div className={`rounded-full bg-ig-background ${hasActiveStories ? "p-[2.5px]" : ""}`}>
+            <div className={`rounded-full bg-ig-background ${hasActiveStories ? "p-[3.5px]" : ""}`}>
               {profileUser.avatarUrl ? (
                 <img
                   src={profileUser.avatarUrl}
@@ -415,12 +415,18 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Plus overlay hanya untuk profil sendiri saat tidak ada cerita aktif */}
-          {isOwnProfile && !hasActiveStories && (
+          {/* Plus overlay selalu tampil untuk profil sendiri agar pengguna tahu bisa ditekan */}
+          {isOwnProfile && (
             <button
-              onClick={() => storyFileInputRef.current?.click()}
-              className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0095f6] border-[3px] border-ig-background flex items-center justify-center text-white text-lg font-semibold hover:bg-[#1877f2] transition-all active:scale-90 cursor-pointer shadow-md select-none"
-              title="Buat Cerita Baru"
+              onClick={() => {
+                if (hasActiveStories) {
+                  setIsStoryMenuOpen(true);
+                } else {
+                  storyFileInputRef.current?.click();
+                }
+              }}
+              className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0095f6] border-[3px] border-ig-background flex items-center justify-center text-white text-lg font-bold hover:bg-[#1877f2] transition-all active:scale-90 cursor-pointer shadow-md select-none"
+              title="Kelola Cerita"
             >
               +
             </button>
@@ -591,54 +597,37 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-3 gap-[2px]">
               {myPosts.map((post) => (
-                <div
+                <Link
                   key={post.id}
-                  className="relative aspect-[4/5] overflow-hidden group"
+                  to={`/posts/${post.id}`}
+                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-ig-elevated-bg"
                 >
-                  {/* Thumbnail */}
-                  <Link to={`/posts/${post.id}`} className="block w-full h-full">
-                    {post.imageUrl ? (
-                      <img
-                        src={post.imageUrl}
-                        alt={post.content}
-                        className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
-                        <span className="text-ig-secondary-text text-xs text-center px-2 line-clamp-3">
-                          {post.content}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
-                  {/* Overlay Hover — stats + tombol hapus */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
-                    <div className="flex gap-4">
-                      <span className="text-white text-sm font-semibold">
-                        ❤️ {post._count?.likes ?? 0}
-                      </span>
-                      <span className="text-white text-sm font-semibold">
-                        💬 {post._count?.comments ?? 0}
+                  {post.imageUrl ? (
+                    <img
+                      src={post.imageUrl}
+                      alt={post.content}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center p-3">
+                      <span className="text-xs text-ig-secondary-text line-clamp-3 text-center">
+                        {post.content}
                       </span>
                     </div>
+                  )}
 
-                    {isOwnProfile && (
-                      <button
-                        onClick={() => handleDeletePost(post.id)}
-                        disabled={deletingId === post.id}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/80 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-colors border-none cursor-pointer disabled:opacity-60"
-                      >
-                        {deletingId === post.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3 w-3" />
-                        )}
-                        Hapus
-                      </button>
-                    )}
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <Heart size={20} fill="white" />
+                      <span>{post._count?.likes ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <MessageCircle size={20} fill="white" />
+                      <span>{post._count?.comments ?? 0}</span>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )
@@ -655,38 +644,37 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-3 gap-[2px]">
               {savedPosts.map((post) => (
-                <div
+                <Link
                   key={post.id}
-                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer"
+                  to={`/posts/${post.id}`}
+                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer bg-ig-elevated-bg"
                 >
-                  <Link to={`/posts/${post.id}`} className="block w-full h-full">
-                    {post.imageUrl ? (
-                      <img
-                        src={post.imageUrl}
-                        alt={post.content}
-                        className="w-full h-full object-cover group-hover:opacity-75 transition-opacity duration-200"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center">
-                        <span className="text-ig-secondary-text text-xs text-center px-2 line-clamp-3">
-                          {post.content}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="flex gap-4">
-                      <span className="text-white text-sm font-semibold">
-                        ❤️ {post._count?.likes ?? 0}
-                      </span>
-                      <span className="text-white text-sm font-semibold">
-                        💬 {post._count?.comments ?? 0}
+                  {post.imageUrl ? (
+                    <img
+                      src={post.imageUrl}
+                      alt={post.content}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-ig-secondary-bg flex items-center justify-center p-3">
+                      <span className="text-xs text-ig-secondary-text line-clamp-3 text-center">
+                        {post.content}
                       </span>
                     </div>
+                  )}
+
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <Heart size={20} fill="white" />
+                      <span>{post._count?.likes ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 font-semibold text-white">
+                      <MessageCircle size={20} fill="white" />
+                      <span>{post._count?.comments ?? 0}</span>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )
