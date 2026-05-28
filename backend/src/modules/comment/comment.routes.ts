@@ -1,29 +1,18 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
 import { authPlugin } from "@/plugins/auth.plugin";
-import { localCache } from "@/utils/cache";
+import { CommentService } from "./comment.service";
+import { createCommentSchema } from "./comment.schema";
 
 export const commentRoutes = new Elysia({ prefix: "/comments" })
   .use(authPlugin)
+  
+  // 1. Ambil semua komentar
   .get("/", async () => {
-    const comments = await db.comment.findMany({
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            avatarUrl: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
+    const comments = await CommentService.getAllComments();
     return { data: comments };
   })
+  
+  // 2. Kirim komentar baru
   .post("/", async ({ body, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -31,59 +20,16 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const { postId, content, parentId } = body as any;
+      
+      const { postId, content, parentId } = body;
       const authorId = user.id;
 
-      if (!postId?.trim()) {
-        set.status = 400;
-        return { message: "postId wajib diisi" };
-      }
-
-      if (!content?.trim()) {
-        set.status = 400;
-        return { message: "Komentar tidak boleh kosong" };
-      }
-
-      const newComment = await db.comment.create({
-        data: {
-          content,
-          postId,
-          parentId: parentId || null,
-          authorId: authorId,
-        },
-        include: {
-          author: {
-            select: { id: true, username: true, name: true, avatarUrl: true },
-          },
-        },
+      const newComment = await CommentService.createComment({
+        content,
+        postId,
+        parentId: parentId || null,
+        authorId,
       });
-
-      // Invalidate hanya feed cache
-      localCache.deletePattern("posts:feed:");
-
-      // Update commentCount di User
-      await db.user.update({
-        where: { id: authorId },
-        data: { commentCount: { increment: 1 } },
-      });
-
-      // Ambil data post untuk mengetahui siapa pemiliknya
-      const post = await db.post.findUnique({
-        where: { id: postId },
-        select: { authorId: true },
-      });
-
-      // Buat notifikasi jika yang komen bukan yang punya post
-      if (post && post.authorId !== authorId) {
-        await db.notification.create({
-          data: {
-            type: "comment",
-            message: `${newComment.author?.username || "Seseorang"} mengomentari postinganmu: "${content.length > 20 ? content.substring(0, 20) + "..." : content}"`,
-            receiverId: post.authorId,
-            refId: postId,
-          },
-        });
-      }
 
       return newComment;
     } catch (error: any) {
@@ -91,4 +37,4 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
       set.status = 500;
       return { message: "Gagal menyimpan komentar", error: error?.message || String(error) };
     }
-  });
+  }, createCommentSchema);
