@@ -209,3 +209,36 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
+
+/* =========================================
+   CUSTOM SONNER TOAST OVERRIDES (INSTAFY)
+   Mengubah warna toast sukses dan error agar senada
+========================================= */
+[data-sonner-toaster] {
+  font-family: "Outfit", "Optimistic Text Normal", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  background-color: var(--color-ig-secondary-bg) !important;
+  color: var(--color-ig-text) !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--color-ig-border) !important;
+  box-shadow: var(--shadow-elevated) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  border: 1px solid rgba(211, 0, 197, 0.45) !important; /* Instafy Purple border */
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+  color: #d62976 !important; /* Instagram Pink/Purple icon */
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  border: 1px solid rgba(255, 48, 64, 0.45) !important; /* Instafy Red border */
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
+  color: #ff3040 !important; /* Instafy Red icon */
+}
+
