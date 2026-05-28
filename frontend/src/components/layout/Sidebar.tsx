@@ -1,14 +1,16 @@
-import { Home, Search, PlusSquare, Heart, User, LogOut } from "lucide-react";
+// frontend/src/components/layout/Sidebar.tsx
+import { Home, Search, PlusSquare, Heart, User, LogOut, MessageSquare } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { ThemeToggle } from "../common/ThemeToggle";
 
 const navItems = [
-  { icon: Home,       label: "Beranda",    to: "/" },
-  { icon: Search,      label: "Cari",       to: "/search" },
-  { icon: PlusSquare, label: "Buat Post",  to: "/create" },
-  { icon: Heart,      label: "Notifikasi", to: "/notifications" },
-  { icon: User,       label: "Profil",     to: "/profile" },
+  { icon: Home,          label: "Beranda",    to: "/" },
+  { icon: Search,        label: "Cari",        to: "/search" },
+  { icon: MessageSquare, label: "Pesan",       to: "/direct/inbox" }, // Menu Baru Kamu!
+  { icon: PlusSquare,    label: "Buat Post",  to: "/create" },
+  { icon: Heart,         label: "Notifikasi", to: "/notifications" },
+  { icon: User,          label: "Profil",     to: "/profile" },
 ];
 
 export function Sidebar() {

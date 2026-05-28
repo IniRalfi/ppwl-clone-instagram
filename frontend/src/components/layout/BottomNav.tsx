@@ -1,12 +1,14 @@
-import { Home, Search, PlusSquare, Heart, User } from "lucide-react";
+// frontend/src/components/layout/BottomNav.tsx
+import { Home, Search, PlusSquare, Heart, User, MessageSquare } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
-  { icon: Home,       to: "/" },
-  { icon: Search,      to: "/search" },
-  { icon: PlusSquare, to: "/create" },
-  { icon: Heart,      to: "/notifications" },
-  { icon: User,       to: "/profile" },
+  { icon: Home,          to: "/" },
+  { icon: Search,        to: "/search" },
+  { icon: MessageSquare, to: "/direct/inbox" }, // Menu Baru Kamu!
+  { icon: PlusSquare,    to: "/create" },
+  { icon: Heart,         to: "/notifications" },
+  { icon: User,          to: "/profile" },
 ];
 
 export function BottomNav() {
