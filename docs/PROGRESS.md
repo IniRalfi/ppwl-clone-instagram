@@ -22,7 +22,9 @@ Semua target dari Fase 1 hingga Fase 4 (Migrasi dan Integrasi Fitur Awal) saat i
 Berikut adalah to-do list untuk fase pengembangan baru:
 
 ### ⚙️ Fase 5: Pembenahan Arsitektur & Refactoring Kode
-- [ ] Penataan ulang modul backend (pemisahan logic controller/services dari file router agar kode lebih bersih).
+- [ ] Penataan ulang modul backend (pemisahan logic controller/services dari file router):
+  - [x] Refactoring **Auth Module** (`auth.routes.ts`, `auth.schema.ts`, `auth.service.ts`).
+  - [ ] Refactoring modul lainnya (`comment`, `post`, `like`, `follow`, `message`, `notification`, `story`, `user`).
 - [ ] Penggunaan middleware terpusat untuk error handling dan parsing data yang seragam.
 - [ ] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
 

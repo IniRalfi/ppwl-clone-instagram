@@ -1,22 +1,22 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
-// Tambahkan import authPlugin di bagian atas file
 import { authPlugin } from "@/plugins/auth.plugin";
+import { AuthService } from "./auth.service";
+import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .use(authPlugin)
+  
+  // 1. Registrasi Akun
   .post("/register", async ({ body, set }) => {
     try {
-      const { name, username, email, password } = body as any;
+      const { name, username, email, password } = body;
+      const passwordHash = await Bun.password.hash(password);
 
-      const user = await db.user.create({
-        data: {
-          name,
-          username,
-          email,
-          passwordHash: await Bun.password.hash(password),
-          provider: "email",
-        },
+      const user = await AuthService.register({
+        name,
+        username,
+        email,
+        passwordHash,
       });
 
       return {
@@ -27,25 +27,14 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       set.status = 400;
       return { message: "Gagal register, mungkin email/username sudah dipakai", error };
     }
-  })
-  // Bagian Login (Baris 28-58)
+  }, registerSchema)
+
+  // 2. Login Akun (Email/Username)
   .post("/login", async ({ body, set, jwt }) => {
     try {
-      const { email, password } = body as any;
+      const { email, password } = body;
 
-      if (!email || !password) {
-        set.status = 400;
-        return { message: "Email/Username dan Password wajib diisi" };
-      }
-
-      const user = await db.user.findFirst({
-        where: {
-          OR: [
-            { email: email },
-            { username: email }
-          ]
-        },
-      });
+      const user = await AuthService.findUserByEmailOrUsername(email);
 
       if (
         !user ||
@@ -55,6 +44,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         set.status = 401;
         return { message: "Email/Username atau password salah" };
       }
+
       const accessToken = await jwt.sign({ id: user.id });
       return {
         message: "Login Berhasil",
@@ -73,46 +63,23 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       set.status = 500;
       return { message: "Terjadi kesalahan server" };
     }
-  })
+  }, loginSchema)
+
+  // 3. Login Google OAuth
   .post("/google", async ({ body, set, jwt }) => {
     try {
-      const { token } = body as { token: string };
-      if (!token) {
-        set.status = 400;
-        return { message: "Google token tidak ditemukan" };
-      }
+      const { token } = body;
 
-      // Memverifikasi token via Google endpoint
-      const googleRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!googleRes.ok) {
-        const errText = await googleRes.text();
-        console.error("Google Info Error:", errText);
-        set.status = 401;
-        return { message: `Google Error: ${errText}` };
-      }
-
-      const googleUser = await googleRes.json();
+      // Verifikasi token via Google API Service
+      const googleUser = await AuthService.verifyGoogleToken(token);
       const { email, name, picture } = googleUser;
 
-      // Cari user di database
-      let user = await db.user.findUnique({ where: { email } });
-
-      if (!user) {
-        // Auto-register jika belum ada
-        user = await db.user.create({
-          data: {
-            email,
-            name,
-            username: email.split("@")[0] + Math.floor(Math.random() * 1000),
-            avatarUrl: picture,
-            passwordHash: "", // Akun OAuth
-            provider: "google",
-          },
-        });
-      }
+      // Cari atau buat user baru
+      const user = await AuthService.findOrCreateGoogleUser({
+        email,
+        name,
+        avatarUrl: picture,
+      });
 
       const accessToken = await jwt.sign({ id: user.id });
       return {
@@ -128,8 +95,8 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
           accessToken,
         },
       };
-    } catch (error) {
-      set.status = 500;
-      return { message: "Kesalahan server saat Login Google" };
+    } catch (error: any) {
+      set.status = 401;
+      return { message: error.message || "Kesalahan server saat Login Google" };
     }
-  });
+  }, googleSchema);
