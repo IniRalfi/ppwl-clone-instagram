@@ -85,6 +85,17 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     return { data: mappedPost };
   }, getPostByIdSchema)
 
+  // 3.5 GET /posts/:id/comments — Ambil komentar bertahap
+  .get("/:id/comments", async ({ params: { id }, query, getCurrentUser }) => {
+    const user = await getCurrentUser();
+    const currentUserId = user?.id;
+    const { cursor, limit } = query;
+    const take = limit ? parseInt(limit, 10) : 15;
+
+    const res = await PostService.getPostComments(id, currentUserId, cursor, take);
+    return { data: res };
+  })
+
   // 4. POST /posts — Buat postingan baru (multipart/form-data)
   .post("/", async ({ body, getCurrentUser, set }) => {
     try {

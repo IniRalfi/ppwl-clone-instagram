@@ -23,6 +23,7 @@ interface Post {
   comments?: Comment[];
   isLikedByMe?: boolean;
   isBookmarkedByMe?: boolean;
+  commentsNextCursor?: string | null;
 }
 
 function buildCommentTree(flatComments: Comment[]): Comment[] {
@@ -64,6 +65,8 @@ export function PostDetailPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const currentTheme = useThemeStore((state) => state.theme);
 
   // State reply: null = komentar baru, isi = sedang balas komentar tertentu
@@ -73,6 +76,7 @@ export function PostDetailPage() {
   } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const commentListRef = useRef<HTMLDivElement>(null);
   
   // Mengambil user aktif dari auth store
   const currentUser = useAuthStore((state) => state.user);
@@ -85,6 +89,7 @@ export function PostDetailPage() {
           setPost(json.data);
           setComments(json.data.comments || []);
           setIsBookmarked(!!json.data.isBookmarkedByMe);
+          setNextCursor(json.data.commentsNextCursor || null);
         } else {
           toast.error("Gagal memuat detail postingan.");
           navigate('/');
@@ -186,6 +191,29 @@ export function PostDetailPage() {
     }
   };
 
+  const handleScroll = async () => {
+    const container = commentListRef.current;
+    if (!container || !nextCursor || isFetchingMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      setIsFetchingMore(true);
+      try {
+        const json = await apiClient.get<{ data: { comments: Comment[]; nextCursor: string | null } }>(
+          `/posts/${id}/comments?cursor=${nextCursor}&limit=15`
+        );
+        if (json && json.data) {
+          setComments((prev) => [...prev, ...json.data.comments]);
+          setNextCursor(json.data.nextCursor);
+        }
+      } catch {
+        toast.error("Gagal memuat lebih banyak komentar.");
+      } finally {
+        setIsFetchingMore(false);
+      }
+    }
+  };
+
   const canSubmit = inputValue.trim().length > 0 && !isSubmitting;
 
   if (isLoading) {
@@ -261,7 +289,7 @@ export function PostDetailPage() {
           </div>
 
           {/* List Komentar */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+          <div ref={commentListRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
             {/* Caption sebagai komentar pertama */}
             <div className="flex items-start mb-6">
               <img
@@ -290,6 +318,12 @@ export function PostDetailPage() {
                 onReplyClick={handleReplyClick}
               />
             ))}
+
+            {isFetchingMore && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="w-5 h-5 text-ig-primary animate-spin" />
+              </div>
+            )}
           </div>
 
           {/* Input Bar (Fixed Bottom of Right Panel) */}

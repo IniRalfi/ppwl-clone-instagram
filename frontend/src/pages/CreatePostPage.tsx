@@ -714,7 +714,7 @@ export default function CreatePostPage() {
                     <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
                       Pilih Filter Foto
                     </span>
-                    <div className="grid grid-cols-3 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                    <div className="grid grid-cols-3 gap-2">
                       {filtersPreset.map((f) => (
                         <button
                           key={f.name}

@@ -83,6 +83,7 @@ export class PostService {
       include: {
         author: { select: AUTHOR_SELECT },
         comments: {
+          take: 16,
           include: {
             author: { select: { id: true, username: true, name: true, avatarUrl: true } },
             likes: currentUserId
@@ -114,7 +115,62 @@ export class PostService {
     if (!post) return null;
 
     const { likes, bookmarks, comments, ...rest } = post as any;
-    const mappedComments = (comments || []).map((c: any) => {
+    let commentsNextCursor: string | null = null;
+    let mappedComments = (comments || []).map((c: any) => {
+      const { likes: commentLikes, _count, ...cRest } = c;
+      return {
+        ...cRest,
+        likesCount: _count?.likes ?? 0,
+        isLikedByMe: commentLikes && commentLikes.length > 0,
+      };
+    });
+
+    if (mappedComments.length > 15) {
+      const nextItem = mappedComments.pop();
+      commentsNextCursor = nextItem.id;
+    }
+
+    return {
+      ...rest,
+      comments: mappedComments,
+      commentsNextCursor,
+      isLikedByMe: likes && likes.length > 0,
+      isBookmarkedByMe: bookmarks && bookmarks.length > 0,
+    };
+  }
+
+  // Ambal komentar bertahap berbasis kursor
+  static async getPostComments(postId: string, currentUserId?: string, cursor?: string, limit = 15) {
+    const queryOptions: any = {
+      where: { postId },
+      take: limit + 1,
+      orderBy: { createdAt: "asc" },
+      include: {
+        author: { select: { id: true, username: true, name: true, avatarUrl: true } },
+        likes: currentUserId
+          ? {
+              where: { userId: currentUserId },
+              select: { userId: true },
+            }
+          : false,
+        _count: { select: { likes: true } },
+      },
+    };
+
+    if (cursor) {
+      queryOptions.cursor = { id: cursor };
+      queryOptions.skip = 1;
+    }
+
+    const comments = await db.comment.findMany(queryOptions);
+
+    let nextCursor: string | null = null;
+    if (comments.length > limit) {
+      const nextItem = comments.pop();
+      nextCursor = nextItem?.id ?? null;
+    }
+
+    const mappedComments = comments.map((c: any) => {
       const { likes: commentLikes, _count, ...cRest } = c;
       return {
         ...cRest,
@@ -124,10 +180,8 @@ export class PostService {
     });
 
     return {
-      ...rest,
       comments: mappedComments,
-      isLikedByMe: likes && likes.length > 0,
-      isBookmarkedByMe: bookmarks && bookmarks.length > 0,
+      nextCursor,
     };
   }
 
