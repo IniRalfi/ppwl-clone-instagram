@@ -366,12 +366,22 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
 
           {/* Bookmark */}
-          <Button variant="ghost" size="icon" onClick={() => setIsBookmarked(!isBookmarked)}
-            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent ${
-              isBookmarked ? 'text-ig-text' : 'text-ig-text hover:text-ig-secondary-text'
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsBookmarked(!isBookmarked)}
+            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent
+              transition-transform active:scale-95 ${
+              isBookmarked
+                ? 'text-ig-text scale-110'
+                : 'text-ig-text hover:text-ig-secondary-text'
             }`}
           >
-            <Bookmark className={`h-6 w-6 ${isBookmarked ? 'fill-current' : ''}`} />
+            <Bookmark
+              className={`h-6 w-6 transition-all duration-150 ${
+                isBookmarked ? 'fill-current' : ''
+              }`}
+            />
           </Button>
         </div>
 
