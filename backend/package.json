@@ -23,6 +23,7 @@
     "@react-oauth/google": "^0.13.5",
     "@scalar/themes": "^0.15.5",
     "@scalar/types": "^0.12.2",
+    "argon2": "^0.44.0",
     "cloudinary": "^2.10.0",
     "elysia": "latest",
     "nanoid": "^5.1.11",
