@@ -48,11 +48,27 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
   - Menyesuaikan rasio gambar feed (`PostCard`) dan placeholder loading (`PostSkeleton`) menjadi rasio standar Instagram **4:5** (`aspect-[4/5]`).
   - Memperbaiki typo merek "Instagaram" menjadi "Instagram" pada navigasi sidebar dan mengecilkan ukuran teks menu menjadi `14px` standard.
 
-### Fixed (Diperbaiki)
-- **Penyelesaian 20 Bugs Utama (`bug_report.md`)**:
-  - Memperbaiki penumpukan skeleton ganda pada hover profil card dengan optimasi parameter status loading.
-  - Memperbaiki penataan pohon komentar bersarang (*nested comment tree*) di frontend.
-  - Menambahkan pencegahan database pool exhaustion menggunakan debouncing hover stats.
+- **Penyelesaian 20 Bugs Utama (Migrasi dari bug_report.md)**:
+  - **BUG-01 (Keamanan)**: Enkripsi password menggunakan hashing Argon2 (sebelumnya plain text).
+  - **BUG-02 (Keamanan)**: Proteksi endpoint sensitif (likes, posts, comments, follow) dengan JWT middleware verifikasi token.
+  - **BUG-03 (Keamanan)**: Mengganti token JWT dummy statis dengan implementasi dynamic signing JWT plugin Elysia.
+  - **BUG-04 (Performa)**: Mengatasi N+1 query problem di feed utama dengan menyertakan `isLikedByMe` langsung dari endpoint `GET /posts`.
+  - **BUG-05 (Performa)**: Mengoptimasi query profil user (`GET /posts?authorId=...`) untuk mengambil post spesifik dari database alih-alih filter memori di frontend.
+  - **BUG-06 (UI/UX)**: Menghapus data stats hover card yang hardcoded `"0"` dengan data aslinya.
+  - **BUG-07 (DB)**: Sinkronisasi field statistik `postCount` di database saat membuat/menghapus postingan.
+  - **BUG-08 (UI/UX)**: Memperbaiki status penanda follow/unfollow di hover card agar tidak bernilai true ketika request gagal.
+  - **BUG-09 (Kestabilan)**: Menambahkan blok penanganan error (try-catch) pada endpoint status like.
+  - **BUG-10 (UI/UX)**: Memperbaiki format ringkasan pesan notifikasi komentar pendek agar tanda elipsis (`...`) tidak muncul secara berlebihan.
+  - **BUG-11 (Kualitas Kode)**: Menyeragamkan seluruh request REST API di frontend agar melewati `apiClient` terpusat dan tidak mencampuradukkan `fetch` langsung.
+  - **BUG-12 (Keamanan)**: Menyaring notifikasi (`GET /notifications`) berdasarkan ID pengguna yang sedang masuk.
+  - **BUG-13 (Keamanan)**: Menyembunyikan alamat email pengguna lain dari kembalian data publik endpoint `GET /users`.
+  - **BUG-14 (Memori)**: Menghindari kebocoran memori (*memory leak*) dengan pembersihan otomatis file Object URL pratinjau unggahan gambar.
+  - **BUG-15 (UI/UX)**: Membangun antarmuka pendaftaran (`RegisterPage.tsx`) yang sebelumnya kosong/placeholder.
+  - **BUG-16 (Kestabilan)**: Memasang validasi input pada route pembuatan komentar.
+  - **BUG-17 (Kualitas Kode)**: Mengganti tipe data bertipe `any` di `PostDetailPage` dengan tipe bawaan TypeScript.
+  - **BUG-18 (UI/UX)**: Menambahkan notifikasi toast error saat aksi follow/unfollow pada daftar saran pengguna gagal.
+  - **BUG-19 (UI/UX)**: Mengganti pop-up `alert()` mentah bawaan browser ketika mengklik tag postingan dengan navigasi rute profil.
+  - **BUG-20 (Kualitas Kode)**: Mengubah tipe properti `postsCount` pada komponen `PostCard` dari `string` menjadi `number`.
 
 ---
 
