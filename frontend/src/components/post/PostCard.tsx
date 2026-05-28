@@ -396,9 +396,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   );
 
   return (
-    <Card className="post-card w-full border-none bg-ig-background text-ig-text rounded-none sm:rounded-lg overflow-hidden text-left relative">
+    <div className="w-full bg-transparent text-ig-text text-left relative pb-8 mb-4 border-b border-ig-separator">
       {/* ── HEADER ── */}
-      <div className="flex items-center justify-between px-4 py-3 relative">
+      <div className="flex items-center justify-between px-0 pb-3 relative">
         <div className="flex items-center space-x-3">
           <Avatar
             avatarUrl={avatarUrl}
@@ -421,15 +421,15 @@ export const PostCard: React.FC<PostCardProps> = ({
         <Button
           variant="ghost"
           size="icon"
-          className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent rounded-full h-8 w-8 p-0 flex items-center justify-center"
+          className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent rounded-full h-8 w-8 p-0 flex items-center justify-center cursor-pointer"
         >
           <MoreHorizontal className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* ── CAROUSEL GAMBAR ── */}
+      {/* ── CAROUSEL GAMBAR (dengan border & rounded tipis seperti screenshot) ── */}
       <div
-        className="relative w-full overflow-hidden bg-black flex items-center justify-center aspect-[4/5]"
+        className="relative w-full overflow-hidden bg-black flex items-center justify-center aspect-[4/5] rounded-[4px] border border-ig-border"
         onDoubleClick={handleDoubleClick}
         onClick={() => setShowTags(!showTags)}
       >
@@ -528,7 +528,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </div>
 
       {/* ── FOOTER: TOMBOL + CAPTION ── */}
-      <div className="px-4 py-3 space-y-3">
+      <div className="px-0 py-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Like */}
@@ -538,21 +538,16 @@ export const PostCard: React.FC<PostCardProps> = ({
                 size="icon"
                 onClick={handleLikeToggle}
                 disabled={isLikeLoading}
-                className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 ${
+                className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 cursor-pointer ${
                   isLiked
                     ? "text-red-500 hover:text-red-600"
                     : "text-ig-text hover:text-ig-secondary-text"
                 }`}
               >
                 <Heart
-                  className={`h-6 w-6 transition-all duration-150 ${isLiked ? "fill-current scale-110" : ""}`}
+                  className={`h-6 w-6 transition-all duration-150 ${isLiked ? "fill-current scale-110 animate-bounce" : ""}`}
                 />
               </Button>
-              <span className="text-sm font-semibold select-none text-ig-secondary-text">
-                {currentLikeCount > 1000
-                  ? `${(currentLikeCount / 1000).toFixed(1)}K`
-                  : currentLikeCount}
-              </span>
             </div>
 
             {/* Comment */}
@@ -561,13 +556,10 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onClick={() => navigate(`/posts/${id}`)}
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150"
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
                 <MessageCircle className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-ig-secondary-text">
-                {commentsCount}
-              </span>
             </div>
 
             {/* Share */}
@@ -575,11 +567,10 @@ export const PostCard: React.FC<PostCardProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg] transition-transform active:scale-75 hover:scale-110 duration-150"
+                className="text-ig-text hover:text-ig-secondary-text hover:bg-transparent h-7 w-7 p-0 flex items-center justify-center rotate-[-20deg] transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer"
               >
                 <Send className="h-6 w-6" />
               </Button>
-              <span className="text-sm font-semibold select-none text-ig-secondary-text">0</span>
             </div>
           </div>
 
@@ -589,7 +580,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             size="icon"
             onClick={handleBookmarkToggle}
             disabled={isBookmarkLoading}
-            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 ${
+            className={`h-7 w-7 p-0 flex items-center justify-center hover:bg-transparent transition-transform active:scale-75 hover:scale-110 duration-150 cursor-pointer ${
               isBookmarked ? "text-ig-text" : "text-ig-text hover:text-ig-secondary-text"
             }`}
           >
@@ -599,8 +590,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           </Button>
         </div>
 
+        {/* Likes Count */}
+        <div className="text-sm font-bold text-ig-text select-none">
+          {currentLikeCount > 0
+            ? `${currentLikeCount.toLocaleString("id-ID")} suka`
+            : "Jadilah yang pertama menyukai ini"}
+        </div>
+
         {/* Caption */}
-        <div className="text-[13.5px] leading-relaxed pt-1 border-t border-ig-border relative">
+        <div className="text-[13.5px] leading-relaxed relative">
           <div>
             <span
               className="inline-block relative group mr-2"
@@ -618,7 +616,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onClick={() => setIsExpanded(true)}
                 className="text-ig-secondary-text font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
               >
-                ... more
+                ... lainnya
               </button>
             )}
             {isExpanded && shouldTruncate && (
@@ -626,13 +624,23 @@ export const PostCard: React.FC<PostCardProps> = ({
                 onClick={() => setIsExpanded(false)}
                 className="text-ig-secondary-text text-xs font-normal hover:text-ig-secondary-text ml-1 bg-transparent border-none p-0 cursor-pointer inline-block"
               >
-                (less)
+                (lebih sedikit)
               </button>
             )}
           </div>
         </div>
+
+        {/* Link Komentar */}
+        {commentsCount > 0 && (
+          <div
+            onClick={() => navigate(`/posts/${id}`)}
+            className="text-[13.5px] text-ig-secondary-text cursor-pointer hover:underline pt-0.5 select-none"
+          >
+            Lihat semua {commentsCount} komentar
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   );
 };
 

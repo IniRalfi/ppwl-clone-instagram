@@ -1,6 +1,7 @@
 // frontend/src/components/story/StoriesRow.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import StoryViewer from "./StoryViewer";
 import { getActiveStories, uploadStory } from "../../services/story.service";
@@ -27,24 +28,24 @@ interface StoryAvatarProps {
 
 function StoryAvatar({ group, onClick }: StoryAvatarProps) {
   const ringClass = group.hasUnread
-    ? "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px]"
-    : "bg-neutral-600 p-[2px]";
+    ? "bg-gradient-to-tr from-[#FFD600] via-[#FF0069] to-[#7638FA] p-[2px]"
+    : "bg-ig-border p-[1px]";
 
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1 flex-shrink-0 w-16"
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 w-20 cursor-pointer select-none"
     >
-      <div className={`rounded-full ${ringClass}`}>
-        <div className="rounded-full p-[2px] bg-ig-background">
+      <div className={`rounded-full ${ringClass} transition-transform duration-200 hover:scale-[1.03]`}>
+        <div className="rounded-full p-[2.5px] bg-ig-background">
           <img
             src={group.avatarUrl}
             alt={group.username}
-            className="w-12 h-12 rounded-full object-cover"
+            className="w-[56px] h-[56px] rounded-full object-cover"
           />
         </div>
       </div>
-      <span className="text-ig-text text-xs truncate w-full text-center">
+      <span className="text-ig-text text-[11px] font-normal tracking-tight truncate w-full text-center">
         {group.username}
       </span>
     </button>
@@ -82,7 +83,7 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
   };
 
   return (
-    <label className="flex flex-col items-center gap-1 flex-shrink-0 w-16 cursor-pointer relative">
+    <label className="flex flex-col items-center gap-1.5 flex-shrink-0 w-20 cursor-pointer relative select-none">
       <input
         type="file"
         accept="image/*"
@@ -90,17 +91,17 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
         disabled={isUploading}
         className="hidden"
       />
-      <div className="relative">
-        <div className="rounded-full bg-neutral-700 p-[2px]">
-          <div className="rounded-full p-[2px] bg-ig-background">
+      <div className="relative transition-transform duration-200 hover:scale-[1.03]">
+        <div className="rounded-full bg-ig-border p-[1px]">
+          <div className="rounded-full p-[2.5px] bg-ig-background">
             <img
               src={avatarUrl}
               alt="Your story"
-              className={`w-12 h-12 rounded-full object-cover ${isUploading ? "opacity-50 animate-pulse" : ""}`}
+              className={`w-[56px] h-[56px] rounded-full object-cover ${isUploading ? "opacity-50 animate-pulse" : ""}`}
             />
           </div>
         </div>
-        <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-ig-primary border-2 border-ig-background flex items-center justify-center">
+        <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-ig-primary border-2 border-ig-background flex items-center justify-center shadow">
           {isUploading ? (
             <span className="text-white text-[9px] font-bold animate-spin">◌</span>
           ) : (
@@ -108,7 +109,7 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
           )}
         </div>
       </div>
-      <span className="text-ig-secondary-text text-xs truncate w-full text-center">
+      <span className="text-ig-secondary-text text-[11px] tracking-tight truncate w-full text-center">
         {username}
       </span>
     </label>
@@ -120,6 +121,10 @@ export function StoriesRow() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<UserStoryGroup | null>(null);
   const { user } = useAuthStore();
+  
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftBtn, setShowLeftBtn] = useState(false);
+  const [showRightBtn, setShowRightBtn] = useState(false);
 
   const fetchStoriesData = async () => {
     try {
@@ -136,14 +141,54 @@ export function StoriesRow() {
     fetchStoriesData();
   }, []);
 
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftBtn(scrollLeft > 2);
+      setShowRightBtn(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+  }, [stories, isLoading]);
+
+  const handleScrollAction = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 320;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      // Berikan jeda untuk transisi scroll selesai baru hitung status tombol
+      setTimeout(checkScroll, 350);
+    }
+  };
+
   // Filter out current user's story group from the rest of the list, since we always display a dedicated MyStoryAvatar
   const otherStories = stories.filter((g) => g.userId !== user?.id);
   const myStoryGroup = stories.find((g) => g.userId === user?.id);
 
   return (
     <>
-      <div className="w-full bg-ig-secondary-bg/60 backdrop-blur-md rounded-2xl border border-ig-border px-5 py-4 mb-6 shadow-card transition-all duration-300">
-        <div className="flex gap-4 overflow-x-auto scrollbar-none">
+      <div className="w-full bg-transparent px-0 py-2 mb-6 relative group/stories">
+        {/* Tombol Scroll Kiri */}
+        {showLeftBtn && (
+          <button
+            onClick={() => handleScrollAction("left")}
+            className="absolute left-1 top-1/2 -translate-y-[28px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
+            aria-label="Stories sebelumnya"
+          >
+            <ChevronLeft className="w-4 h-4 stroke-[3px]" />
+          </button>
+        )}
+
+        {/* List Stories */}
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex gap-4 overflow-x-auto scrollbar-none pb-1 snap-x select-none"
+        >
           <MyStoryAvatar onUploadSuccess={fetchStoriesData} />
           
           {/* Jika user punya story sendiri, tampilkan avatar story miliknya yang bisa dilihat */}
@@ -156,8 +201,14 @@ export function StoriesRow() {
 
           {isLoading ? (
             <div className="flex gap-4 animate-pulse">
-              <div className="w-12 h-12 bg-ig-elevated-bg rounded-full" />
-              <div className="w-12 h-12 bg-ig-elevated-bg rounded-full" />
+              <div className="w-20 flex flex-col items-center gap-1.5">
+                <div className="w-[66px] h-[66px] bg-ig-border rounded-full" />
+                <div className="w-12 h-3 bg-ig-border rounded" />
+              </div>
+              <div className="w-20 flex flex-col items-center gap-1.5">
+                <div className="w-[66px] h-[66px] bg-ig-border rounded-full" />
+                <div className="w-12 h-3 bg-ig-border rounded" />
+              </div>
             </div>
           ) : (
             otherStories.map((group) => (
@@ -169,6 +220,17 @@ export function StoriesRow() {
             ))
           )}
         </div>
+
+        {/* Tombol Scroll Kanan */}
+        {showRightBtn && (
+          <button
+            onClick={() => handleScrollAction("right")}
+            className="absolute right-1 top-1/2 -translate-y-[28px] w-6 h-6 rounded-full bg-white text-neutral-800 flex items-center justify-center shadow-md hover:bg-neutral-100 cursor-pointer z-10 transition-all active:scale-90"
+            aria-label="Stories berikutnya"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[3px]" />
+          </button>
+        )}
       </div>
 
       {activeGroup && (
