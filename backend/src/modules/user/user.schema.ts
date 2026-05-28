@@ -18,5 +18,9 @@ export const updateProfileSchema = {
     bio: t.Optional(t.String()),
     avatarUrl: t.Optional(t.String()),
     image: t.Optional(t.Any()),
+    website: t.Optional(t.String()),
+    gender: t.Optional(t.String()),
+    showThreads: t.Optional(t.Any()),
+    suggestions: t.Optional(t.Any()),
   }),
 };

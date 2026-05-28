@@ -16,6 +16,10 @@ model User {
   passwordHash String?
   avatarUrl    String?
   bio          String?
+  website      String?
+  gender       String?
+  showThreads  Boolean @default(false)
+  suggestions  Boolean @default(true)
   provider     String  @default("email")
   providerId   String?
   postCount    Int     @default(0)

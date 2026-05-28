@@ -45,6 +45,10 @@ interface ProfileUser {
   name: string;
   avatarUrl: string | null;
   bio: string | null;
+  website?: string | null;
+  gender?: string | null;
+  showThreads?: boolean;
+  suggestions?: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -99,9 +103,29 @@ export default function ProfilePage() {
   const [isStoryMenuOpen, setIsStoryMenuOpen] = useState(false);
   const [selectedStoryFile, setSelectedStoryFile] = useState<File | null>(null);
   const [viewStoriesActive, setViewStoriesActive] = useState(false);
+  const [viewOtherStoriesActive, setViewOtherStoriesActive] = useState(false);
   const storyFileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = !username || username === loggedInUser?.username;
+
+  const otherUserStoryGroup = stories.find((group) => group.userId === profileUser?.id);
+  const hasActiveStories = isOwnProfile
+    ? !!(myStoryGroup && myStoryGroup.stories.length > 0)
+    : !!(otherUserStoryGroup && otherUserStoryGroup.stories.length > 0);
+
+  const handleAvatarClick = () => {
+    if (isOwnProfile) {
+      if (myStoryGroup && myStoryGroup.stories.length > 0) {
+        setIsStoryMenuOpen(true);
+      } else {
+        storyFileInputRef.current?.click();
+      }
+    } else {
+      if (otherUserStoryGroup && otherUserStoryGroup.stories.length > 0) {
+        setViewOtherStoriesActive(true);
+      }
+    }
+  };
 
   const loadActiveStories = async () => {
     if (!loggedInUser) return;
@@ -143,6 +167,10 @@ export default function ProfilePage() {
               name: loggedInUser.name,
               avatarUrl: loggedInUser.avatarUrl ?? null,
               bio: loggedInUser.bio ?? null,
+              website: loggedInUser.website ?? null,
+              gender: loggedInUser.gender ?? null,
+              showThreads: loggedInUser.showThreads ?? false,
+              suggestions: loggedInUser.suggestions ?? true,
             };
           }
         } else if (username) {
@@ -223,6 +251,10 @@ export default function ProfilePage() {
     bio: string;
     avatarUrl: string;
     image?: File;
+    website?: string;
+    gender?: string;
+    showThreads?: boolean;
+    suggestions?: boolean;
   }) => {
     try {
       let res;
@@ -232,12 +264,20 @@ export default function ProfilePage() {
         formData.append("bio", data.bio);
         formData.append("avatarUrl", data.avatarUrl);
         formData.append("image", data.image);
+        if (data.website) formData.append("website", data.website);
+        if (data.gender) formData.append("gender", data.gender);
+        formData.append("showThreads", String(data.showThreads ?? false));
+        formData.append("suggestions", String(data.suggestions ?? true));
         res = await apiClient.putForm<{ data: ProfileUser }>("/users/profile", formData);
       } else {
         res = await apiClient.put<{ data: ProfileUser }>("/users/profile", {
           name: data.name,
           bio: data.bio,
           avatarUrl: data.avatarUrl,
+          website: data.website,
+          gender: data.gender,
+          showThreads: data.showThreads,
+          suggestions: data.suggestions,
         });
       }
 
@@ -247,11 +287,26 @@ export default function ProfilePage() {
           name: res.data.name,
           bio: res.data.bio ?? "",
           avatarUrl: res.data.avatarUrl ?? "",
+          website: res.data.website ?? "",
+          gender: res.data.gender ?? "",
+          showThreads: res.data.showThreads ?? false,
+          suggestions: res.data.suggestions ?? true,
         });
         
         // Sync ke state lokal
         setProfileUser((prev) =>
-          prev ? { ...prev, name: res.data.name, bio: res.data.bio, avatarUrl: res.data.avatarUrl } : null
+          prev
+            ? {
+                ...prev,
+                name: res.data.name,
+                bio: res.data.bio,
+                avatarUrl: res.data.avatarUrl,
+                website: res.data.website,
+                gender: res.data.gender,
+                showThreads: res.data.showThreads,
+                suggestions: res.data.suggestions,
+              }
+            : null
         );
 
         toast.success("Profil berhasil diperbarui!");
@@ -335,8 +390,42 @@ export default function ProfilePage() {
       {/* ── Header Profil ── */}
       <div className="flex items-start gap-8 py-8 border-b border-ig-border">
 
-        {/* Avatar Besar */}
-        <Avatar name={profileUser.name} avatarUrl={profileUser.avatarUrl} size="lg" />
+        {/* Custom Avatar dengan Integrasi Story & Plus Icon */}
+        <div className="relative group flex-shrink-0 select-none">
+          <div
+            onClick={handleAvatarClick}
+            className={`cursor-pointer rounded-full transition-transform active:scale-95 ${
+              hasActiveStories
+                ? "p-[3px] bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]"
+                : ""
+            }`}
+          >
+            <div className={`rounded-full bg-ig-background ${hasActiveStories ? "p-[2.5px]" : ""}`}>
+              {profileUser.avatarUrl ? (
+                <img
+                  src={profileUser.avatarUrl}
+                  alt={`Foto profil ${profileUser.name}`}
+                  className="w-[150px] h-[150px] rounded-full object-cover border border-neutral-800"
+                />
+              ) : (
+                <div className="w-[150px] h-[150px] rounded-full bg-neutral-900/60 flex items-center justify-center text-ig-text text-4xl font-bold border border-neutral-800">
+                  {profileUser.name?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Plus overlay hanya untuk profil sendiri saat tidak ada cerita aktif */}
+          {isOwnProfile && !hasActiveStories && (
+            <button
+              onClick={() => storyFileInputRef.current?.click()}
+              className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#0095f6] border-[3px] border-ig-background flex items-center justify-center text-white text-lg font-semibold hover:bg-[#1877f2] transition-all active:scale-90 cursor-pointer shadow-md select-none"
+              title="Buat Cerita Baru"
+            >
+              +
+            </button>
+          )}
+        </div>
 
         {/* Info Profil */}
         <div className="flex-1">
@@ -420,7 +509,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Nama + Bio */}
+           {/* Nama + Bio */}
           <p className="text-ig-text text-sm font-semibold">{profileUser.name}</p>
           {profileUser.bio ? (
             <p className="text-ig-text text-sm mt-1 whitespace-pre-line">
@@ -431,55 +520,47 @@ export default function ProfilePage() {
               Belum ada bio.
             </p>
           )}
+          {profileUser.website && (
+            <a
+              href={profileUser.website.startsWith("http") ? profileUser.website : `https://${profileUser.website}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#0095f6] text-sm font-semibold hover:underline block mt-1"
+            >
+              🔗 {profileUser.website}
+            </a>
+          )}
         </div>
       </div>
 
-      {/* ── Cerita Baru (+ Story) ── */}
-      {isOwnProfile && (
-        <div className="flex gap-6 py-6 px-4 border-b border-neutral-800">
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={() => setIsStoryMenuOpen(true)}>
-            <div className="w-[66px] h-[66px] rounded-full border border-neutral-700 bg-neutral-900/60 flex items-center justify-center transition-all group-hover:bg-neutral-800 active:scale-95 shadow-sm">
-              <span className="text-neutral-400 text-3xl font-light leading-none">+</span>
-            </div>
-            <span className="text-ig-text text-xs font-semibold">Baru</span>
-          </div>
 
-          <input
-            type="file"
-            ref={storyFileInputRef}
-            onChange={handleStoryFileChange}
-            accept="image/*"
-            className="hidden"
-          />
-        </div>
-      )}
 
       {/* ── Tab Navigation (Hanya jika milik sendiri) ── */}
       {isOwnProfile && (
-        <div className="flex border-b border-neutral-850 justify-center">
+        <div className="flex justify-center gap-12 mt-4 mb-2">
           {/* Tab: POSTINGAN */}
           <button
             onClick={() => setActiveTab("posts")}
-            className={`flex items-center gap-2 px-6 py-3 text-xs font-semibold tracking-widest uppercase transition-colors -mb-px ${
+            className={`flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold tracking-wider transition-all cursor-pointer ${
               activeTab === "posts"
-                ? "text-ig-text border-t border-ig-text"
-                : "text-ig-secondary-text hover:text-ig-text border-t border-transparent"
+                ? "text-ig-text border-b-2 border-ig-text"
+                : "text-ig-secondary-text hover:text-ig-text border-b-2 border-transparent"
             }`}
           >
-            <Grid3X3 className="w-3.5 h-3.5" />
+            <Grid3X3 className="w-4.5 h-4.5" />
             Postingan
           </button>
 
           {/* Tab: DISIMPAN */}
           <button
             onClick={() => setActiveTab("saved")}
-            className={`flex items-center gap-2 px-6 py-3 text-xs font-semibold tracking-widest uppercase transition-colors -mb-px ${
+            className={`flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold tracking-wider transition-all cursor-pointer ${
               activeTab === "saved"
-                ? "text-ig-text border-t border-ig-text"
-                : "text-ig-secondary-text hover:text-ig-text border-t border-transparent"
+                ? "text-ig-text border-b-2 border-ig-text"
+                : "text-ig-secondary-text hover:text-ig-text border-b-2 border-transparent"
             }`}
           >
-            <Bookmark className="w-3.5 h-3.5" />
+            <Bookmark className="w-4.5 h-4.5" />
             Disimpan
           </button>
         </div>
@@ -619,6 +700,10 @@ export default function ProfilePage() {
           initialUsername={profileUser.username}
           initialBio={profileUser.bio ?? ""}
           initialAvatarUrl={profileUser.avatarUrl ?? ""}
+          initialWebsite={profileUser.website ?? ""}
+          initialGender={profileUser.gender ?? "Male"}
+          initialShowThreads={profileUser.showThreads ?? false}
+          initialSuggestions={profileUser.suggestions ?? true}
           onClose={() => setIsEditModalOpen(false)}
           onSave={handleSaveProfile}
         />
@@ -715,6 +800,24 @@ export default function ProfilePage() {
           onClose={() => setViewStoriesActive(false)}
         />
       )}
+
+      {/* ── Story Viewer Modal (Other User) ── */}
+      {viewOtherStoriesActive && otherUserStoryGroup && (
+        <StoryViewer
+          groups={stories}
+          initialGroupId={otherUserStoryGroup.userId}
+          onClose={() => setViewOtherStoriesActive(false)}
+        />
+      )}
+
+      {/* Input File Cerita Tersembunyi */}
+      <input
+        type="file"
+        ref={storyFileInputRef}
+        onChange={handleStoryFileChange}
+        accept="image/*"
+        className="hidden"
+      />
     </div>
   );
 }

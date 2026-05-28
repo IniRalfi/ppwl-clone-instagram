@@ -33,14 +33,18 @@ export class UserService {
         name: true,
         avatarUrl: true,
         bio: true,
+        website: true,
+        gender: true,
+        showThreads: true,
+        suggestions: true,
         createdAt: true,
       }
     });
   }
 
   // 3. Perbarui informasi profil pengguna aktif
-  static async updateProfile(userId: string, data: { name?: string; bio?: string; avatarUrl?: string }) {
-    const { name, bio, avatarUrl } = data;
+  static async updateProfile(userId: string, data: { name?: string; bio?: string; avatarUrl?: string; website?: string; gender?: string; showThreads?: boolean; suggestions?: boolean }) {
+    const { name, bio, avatarUrl, website, gender, showThreads, suggestions } = data;
 
     return await db.user.update({
       where: { id: userId },
@@ -48,6 +52,10 @@ export class UserService {
         name: name ?? undefined,
         bio: bio ?? undefined,
         avatarUrl: avatarUrl ?? undefined,
+        website: website ?? undefined,
+        gender: gender ?? undefined,
+        showThreads: showThreads ?? undefined,
+        suggestions: suggestions ?? undefined,
       },
       select: {
         id: true,
@@ -56,6 +64,10 @@ export class UserService {
         email: true,
         avatarUrl: true,
         bio: true,
+        website: true,
+        gender: true,
+        showThreads: true,
+        suggestions: true,
       }
     });
   }

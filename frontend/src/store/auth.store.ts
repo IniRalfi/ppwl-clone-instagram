@@ -8,6 +8,10 @@ export type User = {
   email: string;
   avatarUrl?: string;
   bio?: string;
+  website?: string;
+  gender?: string;
+  showThreads?: boolean;
+  suggestions?: boolean;
 };
 
 type AuthStore = {

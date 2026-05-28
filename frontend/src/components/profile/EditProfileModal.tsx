@@ -7,8 +7,21 @@ interface EditProfileProps {
   initialUsername: string;
   initialBio: string;
   initialAvatarUrl: string;
+  initialWebsite?: string;
+  initialGender?: string;
+  initialShowThreads?: boolean;
+  initialSuggestions?: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; bio: string; avatarUrl: string; image?: File }) => Promise<void>;
+  onSave: (data: {
+    name: string;
+    bio: string;
+    avatarUrl: string;
+    image?: File;
+    website?: string;
+    gender?: string;
+    showThreads?: boolean;
+    suggestions?: boolean;
+  }) => Promise<void>;
 }
 
 export function EditProfileModal({
@@ -16,6 +29,10 @@ export function EditProfileModal({
   initialUsername,
   initialBio,
   initialAvatarUrl,
+  initialWebsite = "",
+  initialGender = "Male",
+  initialShowThreads = false,
+  initialSuggestions = true,
   onClose,
   onSave,
 }: EditProfileProps) {
@@ -25,10 +42,10 @@ export function EditProfileModal({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState(initialAvatarUrl);
   
-  const [website, setWebsite] = useState("github.com/" + initialUsername + " + 1");
-  const [showThreads, setShowThreads] = useState(false);
-  const [gender, setGender] = useState("Male");
-  const [suggestions, setSuggestions] = useState(true);
+  const [website, setWebsite] = useState(initialWebsite);
+  const [showThreads, setShowThreads] = useState(initialShowThreads);
+  const [gender, setGender] = useState(initialGender);
+  const [suggestions, setSuggestions] = useState(initialSuggestions);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +79,10 @@ export function EditProfileModal({
         bio: bio.trim(),
         avatarUrl: avatarUrl.trim(),
         image: avatarFile || undefined,
+        website: website.trim(),
+        gender,
+        showThreads,
+        suggestions,
       });
       onClose();
     } catch {

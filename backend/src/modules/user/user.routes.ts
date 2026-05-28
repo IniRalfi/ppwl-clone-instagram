@@ -36,7 +36,7 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         return { message: "Unauthorized" };
       }
 
-      const { name, bio, avatarUrl, image } = body;
+      const { name, bio, avatarUrl, image, website, gender, showThreads, suggestions } = body;
       let finalAvatarUrl = avatarUrl;
 
       if (image && image.size > 0) {
@@ -44,7 +44,18 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         finalAvatarUrl = await uploadMedia(buffer, image.type);
       }
 
-      const updatedUser = await UserService.updateProfile(user.id, { name, bio, avatarUrl: finalAvatarUrl });
+      const parsedShowThreads = showThreads === "true" || showThreads === true;
+      const parsedSuggestions = suggestions === "true" || suggestions === true;
+
+      const updatedUser = await UserService.updateProfile(user.id, {
+        name,
+        bio,
+        avatarUrl: finalAvatarUrl,
+        website,
+        gender,
+        showThreads: parsedShowThreads,
+        suggestions: parsedSuggestions,
+      });
       return {
         message: "Profil berhasil diperbarui",
         data: updatedUser,
