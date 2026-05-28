@@ -114,28 +114,35 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
         </div>
 
         {/* ── PANEL KANAN: Form Login ── */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative bg-ig-background lg:bg-transparent">
-          <div className="w-full max-w-[350px] bg-ig-secondary-bg border border-ig-border shadow-card lg:border-none lg:shadow-none p-6 lg:p-0 rounded-2xl">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative bg-ig-background lg:bg-transparent transition-colors duration-300">
+          <div
+            className="w-full max-w-[420px] bg-ig-secondary-bg p-8 md:p-10 rounded-3xl transition-all duration-300 shadow-card md:shadow-elevated border border-transparent"
+            style={{
+              backgroundImage: "linear-gradient(var(--color-ig-secondary-bg), var(--color-ig-secondary-bg)), linear-gradient(135deg, rgba(255, 48, 64, 0.35), rgba(118, 56, 250, 0.35))",
+              backgroundOrigin: "border-box",
+              backgroundClip: "padding-box, border-box",
+            }}
+          >
             
             {/* Mobile-only Logo */}
-            <div className="flex lg:hidden items-center justify-center gap-3 mb-6">
+            <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
               <img
                 src="/favicon/favicon.svg"
                 alt="Instafy Logo"
-                className="w-10 h-10 object-contain"
+                className="w-12 h-12 object-contain"
               />
-              <span className="text-ig-text font-bold text-2xl font-[var(--font-outfit)] tracking-wide">
+              <span className="text-ig-text font-bold text-3xl font-[var(--font-outfit)] tracking-wide">
                 Instafy
               </span>
             </div>
 
             {/* Judul Form */}
-            <h2 className="text-ig-text text-[15px] font-bold mb-5 font-sans">
+            <h2 className="text-ig-text text-lg font-bold mb-6 font-sans tracking-tight">
               {isLogin ? "Log into Instafy" : "Create new account"}
             </h2>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-[14px]">
+            <form onSubmit={handleSubmit} className="space-y-[18px]">
               {/* Tambahan Field Register */}
               {!isLogin && (
                 <>
@@ -145,7 +152,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                     onChange={(e) => setName(e.target.value)}
                     required
                     placeholder="Full Name"
-                    className="w-full bg-ig-background border border-ig-border rounded-[12px] px-4 py-3 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-ig-text transition-colors"
+                    className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
                   />
                   <input
                     type="text"
@@ -153,7 +160,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     placeholder="Username"
-                    className="w-full bg-ig-background border border-ig-border rounded-[12px] px-4 py-3 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-ig-text transition-colors"
+                    className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
                   />
                 </>
               )}
@@ -166,7 +173,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                 required
                 placeholder="Mobile number, username or email"
                 autoComplete="email"
-                className="w-full bg-ig-background border border-ig-border rounded-[12px] px-4 py-3 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-ig-text transition-colors"
+                className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
               />
 
               {/* Input Password */}
@@ -177,25 +184,32 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                 required
                 placeholder="Password"
                 autoComplete={isLogin ? "current-password" : "new-password"}
-                className="w-full bg-ig-background border border-ig-border rounded-[12px] px-4 py-3 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-ig-text transition-colors"
+                className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
               />
 
               {/* Tombol Utama (Log in / Sign up) */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 bg-ig-primary hover:bg-ig-primary-hover text-white text-[15px] font-semibold py-3 rounded-full transition-colors disabled:opacity-70 flex justify-center cursor-pointer"
+                className="w-full mt-4 bg-gradient-to-r from-[#FF3040] via-[#D300C5] to-[#7638FA] text-white text-[15px] font-semibold py-3.5 rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(211,0,197,0.4)] disabled:opacity-70 flex justify-center cursor-pointer"
               >
                 {isLoading ? "Loading..." : isLogin ? "Log in" : "Sign up"}
               </button>
             </form>
 
+            {/* Separator Line */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="h-[1px] bg-ig-border flex-1" />
+              <span className="text-xs text-ig-secondary-text font-semibold uppercase tracking-wider">Atau</span>
+              <div className="h-[1px] bg-ig-border flex-1" />
+            </div>
+
             {/* Log in with Google */}
-            <div className="mt-6">
+            <div>
               <button 
                 type="button"
                 onClick={() => googleLogin()}
-                className="w-full border border-ig-border hover:bg-ig-elevated-bg text-ig-text text-[15px] font-semibold py-[11px] rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full border border-ig-border hover:border-transparent hover:bg-gradient-to-r hover:from-[#FF3040]/10 hover:to-[#7638FA]/10 text-ig-text text-[15px] font-semibold py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -217,7 +231,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                   setName("");
                   setUsername("");
                 }}
-                className="w-full border border-ig-border hover:bg-ig-elevated-bg text-ig-primary text-[15px] font-semibold py-[11px] rounded-full transition-colors cursor-pointer"
+                className="w-full border border-ig-border hover:border-transparent hover:bg-gradient-to-r hover:from-[#FF3040]/10 hover:to-[#7638FA]/10 text-ig-primary text-[15px] font-semibold py-3 rounded-full transition-all duration-300 cursor-pointer hover:scale-[1.01]"
               >
                 {isLogin ? "Create new account" : "Log into existing account"}
               </button>
