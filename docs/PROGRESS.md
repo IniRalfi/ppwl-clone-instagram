@@ -25,7 +25,8 @@ Berikut adalah to-do list untuk fase pengembangan baru:
 - [ ] Penataan ulang modul backend (pemisahan logic controller/services dari file router):
   - [x] Refactoring **Auth Module** (`auth.routes.ts`, `auth.schema.ts`, `auth.service.ts`).
   - [x] Refactoring **Comment Module** (`comment.routes.ts`, `comment.schema.ts`, `comment.service.ts`).
-  - [ ] Refactoring modul lainnya (`post`, `like`, `follow`, `message`, `notification`, `story`, `user`).
+  - [x] Refactoring **Post Module** (`post.routes.ts`, `post.schema.ts`, `post.service.ts`).
+  - [ ] Refactoring modul lainnya (`like`, `follow`, `message`, `notification`, `story`, `user`).
 - [ ] Penggunaan middleware terpusat untuk error handling dan parsing data yang seragam.
 - [ ] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
 

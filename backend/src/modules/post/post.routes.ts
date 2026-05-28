@@ -1,37 +1,24 @@
 import { Elysia } from "elysia";
-import { db } from "@/db/client";
-import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
-import { uploadMedia, deleteMedia } from "@/config/s3";
+import { PostService } from "./post.service";
 import { authPlugin } from "@/plugins/auth.plugin";
 import { localCache } from "@/utils/cache";
-
-// Pilih field author yang aman untuk di-return ke frontend
-const AUTHOR_SELECT = {
-  id: true,
-  name: true,
-  username: true,
-  avatarUrl: true,
-  bio: true,
-  postCount: true,
-  _count: {
-    select: {
-      followers: true,
-      following: true,
-    },
-  },
-} as const;
+import {
+  getPostsSchema,
+  getPostByIdSchema,
+  createPostSchema,
+  deletePostSchema,
+  bookmarkPostSchema,
+} from "./post.schema";
 
 export const postRoutes = new Elysia({ prefix: "/posts" })
   .use(authPlugin)
 
-  // ─────────────────────────────────────────────
-  // GET /posts — Ambil semua postingan (feed)
-  // ─────────────────────────────────────────────
+  // 1. GET /posts — Ambil semua postingan (feed)
   .get("/", async ({ query, getCurrentUser }) => {
     const user = await getCurrentUser();
     const currentUserId = user?.id;
-    const { authorId, limit } = query as { authorId?: string; limit?: string };
-    const take = limit ? parseInt(limit, 10) : 10; // Default limit = 10 untuk consistency
+    const { authorId, limit } = query;
+    const take = limit ? parseInt(limit, 10) : 10;
 
     const cacheKey = `posts:feed:${authorId || "all"}:limit:${take}:user:${currentUserId || "guest"}`;
     const cached = localCache.get<any>(cacheKey);
@@ -45,45 +32,14 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     if (process.env.DEBUG_CACHE === "true") {
       console.log(`❌ Cache MISS: ${cacheKey}`);
     }
-    const posts = await db.post.findMany({
-      where: authorId ? { authorId } : undefined,
-      take,
-      include: {
-        author: { select: AUTHOR_SELECT },
-        likes: currentUserId
-          ? {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            }
-          : false,
-        bookmarks: currentUserId
-          ? {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            }
-          : false,
-        _count: { select: { likes: true, comments: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
 
-    const mappedPosts = posts.map((post) => {
-      const { likes, bookmarks, ...rest } = post as any;
-      return {
-        ...rest,
-        isLikedByMe: likes && likes.length > 0,
-        isBookmarkedByMe: bookmarks && bookmarks.length > 0,
-      };
-    });
-
+    const mappedPosts = await PostService.getPosts(currentUserId, authorId, take);
     localCache.set(cacheKey, mappedPosts, 15000); // cache 15 detik
 
     return { data: mappedPosts };
-  })
+  }, getPostsSchema)
 
-  // ─────────────────────────────────────────────
-  // GET /posts/saved — Mengambil postingan yang di-bookmark oleh user aktif
-  // ─────────────────────────────────────────────
+  // 2. GET /posts/saved — Mengambil postingan yang di-bookmark oleh user aktif
   .get("/saved", async ({ getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -91,28 +47,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const userId = user.id;
-
-      const savedBookmarked = await db.bookmark.findMany({
-        where: { userId },
-        include: {
-          post: {
-            include: {
-              author: { select: AUTHOR_SELECT },
-              _count: { select: { likes: true, comments: true } },
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      const mappedPosts = savedBookmarked.map((b) => {
-        return {
-          ...b.post,
-          isBookmarkedByMe: true,
-        };
-      });
-
+      const mappedPosts = await PostService.getSavedPosts(user.id);
       return { data: mappedPosts };
     } catch (error) {
       console.error("❌ Gagal mengambil saved posts:", error);
@@ -121,9 +56,7 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     }
   })
 
-  // ─────────────────────────────────────────────
-  // GET /posts/:id — Ambil 1 postingan + komentar
-  // ─────────────────────────────────────────────
+  // 3. GET /posts/:id — Ambil 1 postingan + komentar
   .get("/:id", async ({ params: { id }, getCurrentUser, set }) => {
     const user = await getCurrentUser();
     const currentUserId = user?.id;
@@ -141,55 +74,18 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       console.log(`❌ Cache MISS: ${cacheKey}`);
     }
 
-    const post = await db.post.findUnique({
-      where: { id },
-      include: {
-        author: { select: AUTHOR_SELECT },
-        comments: {
-          include: {
-            author: { select: { id: true, username: true, name: true, avatarUrl: true } },
-          },
-          orderBy: { createdAt: "asc" },
-        },
-        likes: currentUserId
-          ? {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            }
-          : false,
-        bookmarks: currentUserId
-          ? {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            }
-          : false,
-        _count: { select: { likes: true, comments: true } },
-      },
-    });
-
-    if (!post) {
+    const mappedPost = await PostService.getPostById(id, currentUserId);
+    if (!mappedPost) {
       set.status = 404;
       return { message: "Post tidak ditemukan" };
     }
 
-    const { likes, bookmarks, ...rest } = post as any;
-    const mappedPost = {
-      ...rest,
-      isLikedByMe: likes && likes.length > 0,
-      isBookmarkedByMe: bookmarks && bookmarks.length > 0,
-    };
-
     localCache.set(cacheKey, mappedPost, 10000); // cache 10 detik
 
     return { data: mappedPost };
-  })
+  }, getPostByIdSchema)
 
-  // ─────────────────────────────────────────────
-  // POST /posts — Buat postingan baru
-  // Body: multipart/form-data
-  //   - content: string (wajib)
-  //   - image?: File (opsional, maks 5 MB)
-  // ─────────────────────────────────────────────
+  // 4. POST /posts — Buat postingan baru (multipart/form-data)
   .post("/", async ({ body, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -197,76 +93,21 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const userId = user.id;
 
       const formData = body as Record<string, any>;
       const content = formData.content as string;
       const imageFile = formData.image as File | undefined;
 
-      // Validasi field wajib
-      if (!content?.trim()) {
-        set.status = 400;
-        return { message: "content wajib diisi" };
-      }
-
-      let imageUrl: string | null = null;
-
-      // Proses upload gambar jika ada
-      if (imageFile && imageFile.size > 0) {
-        // Validasi tipe file
-        if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
-          set.status = 400;
-          return {
-            message: `Format gambar tidak didukung. Gunakan: ${ALLOWED_MIME_TYPES.join(", ")}`,
-          };
-        }
-
-        // Validasi ukuran file (maks 5 MB)
-        if (imageFile.size > MAX_FILE_SIZE_BYTES) {
-          set.status = 400;
-          return {
-            message: `Ukuran gambar maksimal 5 MB. Ukuran saat ini: ${(imageFile.size / 1024 / 1024).toFixed(2)} MB`,
-          };
-        }
-
-        // Upload menggunakan S3 Media Service (S3 + Cloudinary Fallback)
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        imageUrl = await uploadMedia(buffer, imageFile.type);
-      }
-
-      // Update postCount di User terlebih dahulu agar data ter-update ter-return di query post.create
-      await db.user.update({
-        where: { id: userId },
-        data: { postCount: { increment: 1 } },
-      });
-
-      // Simpan ke database
-      const post = await db.post.create({
-        data: {
-          content: content.trim(),
-          imageUrl,
-          authorId: userId,
-        },
-        include: {
-          author: { select: AUTHOR_SELECT },
-          _count: { select: { likes: true, comments: true } },
-        },
-      });
-
-      // Invalidate hanya feed cache, bukan single post cache
-      localCache.deletePattern("posts:feed:");
+      const post = await PostService.createPost(user.id, content, imageFile);
       return { message: "Postingan berhasil dibuat", data: post };
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Gagal membuat post:", error);
-      set.status = 500;
-      return { message: "Terjadi kesalahan server saat membuat postingan" };
+      set.status = error.message?.includes("Format") || error.message?.includes("Ukuran") ? 400 : 500;
+      return { message: error.message || "Terjadi kesalahan server saat membuat postingan" };
     }
-  })
+  }, createPostSchema)
 
-  // ─────────────────────────────────────────────
-  // DELETE /posts/:id — Hapus postingan
-  // ─────────────────────────────────────────────
+  // 5. DELETE /posts/:id — Hapus postingan
   .delete("/:id", async ({ params: { id }, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -274,48 +115,23 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const userId = user.id;
 
-      // Cek postingan ada dan milik user ini
-      const post = await db.post.findUnique({ where: { id } });
-
-      if (!post) {
-        set.status = 404;
-        return { message: "Postingan tidak ditemukan" };
-      }
-
-      if (post.authorId !== userId) {
-        set.status = 403;
-        return { message: "Kamu tidak memiliki akses untuk menghapus postingan ini" };
-      }
-
-      // Hapus gambar menggunakan S3 Media Service
-      if (post.imageUrl) {
-        await deleteMedia(post.imageUrl);
-      }
-
-      // Hapus dari database (cascade akan hapus likes & comments terkait)
-      await db.post.delete({ where: { id } });
-
-      // Update postCount di User
-      await db.user.update({
-        where: { id: userId },
-        data: { postCount: { decrement: 1 } },
-      });
-
-      // Invalidate hanya feed cache, bukan single post cache
-      localCache.deletePattern("posts:feed:");
+      await PostService.deletePost(user.id, id);
       return { message: "Postingan berhasil dihapus" };
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Gagal menghapus post:", error);
-      set.status = 500;
-      return { message: "Terjadi kesalahan server saat menghapus postingan" };
+      if (error.message === "Postingan tidak ditemukan") {
+        set.status = 404;
+      } else if (error.message === "Kamu tidak memiliki akses untuk menghapus postingan ini") {
+        set.status = 403;
+      } else {
+        set.status = 500;
+      }
+      return { message: error.message || "Terjadi kesalahan server saat menghapus postingan" };
     }
-  })
+  }, deletePostSchema)
 
-  // ─────────────────────────────────────────────
-  // POST /posts/:id/bookmark — Toggle simpan postingan
-  // ─────────────────────────────────────────────
+  // 6. POST /posts/:id/bookmark — Toggle simpan postingan
   .post("/:id/bookmark", async ({ params: { id }, getCurrentUser, set }) => {
     try {
       const user = await getCurrentUser();
@@ -323,40 +139,15 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         set.status = 401;
         return { message: "Unauthorized" };
       }
-      const userId = user.id;
 
-      const post = await db.post.findUnique({ where: { id } });
-      if (!post) {
-        set.status = 404;
-        return { message: "Postingan tidak ditemukan" };
-      }
-
-      const existingBookmark = await db.bookmark.findUnique({
-        where: {
-          userId_postId: { userId, postId: id },
-        },
-      });
-
-      if (existingBookmark) {
-        await db.bookmark.delete({
-          where: {
-            userId_postId: { userId, postId: id },
-          },
-        });
-        // Invalidate hanya feed cache
-        localCache.deletePattern("posts:feed:");
-        return { message: "Batal menyimpan postingan", bookmarked: false };
-      } else {
-        await db.bookmark.create({
-          data: { userId, postId: id },
-        });
-        // Invalidate hanya feed cache
-        localCache.deletePattern("posts:feed:");
-        return { message: "Postingan berhasil disimpan", bookmarked: true };
-      }
-    } catch (error) {
+      const bookmarked = await PostService.toggleBookmark(user.id, id);
+      return {
+        message: bookmarked ? "Postingan berhasil disimpan" : "Batal menyimpan postingan",
+        bookmarked,
+      };
+    } catch (error: any) {
       console.error("❌ Gagal toggle bookmark:", error);
-      set.status = 500;
-      return { message: "Terjadi kesalahan server" };
+      set.status = error.message === "Postingan tidak ditemukan" ? 404 : 500;
+      return { message: error.message || "Terjadi kesalahan server" };
     }
-  });
+  }, bookmarkPostSchema);
