@@ -36,7 +36,8 @@ export const likeRoutes = new Elysia({ prefix: "/likes" })
           where: { userId_postId: { userId, postId } },
         });
 
-        localCache.deletePattern("posts:");
+        // Invalidate hanya feed cache
+        localCache.deletePattern("posts:feed:");
         const likeCount = await db.like.count({ where: { postId } });
         return { message: "Unlike berhasil", liked: false, likeCount };
       } else {
@@ -45,7 +46,8 @@ export const likeRoutes = new Elysia({ prefix: "/likes" })
           data: { userId, postId },
         });
 
-        localCache.deletePattern("posts:");
+        // Invalidate hanya feed cache
+        localCache.deletePattern("posts:feed:");
         const likeCount = await db.like.count({ where: { postId } });
         return { message: "Like berhasil", liked: true, likeCount };
       }

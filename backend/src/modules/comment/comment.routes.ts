@@ -14,14 +14,14 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
             name: true,
             username: true,
             avatarUrl: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
-    
+
     return { data: comments };
   })
   .post("/", async ({ body, getCurrentUser, set }) => {
@@ -43,7 +43,7 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         set.status = 400;
         return { message: "Komentar tidak boleh kosong" };
       }
-      
+
       const newComment = await db.comment.create({
         data: {
           content,
@@ -53,23 +53,24 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         },
         include: {
           author: {
-            select: { id: true, username: true, name: true, avatarUrl: true }
-          }
-        }
+            select: { id: true, username: true, name: true, avatarUrl: true },
+          },
+        },
       });
 
-      localCache.deletePattern("posts:");
+      // Invalidate hanya feed cache
+      localCache.deletePattern("posts:feed:");
 
       // Update commentCount di User
       await db.user.update({
         where: { id: authorId },
         data: { commentCount: { increment: 1 } },
       });
-      
+
       // Ambil data post untuk mengetahui siapa pemiliknya
       const post = await db.post.findUnique({
         where: { id: postId },
-        select: { authorId: true }
+        select: { authorId: true },
       });
 
       // Buat notifikasi jika yang komen bukan yang punya post
@@ -77,13 +78,13 @@ export const commentRoutes = new Elysia({ prefix: "/comments" })
         await db.notification.create({
           data: {
             type: "comment",
-            message: `${newComment.author?.username || 'Seseorang'} mengomentari postinganmu: "${content.length > 20 ? content.substring(0, 20) + '...' : content}"`,
+            message: `${newComment.author?.username || "Seseorang"} mengomentari postinganmu: "${content.length > 20 ? content.substring(0, 20) + "..." : content}"`,
             receiverId: post.authorId,
             refId: postId,
-          }
+          },
         });
       }
-      
+
       return newComment;
     } catch (error: any) {
       console.error("Error creating comment:", error);

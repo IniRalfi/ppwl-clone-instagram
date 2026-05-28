@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
 import { runDatabaseBackup } from "@/scripts/backup";
+import { localCache } from "@/utils/cache";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
   // Middleware khusus untuk grup /data
@@ -18,7 +19,7 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
     // Sisa pengecekan origin dan API Key
     const origin = request.headers.get("origin");
     const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
-    
+
     // Jika request datang dari Frontend kita, biarkan lewat
     if (origin === frontendUrl) return;
 
@@ -38,7 +39,11 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
       set.status = 500;
       return { success: false, message: "Gagal membuat backup", error: res.error };
     }
-    return { success: true, message: "Backup database berhasil dibuat dan diunggah ke S3", data: res };
+    return {
+      success: true,
+      message: "Backup database berhasil dibuat dan diunggah ke S3",
+      data: res,
+    };
   })
 
   // Rute-rute /data (mengembalikan semua data untuk keperluan inspeksi DB)
@@ -61,4 +66,39 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
   .get("/likes", async () => {
     const data = await db.like.findMany();
     return { data, message: "Likes retrieved successfully" };
+  })
+
+  // ─────────────────────────────────────────────
+  // GET /data/cache/metrics — Lihat cache performance
+  // ─────────────────────────────────────────────
+  .get("/cache/metrics", async () => {
+    const metrics = localCache.getMetrics();
+    return {
+      message: "Cache metrics retrieved successfully",
+      data: metrics,
+      description: {
+        hits: "Jumlah cache hit (data ditemukan di cache)",
+        misses: "Jumlah cache miss (data tidak ditemukan di cache)",
+        sets: "Jumlah kali data disimpan ke cache",
+        deletes: "Jumlah kali cache dihapus/diinvalidasi",
+        hitRate: "Persentase cache hit rate",
+        size: "Jumlah entry yang saat ini tersimpan di cache",
+      },
+    };
+  })
+
+  // ─────────────────────────────────────────────
+  // POST /data/cache/reset — Reset cache metrics
+  // ─────────────────────────────────────────────
+  .post("/cache/reset", async () => {
+    localCache.resetMetrics();
+    return { message: "Cache metrics berhasil direset" };
+  })
+
+  // ─────────────────────────────────────────────
+  // POST /data/cache/clear — Hapus semua cache
+  // ─────────────────────────────────────────────
+  .post("/cache/clear", async () => {
+    localCache.clear();
+    return { message: "Semua cache berhasil dihapus" };
   });

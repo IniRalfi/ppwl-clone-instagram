@@ -1,9 +1,6 @@
 import { Elysia } from "elysia";
 import { db } from "@/db/client";
-import {
-  MAX_FILE_SIZE_BYTES,
-  ALLOWED_MIME_TYPES,
-} from "@/config/cloudinary";
+import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
 import { uploadMedia, deleteMedia } from "@/config/s3";
 import { authPlugin } from "@/plugins/auth.plugin";
 import { localCache } from "@/utils/cache";
@@ -20,8 +17,8 @@ const AUTHOR_SELECT = {
     select: {
       followers: true,
       following: true,
-    }
-  }
+    },
+  },
 } as const;
 
 export const postRoutes = new Elysia({ prefix: "/posts" })
@@ -34,14 +31,20 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     const user = await getCurrentUser();
     const currentUserId = user?.id;
     const { authorId, limit } = query as { authorId?: string; limit?: string };
-    const take = limit ? parseInt(limit, 10) : undefined;
+    const take = limit ? parseInt(limit, 10) : 10; // Default limit = 10 untuk consistency
 
-    const cacheKey = `posts:feed:${authorId || "all"}:limit:${limit || "none"}:user:${currentUserId || "guest"}`;
+    const cacheKey = `posts:feed:${authorId || "all"}:limit:${take}:user:${currentUserId || "guest"}`;
     const cached = localCache.get<any>(cacheKey);
     if (cached) {
+      if (process.env.DEBUG_CACHE === "true") {
+        console.log(`✅ Cache HIT: ${cacheKey}`);
+      }
       return { data: cached, _cached: true };
     }
 
+    if (process.env.DEBUG_CACHE === "true") {
+      console.log(`❌ Cache MISS: ${cacheKey}`);
+    }
     const posts = await db.post.findMany({
       where: authorId ? { authorId } : undefined,
       take,
@@ -96,11 +99,11 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
           post: {
             include: {
               author: { select: AUTHOR_SELECT },
-              _count: { select: { likes: true, comments: true } }
-            }
-          }
+              _count: { select: { likes: true, comments: true } },
+            },
+          },
         },
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
       });
 
       const mappedPosts = savedBookmarked.map((b) => {
@@ -128,7 +131,14 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
     const cacheKey = `posts:single:${id}:user:${currentUserId || "guest"}`;
     const cached = localCache.get<any>(cacheKey);
     if (cached) {
+      if (process.env.DEBUG_CACHE === "true") {
+        console.log(`✅ Cache HIT: ${cacheKey}`);
+      }
       return { data: cached, _cached: true };
+    }
+
+    if (process.env.DEBUG_CACHE === "true") {
+      console.log(`❌ Cache MISS: ${cacheKey}`);
     }
 
     const post = await db.post.findUnique({
@@ -136,7 +146,9 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
       include: {
         author: { select: AUTHOR_SELECT },
         comments: {
-          include: { author: { select: { id: true, username: true, name: true, avatarUrl: true } } },
+          include: {
+            author: { select: { id: true, username: true, name: true, avatarUrl: true } },
+          },
           orderBy: { createdAt: "asc" },
         },
         likes: currentUserId
@@ -242,7 +254,8 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         },
       });
 
-      localCache.deletePattern("posts:");
+      // Invalidate hanya feed cache, bukan single post cache
+      localCache.deletePattern("posts:feed:");
       return { message: "Postingan berhasil dibuat", data: post };
     } catch (error) {
       console.error("❌ Gagal membuat post:", error);
@@ -290,7 +303,8 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
         data: { postCount: { decrement: 1 } },
       });
 
-      localCache.deletePattern("posts:");
+      // Invalidate hanya feed cache, bukan single post cache
+      localCache.deletePattern("posts:feed:");
       return { message: "Postingan berhasil dihapus" };
     } catch (error) {
       console.error("❌ Gagal menghapus post:", error);
@@ -319,23 +333,25 @@ export const postRoutes = new Elysia({ prefix: "/posts" })
 
       const existingBookmark = await db.bookmark.findUnique({
         where: {
-          userId_postId: { userId, postId: id }
-        }
+          userId_postId: { userId, postId: id },
+        },
       });
 
       if (existingBookmark) {
         await db.bookmark.delete({
           where: {
-            userId_postId: { userId, postId: id }
-          }
+            userId_postId: { userId, postId: id },
+          },
         });
-        localCache.deletePattern("posts:");
+        // Invalidate hanya feed cache
+        localCache.deletePattern("posts:feed:");
         return { message: "Batal menyimpan postingan", bookmarked: false };
       } else {
         await db.bookmark.create({
-          data: { userId, postId: id }
+          data: { userId, postId: id },
         });
-        localCache.deletePattern("posts:");
+        // Invalidate hanya feed cache
+        localCache.deletePattern("posts:feed:");
         return { message: "Postingan berhasil disimpan", bookmarked: true };
       }
     } catch (error) {
