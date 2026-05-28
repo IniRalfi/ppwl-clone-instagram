@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -8,7 +8,7 @@ interface EditProfileProps {
   initialBio: string;
   initialAvatarUrl: string;
   onClose: () => void;
-  onSave: (data: { name: string; bio: string; avatarUrl: string }) => Promise<void>;
+  onSave: (data: { name: string; bio: string; avatarUrl: string; image?: File }) => Promise<void>;
 }
 
 export function EditProfileModal({
@@ -22,7 +22,33 @@ export function EditProfileModal({
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState(initialAvatarUrl);
+  
+  const [website, setWebsite] = useState("github.com/" + initialUsername + " + 1");
+  const [showThreads, setShowThreads] = useState(false);
+  const [gender, setGender] = useState("Male");
+  const [suggestions, setSuggestions] = useState(true);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Ukuran file maksimal 5 MB.");
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      toast.success("Foto profil dipilih! Klik Simpan untuk memperbarui.");
+    }
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -35,6 +61,7 @@ export function EditProfileModal({
         name: name.trim(),
         bio: bio.trim(),
         avatarUrl: avatarUrl.trim(),
+        image: avatarFile || undefined,
       });
       onClose();
     } catch {
@@ -44,99 +71,175 @@ export function EditProfileModal({
     }
   };
 
+  const avatarSrc =
+    avatarPreview ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${initialUsername}`;
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[420px] bg-ig-secondary-bg border border-ig-border rounded-xl overflow-hidden"
+        className="w-full max-w-[600px] bg-ig-secondary-bg border border-ig-border rounded-xl overflow-hidden shadow-2xl relative my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-ig-border">
-          <span className="text-ig-text font-semibold text-sm">Edit Profil</span>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-ig-border">
+          <h2 className="text-ig-text font-bold text-lg">Edit profile</h2>
           <button
             onClick={onClose}
-            className="text-ig-text hover:opacity-60 transition-opacity"
+            className="text-ig-text hover:opacity-60 transition-opacity cursor-pointer"
           >
-            <X size={20} />
+            <X size={22} />
           </button>
         </div>
 
-        <div className="px-4 py-4 flex flex-col gap-4">
-          {/* Username (Read Only) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-ig-secondary-text text-xs font-semibold">
-              Username (Tidak dapat diubah)
-            </label>
-            <input
-              type="text"
-              value={initialUsername}
-              disabled
-              className="bg-neutral-800/50 border border-neutral-700 rounded-lg px-3 py-2 text-ig-secondary-text text-sm outline-none cursor-not-allowed"
-            />
+        {/* Form Body */}
+        <div className="px-6 py-6 flex flex-col gap-6 max-h-[75vh] overflow-y-auto scrollbar-thin">
+          
+          {/* Avatar & Change Photo Card */}
+          <div className="bg-ig-background/60 border border-ig-border rounded-xl p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full overflow-hidden border border-ig-border flex-shrink-0">
+                <img
+                  src={avatarSrc}
+                  alt={initialUsername}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-left">
+                <p className="text-ig-text font-bold text-sm leading-tight mb-0.5">{initialUsername}</p>
+                <p className="text-ig-secondary-text text-xs leading-none">{name || initialName}</p>
+              </div>
+            </div>
+            
+            <div>
+              <button
+                type="button"
+                onClick={triggerFileSelect}
+                className="bg-ig-primary text-white font-semibold text-xs px-4 py-2 rounded-lg hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+              >
+                Change photo
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
           </div>
 
-          {/* Nama Lengkap */}
-          <div className="flex flex-col gap-1">
-            <label className="text-ig-secondary-text text-xs font-semibold">
-              Nama Lengkap
-            </label>
+          {/* Website Input */}
+          <div className="flex flex-col gap-2 text-left">
+            <label className="text-ig-text font-bold text-sm">Website</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nama lengkap"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="Website"
               className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors"
             />
+            <p className="text-ig-secondary-text text-[11px] leading-snug">
+              Editing your links is only available on mobile. Visit the Instagram app and edit your profile to change the websites in your bio.
+            </p>
           </div>
 
-          {/* Bio */}
-          <div className="flex flex-col gap-1">
-            <label className="text-ig-secondary-text text-xs font-semibold">
-              Bio
-            </label>
+          {/* Bio Input */}
+          <div className="flex flex-col gap-2 text-left relative">
+            <div className="flex justify-between items-center">
+              <label className="text-ig-text font-bold text-sm">Bio</label>
+              <span className="text-ig-secondary-text text-[11px]">
+                {bio.length} / 150
+              </span>
+            </div>
             <textarea
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tulis bio kamu..."
+              onChange={(e) => setBio(e.target.value.substring(0, 150))}
+              placeholder="Tulis bio..."
               rows={3}
               className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors resize-none"
             />
           </div>
 
-          {/* Avatar URL */}
-          <div className="flex flex-col gap-1">
-            <label className="text-ig-secondary-text text-xs font-semibold">
-              URL Foto Profil
-            </label>
-            <input
-              type="text"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors"
-            />
+          {/* Show Threads badge */}
+          <div className="flex items-center justify-between py-2 text-left">
+            <div>
+              <label className="text-ig-text font-bold text-sm block">Show Threads badge</label>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowThreads(!showThreads)}
+              className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                showThreads ? "bg-ig-primary" : "bg-neutral-700"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                  showThreads ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
           </div>
+
+          {/* Gender Input */}
+          <div className="flex flex-col gap-2 text-left">
+            <label className="text-ig-text font-bold text-sm">Gender</label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="bg-ig-background border border-neutral-700 rounded-lg px-3 py-2 text-ig-text text-sm outline-none focus:border-ig-primary transition-colors cursor-pointer"
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+            <p className="text-ig-secondary-text text-[11px]">
+              This won't be part of your public profile.
+            </p>
+          </div>
+
+          {/* Show account suggestions on profiles */}
+          <div className="flex items-start justify-between py-2 text-left gap-4">
+            <div className="flex-1 min-w-0">
+              <label className="text-ig-text font-bold text-sm block mb-1">
+                Show account suggestions on profiles
+              </label>
+              <p className="text-ig-secondary-text text-[11px] leading-snug">
+                Choose whether people can see similar account suggestions on your profile, and whether your account can be suggested on other profiles.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSuggestions(!suggestions)}
+              className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer shrink-0 mt-1 ${
+                suggestions ? "bg-ig-primary" : "bg-neutral-700"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                  suggestions ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
         </div>
 
-        <div className="flex gap-2 px-4 pb-4">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="flex-1 py-2 text-ig-text text-sm font-semibold bg-neutral-700 hover:bg-neutral-600 rounded-lg transition-colors disabled:opacity-50"
-          >
-            Batal
-          </button>
+        {/* Footer Submit Button */}
+        <div className="p-5 border-t border-ig-border bg-ig-secondary-bg">
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 py-2 text-white text-sm font-semibold bg-ig-primary hover:opacity-85 rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="w-full py-2.5 bg-ig-primary hover:opacity-90 disabled:opacity-50 text-white font-semibold text-sm rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
           >
-            {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-            Simpan
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            Submit
           </button>
         </div>
+
       </div>
     </div>
   );

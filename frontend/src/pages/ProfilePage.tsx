@@ -1,6 +1,6 @@
 // frontend/src/pages/ProfilePage.tsx
-import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { Avatar } from "../components/common/Avatar";
 import { deletePost } from "../services/post.service";
@@ -13,6 +13,12 @@ import { ProfileGridSkeleton } from "../components/ui/Skeleton";
 import { EditProfileModal } from "../components/profile/EditProfileModal";
 import { FollowersModal } from "../components/profile/FollowersModal";
 import { FollowingModal } from "../components/profile/FollowingModal";
+
+// Story imports
+import { getActiveStories } from "../services/story.service";
+import type { UserStoryGroup } from "../components/story/StoriesRow";
+import StoryViewer from "../components/story/StoryViewer";
+import StoryEditorModal from "../components/story/StoryEditorModal";
 
 // ─────────────────────────────────────────────
 // Tipe
@@ -67,6 +73,7 @@ export default function ProfilePage() {
   const loggedInUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const navigate = useNavigate();
 
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
@@ -86,7 +93,42 @@ export default function ProfilePage() {
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
 
+  // Story & Popup States
+  const [stories, setStories] = useState<UserStoryGroup[]>([]);
+  const [myStoryGroup, setMyStoryGroup] = useState<UserStoryGroup | null>(null);
+  const [isStoryMenuOpen, setIsStoryMenuOpen] = useState(false);
+  const [selectedStoryFile, setSelectedStoryFile] = useState<File | null>(null);
+  const [viewStoriesActive, setViewStoriesActive] = useState(false);
+  const storyFileInputRef = useRef<HTMLInputElement>(null);
+
   const isOwnProfile = !username || username === loggedInUser?.username;
+
+  const loadActiveStories = async () => {
+    if (!loggedInUser) return;
+    try {
+      const res = await getActiveStories();
+      setStories(res);
+      const found = res.find((group) => group.userId === loggedInUser.id);
+      if (found) {
+        setMyStoryGroup(found);
+      } else {
+        setMyStoryGroup(null);
+      }
+    } catch (err) {
+      console.error("Gagal memuat active stories di profil:", err);
+    }
+  };
+
+  const handleStoryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedStoryFile(file);
+    }
+  };
+
+  useEffect(() => {
+    loadActiveStories();
+  }, [loggedInUser]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -180,9 +222,25 @@ export default function ProfilePage() {
     name: string;
     bio: string;
     avatarUrl: string;
+    image?: File;
   }) => {
     try {
-      const res = await apiClient.put<{ data: ProfileUser }>("/users/profile", data);
+      let res;
+      if (data.image) {
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("bio", data.bio);
+        formData.append("avatarUrl", data.avatarUrl);
+        formData.append("image", data.image);
+        res = await apiClient.putForm<{ data: ProfileUser }>("/users/profile", formData);
+      } else {
+        res = await apiClient.put<{ data: ProfileUser }>("/users/profile", {
+          name: data.name,
+          bio: data.bio,
+          avatarUrl: data.avatarUrl,
+        });
+      }
+
       if (res && res.data) {
         // Sync ke Zustand store
         updateUser({
@@ -287,20 +345,24 @@ export default function ProfilePage() {
               {profileUser.username}
             </h1>
             {isOwnProfile ? (
-              <>
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="px-4 py-1.5 text-ig-text text-sm font-semibold bg-ig-elevated-bg rounded-lg hover:opacity-80 transition-opacity"
+                  className="px-8 py-1.5 text-ig-text text-sm font-semibold bg-ig-elevated-bg border border-ig-border rounded-lg hover:bg-neutral-800 transition-all active:scale-95 cursor-pointer"
                 >
                   Edit Profil
                 </button>
                 <button
-                  onClick={logout}
-                  className="text-ig-secondary-text text-sm hover:text-ig-text transition-colors"
+                  onClick={() => {
+                    logout();
+                    toast.success("Berhasil keluar! 👋");
+                    navigate("/login");
+                  }}
+                  className="px-4 py-1.5 text-ig-text text-sm font-semibold bg-ig-elevated-bg border border-ig-border rounded-lg hover:bg-red-950/20 hover:text-red-500 transition-all active:scale-95 cursor-pointer"
                 >
                   Keluar
                 </button>
-              </>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <button
@@ -328,9 +390,8 @@ export default function ProfilePage() {
                 </button>
                 <Link
                   to="/messages"
-                  className="px-4 py-1.5 text-sm font-semibold bg-ig-elevated-bg text-ig-text rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1.5"
+                  className="px-6 py-1.5 text-sm font-semibold bg-ig-elevated-bg text-ig-text rounded-lg hover:bg-neutral-800 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                 >
-                  <MessageSquare className="h-4 w-4" />
                   Kirim Pesan
                 </Link>
               </div>
@@ -372,6 +433,26 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* ── Cerita Baru (+ Story) ── */}
+      {isOwnProfile && (
+        <div className="flex gap-6 py-6 px-4 border-b border-neutral-800">
+          <div className="flex flex-col items-center gap-1.5 cursor-pointer group" onClick={() => setIsStoryMenuOpen(true)}>
+            <div className="w-[66px] h-[66px] rounded-full border border-neutral-700 bg-neutral-900/60 flex items-center justify-center transition-all group-hover:bg-neutral-800 active:scale-95 shadow-sm">
+              <span className="text-neutral-400 text-3xl font-light leading-none">+</span>
+            </div>
+            <span className="text-ig-text text-xs font-semibold">Baru</span>
+          </div>
+
+          <input
+            type="file"
+            ref={storyFileInputRef}
+            onChange={handleStoryFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+        </div>
+      )}
 
       {/* ── Tab Navigation (Hanya jika milik sendiri) ── */}
       {isOwnProfile && (
@@ -431,7 +512,7 @@ export default function ProfilePage() {
               {myPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="relative aspect-square overflow-hidden group"
+                  className="relative aspect-[4/5] overflow-hidden group"
                 >
                   {/* Thumbnail */}
                   <Link to={`/posts/${post.id}`} className="block w-full h-full">
@@ -495,7 +576,7 @@ export default function ProfilePage() {
               {savedPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="relative aspect-square overflow-hidden group cursor-pointer"
+                  className="relative aspect-[4/5] overflow-hidden group cursor-pointer"
                 >
                   <Link to={`/posts/${post.id}`} className="block w-full h-full">
                     {post.imageUrl ? (
@@ -556,6 +637,82 @@ export default function ProfilePage() {
           loggedInUserId={loggedInUser?.id}
           onClose={() => setIsFollowingModalOpen(false)}
           onFollowStatsChange={(stats) => setFollowStats((prev) => ({ ...prev, ...stats }))}
+        />
+      )}
+
+      {/* ── Story Menu Popup ── */}
+      {isStoryMenuOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          onClick={() => setIsStoryMenuOpen(false)}
+        >
+          <div
+            className="w-full max-w-[340px] bg-ig-secondary-bg border border-ig-border rounded-xl overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="py-4 border-b border-ig-border text-center">
+              <span className="text-ig-text font-bold text-sm">Cerita & Konten</span>
+            </div>
+            <div className="flex flex-col text-center">
+              {myStoryGroup && myStoryGroup.stories.length > 0 && (
+                <button
+                  onClick={() => {
+                    setIsStoryMenuOpen(false);
+                    setViewStoriesActive(true);
+                  }}
+                  className="w-full py-3.5 text-ig-text text-sm font-semibold hover:bg-neutral-800 transition-colors border-b border-ig-border cursor-pointer bg-transparent border-none"
+                >
+                  Lihat Cerita
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setIsStoryMenuOpen(false);
+                  storyFileInputRef.current?.click();
+                }}
+                className="w-full py-3.5 text-ig-text text-sm font-semibold hover:bg-neutral-800 transition-colors border-b border-ig-border cursor-pointer bg-transparent border-none"
+              >
+                Buat Cerita Baru
+              </button>
+              <button
+                onClick={() => {
+                  setIsStoryMenuOpen(false);
+                  navigate("/create");
+                }}
+                className="w-full py-3.5 text-ig-text text-sm font-semibold hover:bg-neutral-800 transition-colors border-b border-ig-border cursor-pointer bg-transparent border-none"
+              >
+                Buat Postingan Baru
+              </button>
+              <button
+                onClick={() => setIsStoryMenuOpen(false)}
+                className="w-full py-3.5 text-ig-secondary-text text-sm hover:bg-neutral-800 transition-colors cursor-pointer bg-transparent border-none"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Story Editor Modal ── */}
+      {selectedStoryFile && (
+        <StoryEditorModal
+          imageFile={selectedStoryFile}
+          onClose={() => setSelectedStoryFile(null)}
+          onUploadSuccess={() => {
+            setSelectedStoryFile(null);
+            loadActiveStories();
+            toast.success("Cerita berhasil diunggah! 🚀");
+          }}
+        />
+      )}
+
+      {/* ── Story Viewer Modal ── */}
+      {viewStoriesActive && myStoryGroup && (
+        <StoryViewer
+          groups={stories}
+          initialGroupId={myStoryGroup.userId}
+          onClose={() => setViewStoriesActive(false)}
         />
       )}
     </div>

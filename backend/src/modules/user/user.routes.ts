@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { UserService } from "./user.service";
 import { authPlugin } from "@/plugins/auth.plugin";
+import { uploadMedia } from "@/config/s3";
 import {
   searchUsersSchema,
   getUserByUsernameSchema,
@@ -35,9 +36,15 @@ export const userRoutes = new Elysia({ prefix: "/users" })
         return { message: "Unauthorized" };
       }
 
-      const { name, bio, avatarUrl } = body;
+      const { name, bio, avatarUrl, image } = body;
+      let finalAvatarUrl = avatarUrl;
 
-      const updatedUser = await UserService.updateProfile(user.id, { name, bio, avatarUrl });
+      if (image && image.size > 0) {
+        const buffer = Buffer.from(await image.arrayBuffer());
+        finalAvatarUrl = await uploadMedia(buffer, image.type);
+      }
+
+      const updatedUser = await UserService.updateProfile(user.id, { name, bio, avatarUrl: finalAvatarUrl });
       return {
         message: "Profil berhasil diperbarui",
         data: updatedUser,

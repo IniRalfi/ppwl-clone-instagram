@@ -65,7 +65,7 @@ async function request<T>(
 
 // Fungsi fetch khusus untuk FormData (upload file)
 // Tidak perlu set Content-Type — browser yang atur boundary-nya
-async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+async function requestForm<T>(path: string, formData: FormData, method: string = "POST"): Promise<T> {
   const token = getToken();
 
   const headers: HeadersInit = {
@@ -73,7 +73,7 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
   };
 
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: "POST",
+    method,
     body: formData,
     headers,
   });
@@ -102,6 +102,7 @@ export const apiClient = {
       ...(body ? { body: JSON.stringify(body) } : {}),
     }),
   // Untuk upload file (multipart/form-data)
-  postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData),
+  postForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "POST"),
+  putForm: <T>(path: string, formData: FormData) => requestForm<T>(path, formData, "PUT"),
 };
 
