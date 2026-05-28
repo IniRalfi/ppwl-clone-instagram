@@ -50,6 +50,10 @@ aws lambda update-function-configuration \
     CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET,
+    PUSHER_APP_ID=$PUSHER_APP_ID,
+    PUSHER_KEY=$PUSHER_KEY,
+    PUSHER_SECRET=$PUSHER_SECRET,
+    PUSHER_CLUSTER=$PUSHER_CLUSTER,
     PRISMA_QUERY_ENGINE_LIBRARY=/var/task/libquery_engine-rhel-openssl-3.0.x.so.node
   }" \
   --query "LastUpdateStatus" \

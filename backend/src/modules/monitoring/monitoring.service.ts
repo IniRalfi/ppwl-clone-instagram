@@ -39,9 +39,9 @@ export class MonitoringService {
     }
 
     let healthyServices = 0;
-    const totalServices = 3; // Neon DB, S3, Cloudinary
+    const totalServices = 3; // DB, S3, Cloudinary
 
-    // 1. Test Database (Neon)
+    // 1. Test Database (RDS)
     try {
       const start = performance.now();
       await db.$queryRaw`SELECT 1`;
