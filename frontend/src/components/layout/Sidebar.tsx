@@ -27,13 +27,16 @@ export function Sidebar() {
 
   return (
     <aside className="flex flex-col h-screen w-[72px] md:w-[244px] bg-ig-background border-r border-ig-border px-3 py-6 transition-all duration-300">
-      {/* Logo Instagram */}
-      <div className="mb-8 px-3 h-10 flex items-center">
-        <span className="text-ig-text font-bold text-xl font-['Instagram_Sans_Condensed'] hidden md:block tracking-wider">
-          Instagram
+      {/* Logo Instafy */}
+      <div className="mb-8 px-3 h-10 flex items-center gap-3 justify-center md:justify-start">
+        <img
+          src="/favicon/favicon.svg"
+          alt="Instafy Logo"
+          className="w-7 h-7 object-contain"
+        />
+        <span className="text-ig-text font-bold text-xl font-[var(--font-outfit)] hidden md:block tracking-wide">
+          Instafy
         </span>
-        {/* Mini logo saat kolaps di tablet */}
-        <span className="text-ig-text font-bold text-2xl block md:hidden mx-auto">✦</span>
       </div>
 
       {/* Menu Navigasi */}
