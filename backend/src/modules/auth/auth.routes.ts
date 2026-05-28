@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import { env } from "@/config/env";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { AuthService } from "./auth.service";
 import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
@@ -14,7 +14,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   .post("/register", async ({ body, set }) => {
     try {
       const { name, username, email, password } = body;
-      const passwordHash = await argon2.hash(password);
+      const passwordHash = await bcrypt.hash(password, 12);
 
       const user = await AuthService.register({
         name,
@@ -43,7 +43,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       if (
         !user ||
         !user.passwordHash ||
-        !(await argon2.verify(user.passwordHash, password))
+        !(await bcrypt.compare(password, user.passwordHash))
       ) {
         set.status = 401;
         return { message: "Email/Username atau password salah" };
