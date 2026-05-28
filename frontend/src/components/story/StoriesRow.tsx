@@ -1,6 +1,6 @@
 // frontend/src/components/story/StoriesRow.tsx
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import StoryViewer from "./StoryViewer";
@@ -112,7 +112,7 @@ function MyStoryAvatar({ onUploadSuccess }: MyStoryAvatarProps) {
   );
 }
 
-export function StoriesRow() {
+export const StoriesRow = forwardRef<{ refreshStories: () => void }>((_, ref) => {
   const [stories, setStories] = useState<UserStoryGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<UserStoryGroup | null>(null);
@@ -132,6 +132,8 @@ export function StoriesRow() {
       setIsLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({ refreshStories: fetchStoriesData }), []);
 
   useEffect(() => {
     fetchStoriesData();
@@ -246,4 +248,4 @@ export function StoriesRow() {
       )}
     </>
   );
-}
+});

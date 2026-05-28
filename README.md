@@ -21,14 +21,14 @@
 
 ## 👥 Tim
 
-| Nama                    | NIM | Peran                          |
-| ----------------------- | --- | ------------------------------ |
-| Rafli Pratama           | —   | Ketua, Tech Lead & Integration |
-| Adella Rheina Sweeta    | —   | Frontend & Feed Feature        |
-| Rifa Dwinanda Bagaskara | —   | Comment System                 |
-| Tan Atira Yasmin        | —   | Post & Interaction Feature     |
-| Olivia Naura Fakhradika | —   | Profile & UX Specialist        |
-| Salsabila Nur Anisa     | —   | Notification & Mobile Layout   |
+| Nama                          | NIM          | Peran                                                              |
+| ----------------------------- | ------------ | ------------------------------------------------------------------ |
+| Rafli Pratama                 | H1101241008  | Backend Lead & Integration (Auth, API, Prisma, Infra AWS/Lambda)   |
+| Adella Rheina Sweeta          | H1101241034  | Stories & Feed (StoriesRow, StoryViewer, PostCard, HomePage)       |
+| Rifa Dwinanda Bagaskara       | H1101241023  | Comment & Bookmark (CommentItem, CommentForm, Bookmark, Tagging)   |
+| Tan Atira Yasmin              | H1101241032  | Like, Post Creation & Explore (LikeButton, CreatePost, Explore)    |
+| Olivia Naura Fakhradika       | H1101241019  | Profile & Modals (Avatar, ProfilePage, EditProfile, Followers)     |
+| Salsabila Nur Haniyah         | H1101241026  | Layout, Notifications & DM (Sidebar, BottomNav, DirectMessage)     |
 
 ---
 

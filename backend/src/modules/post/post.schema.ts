@@ -16,7 +16,7 @@ export const getPostByIdSchema = {
 
 export const createPostSchema = {
   body: t.Object({
-    content: t.String({ minLength: 1, error: "Content wajib diisi" }),
+    content: t.Optional(t.String()),
     image: t.Optional(t.Any()), // Menggunakan t.Any untuk mendukung multipart file upload dari boundary
   }),
 };

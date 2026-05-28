@@ -193,12 +193,12 @@ export default function MonitoringPage() {
           <div>
             <h2 className="text-lg font-semibold mb-2">Production Infrastructure</h2>
             <p className="text-[14px] text-ig-secondary-text leading-relaxed">
-              Semua infrastruktur pendukung aplikasi Instagram Clone kamu berjalan di atas platform cloud modern. Dashboard ini memantau waktu respon database serverless Neon secara langsung, serta memantau integrasi penyimpanan media berbasis AWS S3 & Cloudinary.
+              Semua infrastruktur pendukung aplikasi Instagram Clone kamu berjalan di atas platform cloud modern. Dashboard ini memantau waktu respon database AWS RDS PostgreSQL secara langsung, serta memantau integrasi penyimpanan media berbasis AWS S3 & Cloudinary.
             </p>
           </div>
           <div className="flex gap-4 mt-4 pt-4 border-t border-ig-border text-xs text-ig-secondary-text">
             <div className="flex items-center gap-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> DB Engine: Neon PostgreSQL
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> DB Engine: AWS RDS PostgreSQL
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Media: AWS S3 + Cloudinary

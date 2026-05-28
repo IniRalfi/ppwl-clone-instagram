@@ -8,7 +8,7 @@ export class MonitoringService {
       timestamp: new Date().toISOString(),
       databases: {
         primary: {
-          name: "Neon PostgreSQL (Production)",
+          name: "AWS RDS PostgreSQL (Production)",
           status: "offline",
           latencyMs: -1,
           error: null,

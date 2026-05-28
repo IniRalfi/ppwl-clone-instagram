@@ -1,6 +1,7 @@
 import { db } from "@/db/client";
 import { uploadMedia } from "@/config/s3";
 import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
+import { triggerPublicRealtime } from "@/config/pusher";
 
 export class StoryService {
   // 1. Ambil cerita aktif (belum kadaluwarsa) dari diri sendiri & teman yang diikuti
@@ -97,12 +98,16 @@ export class StoryService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Kadaluwarsa 24 jam
 
-    return await db.story.create({
+    const story = await db.story.create({
       data: {
         imageUrl,
         userId,
         expiresAt,
       },
     });
+
+    await triggerPublicRealtime("story-created", { userId });
+
+    return story;
   }
 }

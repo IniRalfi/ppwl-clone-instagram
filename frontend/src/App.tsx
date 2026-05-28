@@ -84,9 +84,7 @@ export function App() {
         path="/posts/:id"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <PostDetailPage />
-            </MainLayout>
+            <PostDetailPage />
           </ProtectedRoute>
         }
       />

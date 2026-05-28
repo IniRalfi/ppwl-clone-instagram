@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PostCard } from '../components/post/PostCard';
 import { SuggestedUsers } from '../components/common/SuggestedUsers';
 import { toast } from 'sonner';
@@ -41,6 +41,7 @@ const HomePage: React.FC = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
+  const storiesRef = useRef<{ refreshStories: () => void }>(null);
 
   const fetchPosts = async (cursorValue?: string | null) => {
     const isInitial = !cursorValue;
@@ -104,6 +105,9 @@ const HomePage: React.FC = () => {
         )
       );
     },
+    onStoryCreated: () => {
+      storiesRef.current?.refreshStories();
+    },
   });
 
   const showPendingPosts = () => {
@@ -127,7 +131,7 @@ const HomePage: React.FC = () => {
         <div className="flex-1 max-w-[470px] mx-auto lg:mx-0 flex flex-col gap-5">
 
           {/* ← STORIES ROW DITAMBAHKAN DI SINI */}
-          <StoriesRow />
+          <StoriesRow ref={storiesRef} />
 
           {/* Feed postingan */}
           {pendingPosts.length > 0 && !isLoading && (

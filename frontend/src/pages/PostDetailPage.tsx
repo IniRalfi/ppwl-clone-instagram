@@ -145,7 +145,10 @@ export function PostDetailPage() {
 
       if (json?.data) {
         // BUG-07: Gunakan response POST langsung, tidak perlu fetch ulang
-        setComments((prev) => [json.data, ...prev]);
+        setComments((prev) => {
+          if (prev.some((item) => item.id === json.data.id)) return prev;
+          return [json.data, ...prev];
+        });
         setInputValue("");
         setReplyTarget(null);
         toast.success("Komentar berhasil ditambahkan.");

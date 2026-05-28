@@ -8,6 +8,7 @@ type PublicRealtimeHandlers = {
   onPostCreated?: (post: any) => void;
   onPostEngagementUpdated?: (payload: { postId: string; likeCount?: number; commentCount?: number }) => void;
   onCommentCreated?: (payload: { postId: string; comment: any; commentCount: number }) => void;
+  onStoryCreated?: (payload: { userId: string }) => void;
 };
 
 export function usePublicRealtime(handlers: PublicRealtimeHandlers) {
@@ -32,11 +33,15 @@ export function usePublicRealtime(handlers: PublicRealtimeHandlers) {
     channel.bind("comment-created", (payload: { postId: string; comment: any; commentCount: number }) => {
       handlersRef.current.onCommentCreated?.(payload);
     });
+    channel.bind("story-created", (payload: { userId: string }) => {
+      handlersRef.current.onStoryCreated?.(payload);
+    });
 
     return () => {
       channel.unbind("post-created");
       channel.unbind("post-engagement-updated");
       channel.unbind("comment-created");
+      channel.unbind("story-created");
       pusher.unsubscribe("public-feed");
       pusher.disconnect();
     };
