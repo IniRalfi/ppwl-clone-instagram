@@ -12,6 +12,7 @@ import MessagesPage from "./pages/MessagesPage";
 import { PostDetailPage } from "./pages/PostDetailPage";
 import { MainLayout } from "./components/layout/MainLayout";
 import ExplorePage from "./pages/ExplorePage";
+import DesignSystemPage from "./pages/DesignSystemPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -124,6 +125,9 @@ export function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Design System (public) */}
+      <Route path="/design-system" element={<DesignSystemPage />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
