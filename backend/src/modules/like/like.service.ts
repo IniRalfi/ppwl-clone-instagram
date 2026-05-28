@@ -23,6 +23,22 @@ export class LikeService {
         data: { userId, postId },
       });
       liked = true;
+
+      // Buat notifikasi jika bukan menyukai postingan sendiri
+      if (post.authorId !== userId) {
+        const liker = await db.user.findUnique({
+          where: { id: userId },
+          select: { username: true }
+        });
+        await db.notification.create({
+          data: {
+            type: "like",
+            message: `${liker?.username || "Seseorang"} menyukai postingan Anda.`,
+            receiverId: post.authorId,
+            refId: postId,
+          },
+        });
+      }
     }
 
     // Invalidate feed cache

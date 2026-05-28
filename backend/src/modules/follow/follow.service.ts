@@ -119,6 +119,20 @@ export class FollowService {
     }
 
     await db.follow.create({ data: { followerId, followingId } });
+
+    // Buat notifikasi follow
+    const follower = await db.user.findUnique({
+      where: { id: followerId },
+      select: { username: true }
+    });
+    await db.notification.create({
+      data: {
+        type: "follow",
+        message: `${follower?.username || "Seseorang"} mulai mengikuti Anda.`,
+        receiverId: followingId,
+        refId: followerId,
+      },
+    });
   }
 
   // 6. Unfollow user
