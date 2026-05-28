@@ -6,28 +6,37 @@ Dokumen ini melacak target aktif dan rencana pengembangan aplikasi yang akan dat
 
 ## 🛠️ Status Pengembangan Saat Ini
 
-Semua target dari Fase 1 hingga Fase 6 saat ini telah **SELESAI** diintegrasikan secara penuh.
+Semua target dari Fase 1 hingga Fase 4 (Migrasi dan Integrasi Fitur Awal) saat ini telah **SELESAI** diintegrasikan secara penuh.
 
-| Kategori | Target Pekerjaan | Status |
-| :--- | :--- | :---: |
-| 🟢 **Fase 1** | Bug Fixes (20 Items) | **SELESAI** |
+| Kategori      | Target Pekerjaan                                |   Status    |
+| :------------ | :---------------------------------------------- | :---------: |
+| 🟢 **Fase 1** | Bug Fixes (20 Items)                            | **SELESAI** |
 | 🔵 **Fase 2** | Integrasi Tim (Explore, Profil, Stories, Saved) | **SELESAI** |
-| 🟡 **Fase 3** | Caching, AWS CDN & Monitoring Dashboard | **SELESAI** |
-| 🔴 **Fase 4** | Integrasi Real-Time & Resolusi Merge Tim | **SELESAI** |
+| 🟡 **Fase 3** | Caching, AWS CDN & Monitoring Dashboard         | **SELESAI** |
+| 🔴 **Fase 4** | Integrasi Real-Time & Resolusi Merge Tim        | **SELESAI** |
 
 ---
 
 ## 🚀 Rencana Pengembangan Berikutnya (Backlog & Future Roadmap)
 
-Berikut adalah to-do list untuk fitur-fitur tambahan berikutnya:
+Berikut adalah to-do list untuk fase pengembangan baru:
 
-### ✉️ Integrasi DM Chat (Salsabila)
-- [ ] Mengintegrasikan Direct Message chat di frontend dengan API backend secara real-time (menggunakan WebSocket atau SSE untuk latensi rendah).
-- [ ] Membuat halaman obrolan `/messages` dengan tampilan daftar chat room aktif dan histori obrolan lengkap.
+### ⚙️ Fase 5: Pembenahan Arsitektur & Refactoring Kode
+- [ ] Penataan ulang modul backend (pemisahan logic controller/services dari file router agar kode lebih bersih).
+- [ ] Penggunaan middleware terpusat untuk error handling dan parsing data yang seragam.
+- [ ] Refactoring struktur direktori frontend untuk pemisahan components, hooks, services, dan state.
 
-### 🎥 Pengunggahan Video & Reels
-- [ ] Menambahkan dukungan unggah file video (`.mp4`) dengan kompresi otomatis di backend.
-- [ ] Membuat feed Reels khusus dengan layout scroll vertikal otomatis.
+### 🎨 Fase 6: Peningkatan Keindahan UI (Instagram Pixel-Perfect)
+- [ ] Penyelarasan styling halaman (jarak padding, ukuran font, border, warna latar charcoal Instagram) agar identik dengan aplikasi Instagram asli.
+- [ ] Menyediakan transisi mikro dan loading skeleton yang lebih natural pada setiap perpindahan halaman.
+- [ ] Optimalisasi layout responsif untuk kenyamanan akses via Mobile, Tablet, dan Desktop.
 
-### 🔔 Notifikasi Real-Time
-- [ ] Mengintegrasikan push notifications untuk aktivitas Like, Comment, Follow, dan pesan masuk.
+### 🔔 Fase 7: Sistem Notifikasi Real-Time Berbasis WebSocket
+- [ ] Implementasi server WebSocket di backend ElysiaJS menggunakan `@elysiajs/websocket`.
+- [ ] Membuat react hook kustom (`useWebSocket`) di frontend untuk mengelola koneksi real-time.
+- [ ] Pengiriman notifikasi aktivitas (Like, Comment, Follow, dan Pesan Baru) secara instan khusus untuk user yang sedang aktif online.
+- [ ] Mekanisme penahanan aliran notifikasi (*throttling/buffer*) bagi user tidak aktif agar tidak terjadi lonjakan request ketika mereka baru masuk kembali.
+
+### ⚡ Fase 8: Optimasi Kinerja & Database Query
+- [ ] Analisis dan optimasi query kueri Prisma (menggunakan SELECT spesifik, menghindari query n+1 tersembunyi).
+- [ ] Penanganan loading handler yang presisi dan ramah pengguna (pesan error yang jelas saat server/koneksi bermasalah).
