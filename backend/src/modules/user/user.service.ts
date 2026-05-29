@@ -1,4 +1,5 @@
 import { db } from "@/db/client";
+import { sanitizeBio, sanitizeUrl, logSanitization } from "@/utils/sanitize";
 
 export class UserService {
   // 1. Cari pengguna berdasarkan username atau nama
@@ -20,7 +21,7 @@ export class UserService {
         avatarUrl: true,
         bio: true,
         createdAt: true,
-      }
+      },
     });
   }
 
@@ -39,22 +40,50 @@ export class UserService {
         showThreads: true,
         suggestions: true,
         createdAt: true,
-      }
+      },
     });
   }
 
   // 3. Perbarui informasi profil pengguna aktif
-  static async updateProfile(userId: string, data: { username?: string; name?: string; bio?: string; avatarUrl?: string; website?: string; gender?: string; showThreads?: boolean; suggestions?: boolean }) {
+  static async updateProfile(
+    userId: string,
+    data: {
+      username?: string;
+      name?: string;
+      bio?: string;
+      avatarUrl?: string;
+      website?: string;
+      gender?: string;
+      showThreads?: boolean;
+      suggestions?: boolean;
+    }
+  ) {
     const { username, name, bio, avatarUrl, website, gender, showThreads, suggestions } = data;
+
+    // 🛡️ SECURITY: Sanitize user inputs
+    let sanitizedBio = bio;
+    let sanitizedWebsite = website;
+
+    if (bio) {
+      const originalBio = bio;
+      sanitizedBio = sanitizeBio(bio);
+      logSanitization("user.bio", originalBio, sanitizedBio);
+    }
+
+    if (website) {
+      const originalWebsite = website;
+      sanitizedWebsite = sanitizeUrl(website);
+      logSanitization("user.website", originalWebsite, sanitizedWebsite);
+    }
 
     return await db.user.update({
       where: { id: userId },
       data: {
         username: username ?? undefined,
         name: name ?? undefined,
-        bio: bio ?? undefined,
+        bio: sanitizedBio ?? undefined, // ✅ Use sanitized bio
         avatarUrl: avatarUrl ?? undefined,
-        website: website ?? undefined,
+        website: sanitizedWebsite ?? undefined, // ✅ Use sanitized website
         gender: gender ?? undefined,
         showThreads: showThreads ?? undefined,
         suggestions: suggestions ?? undefined,
@@ -70,7 +99,7 @@ export class UserService {
         gender: true,
         showThreads: true,
         suggestions: true,
-      }
+      },
     });
   }
 }

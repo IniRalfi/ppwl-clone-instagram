@@ -2,6 +2,7 @@ import { db } from "@/db/client";
 import { localCache } from "@/utils/cache";
 import { NotificationService } from "@/modules/notification/notification.service";
 import { triggerPublicRealtime } from "@/config/pusher";
+import { sanitizeComment, logSanitization } from "@/utils/sanitize";
 
 function truncateNotificationText(text: string) {
   const cleanText = text.trim().replace(/\s+/g, " ");
@@ -34,12 +35,24 @@ export class CommentService {
   }
 
   // 2. Buat komentar baru + update stats + kirim notifikasi
-  static async createComment(data: { content: string; postId: string; parentId: string | null; authorId: string }) {
+  static async createComment(data: {
+    content: string;
+    postId: string;
+    parentId: string | null;
+    authorId: string;
+  }) {
+    // 🛡️ SECURITY: Sanitize comment content
+    const originalContent = data.content;
+    const sanitizedContent = sanitizeComment(data.content);
+
+    // Log if content was modified
+    logSanitization("comment.content", originalContent, sanitizedContent);
+
     // Buat komentar dan update commentCount secara atomik
     const [newComment] = await db.$transaction([
       db.comment.create({
         data: {
-          content: data.content,
+          content: sanitizedContent, // ✅ Use sanitized content
           postId: data.postId,
           parentId: data.parentId,
           authorId: data.authorId,
@@ -120,7 +133,11 @@ export class CommentService {
     }
 
     const commentCount = await db.comment.count({ where: { postId: data.postId } });
-    await triggerPublicRealtime("comment-created", { postId: data.postId, comment: newComment, commentCount });
+    await triggerPublicRealtime("comment-created", {
+      postId: data.postId,
+      comment: newComment,
+      commentCount,
+    });
     await triggerPublicRealtime("post-engagement-updated", { postId: data.postId, commentCount });
 
     return newComment;
@@ -130,7 +147,12 @@ export class CommentService {
   static async toggleLikeComment(userId: string, commentId: string) {
     const comment = await db.comment.findUnique({
       where: { id: commentId },
-      select: { authorId: true, content: true, postId: true, author: { select: { username: true } } },
+      select: {
+        authorId: true,
+        content: true,
+        postId: true,
+        author: { select: { username: true } },
+      },
     });
 
     if (!comment) {

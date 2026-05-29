@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { toast } from "sonner";
@@ -6,7 +6,36 @@ import loginHero from "../assets/login.webp";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { useGoogleLogin } from "@react-oauth/google";
 import { loginUser, registerUser, loginWithGoogle } from "../services/auth.service";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
+
+// ✅ Password strength calculator (client-side)
+function calculatePasswordStrength(password: string): {
+  strength: "weak" | "medium" | "strong";
+  score: number;
+  checks: {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    number: boolean;
+    special: boolean;
+  };
+} {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+  };
+
+  const score = Object.values(checks).filter(Boolean).length;
+
+  let strength: "weak" | "medium" | "strong" = "weak";
+  if (score >= 5) strength = "strong";
+  else if (score >= 3) strength = "medium";
+
+  return { strength, score, checks };
+}
 
 export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: boolean }) {
   const navigate = useNavigate();
@@ -19,6 +48,12 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ Calculate password strength in real-time
+  const passwordStrength = useMemo(() => {
+    if (!password || isLogin) return null;
+    return calculatePasswordStrength(password);
+  }, [password, isLogin]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -26,7 +61,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
     try {
       if (isLogin) {
         const res = await loginUser(email, password);
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user); // ✅ Token sudah di cookie, tidak perlu kirim lagi
         toast.success(`Selamat datang, ${res.data.user.name}! 👋`);
         navigate("/");
       } else {
@@ -37,7 +72,60 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
         setPassword("");
       }
     } catch (error: any) {
-      toast.error(error.message || "Terjadi kesalahan.");
+      // ✅ Better error messages in Indonesian
+      let errorMessage = "Terjadi kesalahan. Silakan coba lagi.";
+
+      // Ambil pesan error dari backend
+      const backendMessage = error.message || "";
+
+      // Handle specific error cases dengan pesan yang lebih informatif
+      if (backendMessage.includes("Format email tidak valid")) {
+        errorMessage = "Format email tidak valid. Gunakan format: nama@example.com";
+      } else if (backendMessage.includes("Password terlalu lemah")) {
+        errorMessage = "Password terlalu lemah. Pastikan memenuhi semua persyaratan di atas.";
+      } else if (backendMessage.includes("Password minimal harus 8 karakter")) {
+        errorMessage = "Password minimal harus 8 karakter.";
+      } else if (backendMessage.includes("Nama minimal harus 2 karakter")) {
+        errorMessage = "Nama minimal harus 2 karakter.";
+      } else if (backendMessage.includes("Username minimal harus 3 karakter")) {
+        errorMessage = "Username minimal harus 3 karakter.";
+      } else if (backendMessage.includes("Email atau Username wajib diisi")) {
+        errorMessage = "Email atau Username wajib diisi.";
+      } else if (backendMessage.includes("Password wajib diisi")) {
+        errorMessage = "Password wajib diisi.";
+      } else if (
+        backendMessage.includes("username sudah dipakai") ||
+        backendMessage.includes("Username sudah digunakan")
+      ) {
+        errorMessage = "Username sudah digunakan. Coba username lain.";
+      } else if (
+        backendMessage.includes("email sudah dipakai") ||
+        backendMessage.includes("Email sudah terdaftar")
+      ) {
+        errorMessage = "Email sudah terdaftar. Gunakan email lain atau login.";
+      } else if (backendMessage.includes("Email/Username atau password salah")) {
+        errorMessage = "Email/username atau password salah. Coba lagi.";
+      } else if (backendMessage.includes("tidak ditemukan")) {
+        errorMessage = "Akun tidak ditemukan. Periksa kembali email/username Anda.";
+      } else if (backendMessage.includes("Validasi gagal")) {
+        // Extract pesan validasi yang lebih spesifik
+        const match = backendMessage.match(/Validasi gagal - (.+)/);
+        if (match && match[1]) {
+          // Tampilkan pesan validasi yang lebih spesifik
+          errorMessage = match[1];
+        } else {
+          errorMessage = "Data yang dimasukkan tidak valid. Periksa kembali.";
+        }
+      } else if (
+        backendMessage &&
+        backendMessage !== "Unprocessable Entity" &&
+        backendMessage !== "Terjadi kesalahan."
+      ) {
+        // Jika ada pesan dari backend dan bukan generic error, tampilkan
+        errorMessage = backendMessage;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +136,7 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
       try {
         setIsLoading(true);
         const res = await loginWithGoogle(tokenResponse.access_token);
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user); // ✅ Token sudah di cookie, tidak perlu kirim lagi
         toast.success(`Selamat datang, ${res.data.user.name}! 👋`);
         navigate("/");
       } catch (err: any) {
@@ -119,12 +207,12 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
           <div
             className="w-full max-w-[420px] bg-ig-secondary-bg p-8 md:p-10 rounded-3xl transition-all duration-300 shadow-card md:shadow-elevated border border-transparent"
             style={{
-              backgroundImage: "linear-gradient(var(--color-ig-secondary-bg), var(--color-ig-secondary-bg)), linear-gradient(135deg, rgba(255, 48, 64, 0.35), rgba(118, 56, 250, 0.35))",
+              backgroundImage:
+                "linear-gradient(var(--color-ig-secondary-bg), var(--color-ig-secondary-bg)), linear-gradient(135deg, rgba(255, 48, 64, 0.35), rgba(118, 56, 250, 0.35))",
               backgroundOrigin: "border-box",
               backgroundClip: "padding-box, border-box",
             }}
           >
-            
             {/* Mobile-only Logo */}
             <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
               <img
@@ -172,21 +260,112 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Mobile number, username or email"
+                placeholder={isLogin ? "Email atau Username" : "Email"}
                 autoComplete="email"
                 className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
               />
 
               {/* Input Password */}
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Password"
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
-              />
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
+                />
+
+                {/* ✅ Password Strength Indicator (Register only) */}
+                {!isLogin && password && passwordStrength && (
+                  <div className="space-y-2">
+                    {/* Strength Bar */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-ig-border rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            passwordStrength.strength === "strong"
+                              ? "bg-green-500 w-full"
+                              : passwordStrength.strength === "medium"
+                                ? "bg-yellow-500 w-2/3"
+                                : "bg-red-500 w-1/3"
+                          }`}
+                        />
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${
+                          passwordStrength.strength === "strong"
+                            ? "text-green-500"
+                            : passwordStrength.strength === "medium"
+                              ? "text-yellow-500"
+                              : "text-red-500"
+                        }`}
+                      >
+                        {passwordStrength.strength === "strong"
+                          ? "Kuat"
+                          : passwordStrength.strength === "medium"
+                            ? "Sedang"
+                            : "Lemah"}
+                      </span>
+                    </div>
+
+                    {/* Requirements Checklist */}
+                    <div className="text-xs space-y-1 text-ig-secondary-text">
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.length ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.length ? "text-green-500" : ""}>
+                          Minimal 8 karakter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.uppercase ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.uppercase ? "text-green-500" : ""}>
+                          1 huruf besar (A-Z)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.lowercase ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.lowercase ? "text-green-500" : ""}>
+                          1 huruf kecil (a-z)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.number ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.number ? "text-green-500" : ""}>
+                          1 angka (0-9)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.special ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.special ? "text-green-500" : ""}>
+                          1 karakter spesial (!@#$%...)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Tombol Utama (Log in / Sign up) */}
               <button
@@ -196,8 +375,10 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isLogin ? (
+                  "Log in"
                 ) : (
-                  isLogin ? "Log in" : "Sign up"
+                  "Sign up"
                 )}
               </button>
             </form>
@@ -205,22 +386,36 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
             {/* Separator Line */}
             <div className="flex items-center gap-3 my-6">
               <div className="h-[1px] bg-ig-border flex-1" />
-              <span className="text-xs text-ig-secondary-text font-semibold uppercase tracking-wider">Atau</span>
+              <span className="text-xs text-ig-secondary-text font-semibold uppercase tracking-wider">
+                Atau
+              </span>
               <div className="h-[1px] bg-ig-border flex-1" />
             </div>
 
             {/* Log in with Google */}
             <div>
-              <button 
+              <button
                 type="button"
                 onClick={() => googleLogin()}
                 className="w-full border border-ig-border hover:border-transparent hover:bg-gradient-to-r hover:from-[#FF3040]/10 hover:to-[#7638FA]/10 text-ig-text text-[15px] font-semibold py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
               >
                 <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
                 </svg>
                 Log in with Google
               </button>

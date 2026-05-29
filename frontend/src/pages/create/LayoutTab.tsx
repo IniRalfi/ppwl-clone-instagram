@@ -33,17 +33,17 @@ export function LayoutTab({
   onReset,
 }: LayoutTabProps) {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+    <div className="space-y-3 md:space-y-4">
+      <div className="space-y-1.5 md:space-y-2">
+        <span className="text-[10px] md:text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
           Rasio Aspek Postingan
         </span>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-3 gap-1 md:gap-1.5">
           {aspectRatios.map((ratio) => (
             <button
               key={ratio.name}
               onClick={() => onRatioChange(ratio.width, ratio.height, ratio.name)}
-              className={`py-2 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
+              className={`py-1.5 md:py-2 text-[10px] md:text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
                 activeRatioName === ratio.name
                   ? "bg-ig-primary text-white border-ig-primary"
                   : "bg-ig-elevated-bg border-ig-border text-ig-text hover:bg-neutral-800"
@@ -55,11 +55,11 @@ export function LayoutTab({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <span className="text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
+      <div className="space-y-1.5 md:space-y-2">
+        <span className="text-[10px] md:text-xs font-bold text-ig-secondary-text uppercase tracking-wider block">
           Latar Belakang (Margin)
         </span>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1 md:gap-1.5">
           {bgPresets.map((bg) => (
             <button
               key={bg.name}
@@ -70,10 +70,8 @@ export function LayoutTab({
                     ? "linear-gradient(135deg, #c32aa3, #d62976, #f77737)"
                     : bg.value,
               }}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-semibold cursor-pointer border border-neutral-700 transition-all ${
-                bgColor === bg.value
-                  ? "ring-2 ring-ig-primary text-white"
-                  : "text-ig-text"
+              className={`px-2 md:px-2.5 py-0.5 md:py-1 rounded-md text-[9px] md:text-[10px] font-semibold cursor-pointer border border-neutral-700 transition-all ${
+                bgColor === bg.value ? "ring-2 ring-ig-primary text-white" : "text-ig-text"
               }`}
             >
               {bg.name}
@@ -82,8 +80,8 @@ export function LayoutTab({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs font-semibold">
+      <div className="space-y-1 md:space-y-1.5">
+        <div className="flex justify-between text-[10px] md:text-xs font-semibold">
           <span className="text-ig-secondary-text">Skala Foto</span>
           <span className="text-ig-text">{imageScale}%</span>
         </div>
@@ -93,13 +91,13 @@ export function LayoutTab({
           max={300}
           value={imageScale}
           onChange={(e) => onScaleChange(Number(e.target.value))}
-          className="w-full h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
+          className="w-full h-1 md:h-1.5 bg-ig-elevated-bg rounded-lg appearance-none cursor-pointer accent-ig-primary"
         />
       </div>
 
       <button
         onClick={onReset}
-        className="w-full py-2 text-xs font-semibold rounded-lg bg-ig-elevated-bg hover:bg-neutral-800 text-ig-text transition-colors cursor-pointer border-none"
+        className="w-full py-1.5 md:py-2 text-[10px] md:text-xs font-semibold rounded-lg bg-ig-elevated-bg hover:bg-neutral-800 text-ig-text transition-colors cursor-pointer border-none"
       >
         Reset Layout Foto
       </button>

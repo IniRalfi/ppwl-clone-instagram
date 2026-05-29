@@ -23,16 +23,16 @@
   /* =========================================
      WARNA DASAR & BACKGROUND (Dynamic — baca dari :root)
   ========================================= */
-  --color-ig-background:     var(--color-ig-background);
-  --color-ig-secondary-bg:   var(--color-ig-secondary-bg);
-  --color-ig-elevated-bg:    var(--color-ig-elevated-bg);
-  --color-ig-primary:        var(--color-ig-primary);
-  --color-ig-text:           var(--color-ig-text);
+  --color-ig-background: var(--color-ig-background);
+  --color-ig-secondary-bg: var(--color-ig-secondary-bg);
+  --color-ig-elevated-bg: var(--color-ig-elevated-bg);
+  --color-ig-primary: var(--color-ig-primary);
+  --color-ig-text: var(--color-ig-text);
   --color-ig-secondary-text: var(--color-ig-secondary-text);
-  --color-ig-border:         var(--color-ig-border);
-  --color-ig-separator:      var(--color-ig-separator);
-  --color-ig-chat-in:        var(--color-ig-chat-in);
-  --color-ig-chat-out:       var(--color-ig-chat-out);
+  --color-ig-border: var(--color-ig-border);
+  --color-ig-separator: var(--color-ig-separator);
+  --color-ig-chat-in: var(--color-ig-chat-in);
+  --color-ig-chat-out: var(--color-ig-chat-out);
 
   /* Badge & Notifikasi (Static) */
   --color-ig-badge: rgb(255, 48, 64); /* Merah notif angka */
@@ -87,8 +87,12 @@
   /* =========================================
      6. FONT FAMILY (ASLI MILIK META)
   ========================================= */
-  --font-sans: "Optimistic Text Normal", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-outfit: "Optimistic Text Bold", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans:
+    "Optimistic Text Normal", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-outfit:
+    "Optimistic Text Bold", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 @layer base {
@@ -97,17 +101,17 @@
   ========================================= */
   :root {
     /* ── DARK MODE — Palet Instagram Web Asli ─────────────────── */
-    --color-ig-background:      #0a0a0a;  /* Charcoal gelap, bukan hitam murni */
-    --color-ig-secondary-bg:    #1a1a1a;  /* Surface sedikit lebih terang (sidebar, modal) */
-    --color-ig-elevated-bg:     #262626;  /* Hover state, dropdown */
-    --color-ig-primary:         #0095f6;  /* Biru IG */
-    --color-ig-primary-hover:   #1877f2;
-    --color-ig-text:            #f5f5f5;  /* Putih lembut, bukan #fff murni */
-    --color-ig-secondary-text:  #a8a8a8;  /* Abu medium */
-    --color-ig-border:          rgba(255, 255, 255, 0.12); /* Border transparan */
-    --color-ig-separator:       rgba(255, 255, 255, 0.08);
-    --color-ig-chat-in:         #262626;
-    --color-ig-chat-out:        #3797f0;
+    --color-ig-background: #0a0a0a; /* Charcoal gelap, bukan hitam murni */
+    --color-ig-secondary-bg: #1a1a1a; /* Surface sedikit lebih terang (sidebar, modal) */
+    --color-ig-elevated-bg: #262626; /* Hover state, dropdown */
+    --color-ig-primary: #0095f6; /* Biru IG */
+    --color-ig-primary-hover: #1877f2;
+    --color-ig-text: #f5f5f5; /* Putih lembut, bukan #fff murni */
+    --color-ig-secondary-text: #a8a8a8; /* Abu medium */
+    --color-ig-border: rgba(255, 255, 255, 0.12); /* Border transparan */
+    --color-ig-separator: rgba(255, 255, 255, 0.08);
+    --color-ig-chat-in: #262626;
+    --color-ig-chat-out: #3797f0;
     /* Shadow untuk card di dark mode (sangat subtle) */
     --shadow-card: none;
     --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -115,17 +119,17 @@
 
   /* ── LIGHT MODE — Palet Instagram Web Asli ─────────────────── */
   html.light {
-    --color-ig-background:      #fafafa;  /* Background halaman utama */
-    --color-ig-secondary-bg:    #ffffff;  /* Card, post, sidebar */
-    --color-ig-elevated-bg:     #f0f0f0;  /* Hover, input */
-    --color-ig-primary:         #0095f6;
-    --color-ig-primary-hover:   #1877f2;
-    --color-ig-text:            #000000;
-    --color-ig-secondary-text:  #737373;
-    --color-ig-border:          #dbdbdb;
-    --color-ig-separator:       #efefef;
-    --color-ig-chat-in:         #efefef;
-    --color-ig-chat-out:        #0095f6;
+    --color-ig-background: #fafafa; /* Background halaman utama */
+    --color-ig-secondary-bg: #ffffff; /* Card, post, sidebar */
+    --color-ig-elevated-bg: #f0f0f0; /* Hover, input */
+    --color-ig-primary: #0095f6;
+    --color-ig-primary-hover: #1877f2;
+    --color-ig-text: #000000;
+    --color-ig-secondary-text: #737373;
+    --color-ig-border: #dbdbdb;
+    --color-ig-separator: #efefef;
+    --color-ig-chat-in: #efefef;
+    --color-ig-chat-out: #0095f6;
     /* Shadow memberikan depth di light mode */
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
     --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -135,33 +139,36 @@
      IMPORT FONT ASLI DARI META CDN
   ========================================= */
   @font-face {
-      font-display: swap;
-      font-family: 'Optimistic Text Normal';
-      font-style: normal;
-      font-weight: 400;
-      src: url(https://www.facebook.com/rsrc.php/y2/r/6YirsaXqsap.woff2) format("woff2");
+    font-display: swap;
+    font-family: "Optimistic Text Normal";
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://www.facebook.com/rsrc.php/y2/r/6YirsaXqsap.woff2) format("woff2");
   }
 
   @font-face {
-      font-display: swap;
-      font-family: 'Optimistic Text Medium';
-      font-style: normal;
-      font-weight: 500;
-      src: url(https://www.facebook.com/rsrc.php/ye/r/ndhgOwkNmDs.woff2) format("woff2");
+    font-display: swap;
+    font-family: "Optimistic Text Medium";
+    font-style: normal;
+    font-weight: 500;
+    src: url(https://www.facebook.com/rsrc.php/ye/r/ndhgOwkNmDs.woff2) format("woff2");
   }
 
   @font-face {
-      font-display: swap;
-      font-family: 'Optimistic Text Bold';
-      font-style: normal;
-      font-weight: 700;
-      src: url(https://www.facebook.com/rsrc.php/y8/r/WF8VhTuShVE.woff2) format("woff2");
+    font-display: swap;
+    font-family: "Optimistic Text Bold";
+    font-style: normal;
+    font-weight: 700;
+    src: url(https://www.facebook.com/rsrc.php/y8/r/WF8VhTuShVE.woff2) format("woff2");
   }
 
   body {
     @apply font-sans text-ig-text antialiased;
     background-color: #000000;
-    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease,
+      border-color 0.25s ease;
   }
 
   html.light body {
@@ -169,7 +176,10 @@
   }
 
   /* Scrollbar khas IG — tersembunyi */
-  ::-webkit-scrollbar { width: 0px; height: 0px; }
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+  }
 }
 
 /* =========================================
@@ -182,6 +192,15 @@
   }
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
+  }
+
+  /* Hide scrollbar untuk horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 }
 
@@ -215,7 +234,14 @@
    Mengubah warna toast sukses dan error agar senada
 ========================================= */
 [data-sonner-toaster] {
-  font-family: "Outfit", "Optimistic Text Normal", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family:
+    "Outfit",
+    "Optimistic Text Normal",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] {
@@ -241,4 +267,3 @@
 [data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
   color: #ff3040 !important; /* Instafy Red icon */
 }
-
