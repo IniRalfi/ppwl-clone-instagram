@@ -136,9 +136,18 @@ export class NotificationService {
   }
 
   private static async triggerRealtimeNotification(receiverId: string, notification: any) {
-    if (!pusher) return;
+    console.log(`[Pusher] Mencoba mengirim notifikasi ke channel: private-user-${receiverId}`);
+    if (!pusher) {
+      console.log("[Pusher] Gagal: Instansi pusher bernilai null atau belum aktif.");
+      return;
+    }
 
-    await pusher.trigger(`private-user-${receiverId}`, "new-notification", notification);
+    try {
+      const res = await pusher.trigger(`private-user-${receiverId}`, "new-notification", notification);
+      console.log("[Pusher] Notifikasi berhasil dikirim via pusher.trigger, response:", res);
+    } catch (error) {
+      console.error("[Pusher] ERROR saat memanggil pusher.trigger:", error);
+    }
   }
 
   private static getNotificationUrl(notification: any) {

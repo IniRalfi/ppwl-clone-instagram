@@ -54,6 +54,9 @@ aws lambda update-function-configuration \
     PUSHER_KEY=$PUSHER_KEY,
     PUSHER_SECRET=$PUSHER_SECRET,
     PUSHER_CLUSTER=$PUSHER_CLUSTER,
+    WEB_PUSH_PUBLIC_KEY=$WEB_PUSH_PUBLIC_KEY,
+    WEB_PUSH_PRIVATE_KEY=$WEB_PUSH_PRIVATE_KEY,
+    WEB_PUSH_SUBJECT=$WEB_PUSH_SUBJECT,
     PRISMA_QUERY_ENGINE_LIBRARY=/var/task/libquery_engine-rhel-openssl-3.0.x.so.node
   }" \
   --query "LastUpdateStatus" \
