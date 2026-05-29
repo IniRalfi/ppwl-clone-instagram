@@ -1,43 +1,28 @@
-fix(security): move JWT token from localStorage to HttpOnly cookie (Bug #S3)
-
-BREAKING CHANGE: JWT token authentication mechanism changed from localStorage to HttpOnly cookie
+fix(security): strengthen CORS configuration (Bug #S4)
 
 ## Changes:
 
 ### Backend:
-- Set JWT token via HttpOnly cookie in login/google endpoints
-- Added /auth/logout endpoint to clear cookie
-- Updated auth plugin to read token from cookie (fallback to Bearer)
-- Cookie config: httpOnly=true, secure=production, sameSite=none (production)
-- Fixed Pusher auth endpoint to support both camelCase and snake_case
-
-### Frontend:
-- Removed token from Zustand store (only user data persisted)
-- Updated API client to send credentials (cookies) automatically
-- Removed Authorization header (token now in cookie)
-- Updated LoginPage to not store token in state
-- Updated Sidebar logout to call API before clearing state
-- Fixed Pusher hooks to use customHandler with credentials: "include"
-- Updated useRealtimeNotifications and useDirectMessagesRealtime
+- Reject requests without origin header for protected endpoints
+- Allow public endpoints (/health, /swagger) without origin for monitoring
+- Whitelist specific origins only (production + localhost)
+- Added logging for blocked CORS requests
+- Explicitly set allowed methods: GET, POST, PUT, DELETE, OPTIONS
+- Explicitly set allowed headers: Content-Type, Authorization
+- Set preflight cache max age to 24 hours
 
 ## Security Improvements:
-- ✅ Token cannot be accessed by JavaScript (XSS protection)
-- ✅ HttpOnly cookie prevents token theft via XSS
-- ✅ Secure flag ensures HTTPS-only in production
-- ✅ SameSite=none allows cross-origin (frontend ↔ backend)
-- ✅ Backward compatible (supports Bearer token for testing)
-- ✅ Pusher realtime authentication secured with cookies
+- ✅ Prevent unauthorized cross-origin requests
+- ✅ Block requests from unknown origins
+- ✅ Log suspicious CORS attempts for monitoring
+- ✅ Reduce preflight requests with cache
+- ✅ Explicit method and header whitelisting
 
 ## Testing:
-- ✅ Local: Cookie set with HttpOnly, document.cookie returns undefined
-- ✅ Local: Refresh persists login state
-- ✅ Local: Logout clears cookie
-- ✅ Local: Pusher auth works with cookie authentication
+- ✅ Local: Frontend can access API
+- ✅ Local: /health endpoint accessible without origin
+- ✅ Local: Unknown origins blocked
 - ⏳ Production: Pending deployment test
 
-## Bug Fixes:
-- Fixed Pusher auth endpoint body parsing (camelCase vs snake_case)
-- Fixed Pusher hooks to send cookies in auth requests
-
-Fixes #S3
-Progress: 4/13 bugs fixed (31%)
+Fixes #S4
+Progress: 5/13 bugs fixed (38%)

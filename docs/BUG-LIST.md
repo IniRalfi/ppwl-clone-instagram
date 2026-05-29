@@ -2,7 +2,7 @@
 
 **Tanggal:** 29 Mei 2026  
 **Last Updated:** 29 Mei 2026 22:30  
-**Progress:** 4/13 bugs fixed (31%)
+**Progress:** 5/13 bugs fixed (38%)
 
 ---
 
@@ -10,9 +10,9 @@
 
 | Category               | Total  | Done  | In Progress | TODO  |
 | ---------------------- | ------ | ----- | ----------- | ----- |
-| 🔥 SECURITY (CRITICAL) | 8      | 4     | 0           | 4     |
+| 🔥 SECURITY (CRITICAL) | 8      | 5     | 0           | 3     |
 | 🐛 FUNCTIONAL (UI/UX)  | 5      | 0     | 0           | 5     |
-| **TOTAL**              | **13** | **4** | **0**       | **9** |
+| **TOTAL**              | **13** | **5** | **0**       | **8** |
 
 ---
 
@@ -139,20 +139,27 @@
 
 ---
 
-## 🔴 SECURITY BUGS (TODO)
+### ✅ Bug #S4: Weak CORS Configuration (CRITICAL)
 
-### Bug #S4: Weak CORS Configuration
+**Status:** ✅ DONE  
+**Fixed:** 29 Mei 2026  
+**Files Changed:**
 
-**Severity:** 🔴 CRITICAL  
-**Status:** ⏳ TODO  
-**Files:** `backend/src/config/cors.ts`
+- `backend/src/index.ts`
 
-**Fix Needed:**
+**What Was Fixed:**
 
-- Whitelist specific origins only
-- Reject requests without origin header
+- Reject requests without origin header (except public endpoints)
+- Whitelist specific origins only (production + localhost)
+- Added logging for blocked CORS requests
+- Explicitly set allowed methods (GET, POST, PUT, DELETE, OPTIONS)
+- Explicitly set allowed headers (Content-Type, Authorization)
+- Set preflight cache max age (24 hours)
+- Allow public endpoints (/health, /swagger) without origin
 
 ---
+
+## 🔴 SECURITY BUGS (TODO)
 
 ### Bug #S5: Weak Password Validation
 
