@@ -1,12 +1,10 @@
 import { Elysia } from "elysia";
 import { DataService } from "./data.service";
 import { jwt } from "@elysiajs/jwt";
-import { bearer } from "@elysiajs/bearer";
 import { env } from "@/config/env";
 import { db } from "@/db/client";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
-  .use(bearer())
   .use(
     jwt({
       name: "jwt",
@@ -14,6 +12,16 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
       exp: "7d",
     })
   )
+  .derive({ as: "global" }, ({ headers: { authorization }, query }) => {
+    let derivedBearer: string | undefined;
+    if (authorization?.startsWith("Bearer ")) {
+      derivedBearer = authorization.slice(7);
+    } else if (query && typeof query === "object" && "access_token" in query) {
+      const q = (query as Record<string, any>).access_token;
+      derivedBearer = Array.isArray(q) ? q[0] : q;
+    }
+    return { bearer: derivedBearer };
+  })
   // Middleware khusus untuk grup /data - Custom auth (API key OR admin JWT)
   .onBeforeHandle(async ({ request, set, jwt, bearer, cookie }) => {
     // Lewati preflight OPTIONS

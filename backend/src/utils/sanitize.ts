@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 /**
  * 🛡️ Input Sanitization Utilities
@@ -6,6 +6,9 @@ import DOMPurify from "isomorphic-dompurify";
  * Mencegah XSS (Cross-Site Scripting) attacks dengan membersihkan input user.
  *
  * Analogi: Seperti satpam yang cek barang sebelum masuk - kalau ada yang berbahaya, disita!
+ *
+ * Menggunakan `sanitize-html` (pure Node.js) — bukan isomorphic-dompurify yang
+ * menarik jsdom dan crash di Lambda karena mencoba baca file CSS dari path lokal.
  */
 
 /**
@@ -15,14 +18,12 @@ import DOMPurify from "isomorphic-dompurify";
 export const sanitizeText = (input: string): string => {
   if (!input || typeof input !== "string") return "";
 
-  // Strip ALL HTML tags - hanya allow plain text
-  const sanitized = DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [], // Tidak izinkan HTML tags sama sekali
-    ALLOWED_ATTR: [], // Tidak izinkan attributes
-    KEEP_CONTENT: true, // Keep text content
+  // Strip ALL HTML tags — hanya allow plain text
+  const sanitized = sanitizeHtml(input, {
+    allowedTags: [],        // Tidak izinkan HTML tags sama sekali
+    allowedAttributes: {}, // Tidak izinkan attributes
   });
 
-  // Trim whitespace
   return sanitized.trim();
 };
 
@@ -34,10 +35,9 @@ export const sanitizeRichText = (input: string): string => {
   if (!input || typeof input !== "string") return "";
 
   // Allow basic formatting tags (bold, italic, line breaks)
-  const sanitized = DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: ["b", "i", "em", "strong", "br", "p"], // Basic formatting only
-    ALLOWED_ATTR: [], // No attributes allowed
-    KEEP_CONTENT: true,
+  const sanitized = sanitizeHtml(input, {
+    allowedTags: ["b", "i", "em", "strong", "br", "p"], // Basic formatting only
+    allowedAttributes: {}, // No attributes allowed
   });
 
   return sanitized.trim();

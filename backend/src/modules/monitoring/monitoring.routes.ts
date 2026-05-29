@@ -1,12 +1,10 @@
 import { Elysia } from "elysia";
 import { MonitoringService } from "./monitoring.service";
 import { jwt } from "@elysiajs/jwt";
-import { bearer } from "@elysiajs/bearer";
 import { env } from "@/config/env";
 import { db } from "@/db/client";
 
 export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
-  .use(bearer())
   .use(
     jwt({
       name: "jwt",
@@ -14,6 +12,16 @@ export const monitoringRoutes = new Elysia({ prefix: "/monitoring" })
       exp: "7d",
     })
   )
+  .derive({ as: "global" }, ({ headers: { authorization }, query }) => {
+    let derivedBearer: string | undefined;
+    if (authorization?.startsWith("Bearer ")) {
+      derivedBearer = authorization.slice(7);
+    } else if (query && typeof query === "object" && "access_token" in query) {
+      const q = (query as Record<string, any>).access_token;
+      derivedBearer = Array.isArray(q) ? q[0] : q;
+    }
+    return { bearer: derivedBearer };
+  })
   .onBeforeHandle(async ({ request, set, jwt, bearer, cookie }) => {
     // Lewati preflight OPTIONS
     if (request.method === "OPTIONS") return;

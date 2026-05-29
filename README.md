@@ -8,27 +8,16 @@
 
 📄 **Laporan:** [Google Docs](https://docs.google.com/document/d/1hV_PTNH-kDNz5YgDGbBiWD73-9hstmQboQxHAoMshhQ/edit?usp=sharing)
 
-📋 **Dokumen Terkait:**
-
-- [PRD & Arsitektur](docs/PRD.md)
-- [Changelog](docs/CHANGELOG.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Code Audit Report](docs/CODE_AUDIT_REPORT.md)
-- [Kontribusi Tim](docs/CONTRIBUTIONS.md)
-- [DB Diagram](docs/DB_DIAGRAM.txt)
-
----
-
 ## 👥 Tim
 
-| Nama                          | NIM          | Peran                                                              |
-| ----------------------------- | ------------ | ------------------------------------------------------------------ |
-| Rafli Pratama                 | H1101241008  | Backend Lead & Integration (Auth, API, Prisma, Infra AWS/Lambda)   |
-| Adella Rheina Sweeta          | H1101241034  | Stories & Feed (StoriesRow, StoryViewer, PostCard, HomePage)       |
-| Rifa Dwinanda Bagaskara       | H1101241023  | Comment & Bookmark (CommentItem, CommentForm, Bookmark, Tagging)   |
-| Tan Atira Yasmin              | H1101241032  | Like, Post Creation & Explore (LikeButton, CreatePost, Explore)    |
-| Olivia Naura Fakhradika       | H1101241019  | Profile & Modals (Avatar, ProfilePage, EditProfile, Followers)     |
-| Salsabila Nur Haniyah         | H1101241026  | Layout, Notifications & DM (Sidebar, BottomNav, DirectMessage)     |
+| Nama                    | NIM         | Peran                                                            |
+| ----------------------- | ----------- | ---------------------------------------------------------------- |
+| Rafli Pratama           | H1101241008 | Backend Lead & Integration (Auth, API, Prisma, Infra AWS/Lambda) |
+| Adella Rheina Sweeta    | H1101241034 | Stories & Feed (StoriesRow, StoryViewer, PostCard, HomePage)     |
+| Rifa Dwinanda Bagaskara | H1101241023 | Comment & Bookmark (CommentItem, CommentForm, Bookmark, Tagging) |
+| Tan Atira Yasmin        | H1101241032 | Like, Post Creation & Explore (LikeButton, CreatePost, Explore)  |
+| Olivia Naura Fakhradika | H1101241019 | Profile & Modals (Avatar, ProfilePage, EditProfile, Followers)   |
+| Salsabila Nur Haniyah   | H1101241026 | Layout, Notifications & DM (Sidebar, BottomNav, DirectMessage)   |
 
 ---
 
@@ -55,7 +44,7 @@
 ### Backend
 
 | Teknologi                                                        | Versi | Fungsi                         |
-| ---------------------------------------------------------------- | ----- | ------------------------------ |
+| ---------------------------------------------------------------- | ----- | ------------------------------ | --- | ---------------- |
 | [Bun](https://bun.sh/)                                           | 1.x   | Runtime & package manager      |
 | [ElysiaJS](https://elysiajs.com/)                                | 1.x   | Web framework (ringan & cepat) |
 | [Prisma ORM](https://www.prisma.io/)                             | 6.x   | Database access & schema       |
@@ -68,7 +57,8 @@
 | [Pusher](https://pusher.com/)                                    | 5.x   | Server-side realtime trigger   |
 | [web-push](https://github.com/web-push-libs/web-push)            | 3.x   | Browser push notification      |
 | [Nanoid](https://github.com/ai/nanoid)                           | 5.x   | Unique ID generator            |
-| [Argon2](https://github.com/ranisalt/node-argon2)                | —     | Password hashing               |
+| [bcryptjs](https://github.com/dcodeIO/bcrypt.js)                 | 3.x   | Password hashing (Lambda-safe) |
+| [sanitize-html](https://github.com/apostrophecms/sanitize-html)  | 2.x   | XSS Sanitization input user    |     | Password hashing |
 
 ### Infrastructure & Deployment
 
@@ -367,12 +357,31 @@ VITE_PUSHER_KEY=your-pusher-key
 VITE_PUSHER_CLUSTER=ap1
 ```
 
-### Frontend (`frontend/.env.development`)
+---
 
-```env
-VITE_API_URL=http://localhost:3000
-VITE_GOOGLE_CLIENT_ID=your-google-client-id
+## 🧪 Pengujian API Production (Production Testing)
+
+Kami telah menyediakan skrip pengujian terpadu untuk menguji keandalan API di environment production (verifikasi health check, security headers, rate limiting, registrasi, login, dan validasi cookie).
+
+### Cara Menjalankan Tes
+
+Masuk ke folder backend dan jalankan skrip pengujian:
+
+```bash
+cd backend
+bash scripts/test-production.sh
 ```
+
+### 🔑 Kredensial untuk Grading & Akses Data
+
+Untuk keperluan inspeksi data selama penilaian (grading), kami menyediakan endpoint pemantauan data khusus. Namun, demi melindungi data production dari serangan penyalahgunaan, endpoint `/data/*` dilindungi dengan **API Key** yang aman.
+
+- **Daftar Endpoint Inspeksi:**
+  - Get All Users: `GET /data/users?key=YOUR_API_KEY`
+  - Get All Posts: `GET /data/posts?key=YOUR_API_KEY`
+  - Get All Comments: `GET /data/comments?key=YOUR_API_KEY`
+- ⚠️ **Minta API Key:** Silakan hubungi **Admin (Rafli Pratama)** untuk mendapatkan API Key pengujian yang valid.
+  - **Email:** rflipratm@gmail.com
 
 ---
 

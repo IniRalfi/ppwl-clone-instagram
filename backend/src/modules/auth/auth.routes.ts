@@ -12,10 +12,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // Hanya perlu jwt plugin untuk jwt.sign() saat login berhasil
   .use(jwt({ name: "jwt", secret: env.JWT_SECRET, exp: "7d" }))
 
-  // 🛡️ Rate limiting untuk auth endpoints (prevent brute force)
-  .use(authRateLimit)
-
-  // 1. Registrasi Akun
+  // 1. Registrasi Akun (Tanpa Rate Limit)
   .post(
     "/register",
     async ({ body, set }) => {
@@ -71,108 +68,117 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     registerSchema
   )
 
-  // 2. Login Akun (Email/Username)
-  .post(
-    "/login",
-    async ({ body, set, jwt, cookie: { auth } }) => {
-      try {
-        const { email, password } = body;
+  // 2. Group khusus login & OAuth yang dilindungi Rate Limit
+  .group("", (app) =>
+    app
+      .use(authRateLimit)
 
-        const user = await AuthService.findUserByEmailOrUsername(email);
+      // 2a. Login Akun (Email/Username)
+      .post(
+        "/login",
+        async ({ body, set, jwt, cookie: { auth } }) => {
+          try {
+            const { email, password } = body;
 
-        if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
-          set.status = 401;
-          return { message: "Email/Username atau password salah" };
-        }
+            const user = await AuthService.findUserByEmailOrUsername(email);
 
-        const accessToken = await jwt.sign({ id: user.id });
+            if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
+              set.status = 401;
+              return { message: "Email/Username atau password salah" };
+            }
 
-        // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
-        auth.set({
-          value: accessToken,
-          httpOnly: true,
-          secure: env.NODE_ENV === "production", // HTTPS only di production
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
-        });
+            const accessToken = await jwt.sign({ id: user.id });
 
-        return {
-          message: "Login Berhasil",
-          data: {
-            user: {
-              id: user.id,
-              name: user.name,
-              username: user.username,
-              email: user.email,
-              role: user.role,
-              avatarUrl: user.avatarUrl,
-            },
-            // ❌ Tidak kirim accessToken di response body lagi
-          },
-        };
-      } catch (error) {
-        set.status = 500;
-        return { message: "Terjadi kesalahan server" };
-      }
-    },
-    loginSchema
+            const isProd = env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+            // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
+            auth.set({
+              value: accessToken,
+              httpOnly: true,
+              secure: isProd, // Harus true jika sameSite adalah "none"
+              sameSite: isProd ? "none" : "lax",
+              path: "/",
+              maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
+            });
+
+            return {
+              message: "Login Berhasil",
+              data: {
+                user: {
+                  id: user.id,
+                  name: user.name,
+                  username: user.username,
+                  email: user.email,
+                  role: user.role,
+                  avatarUrl: user.avatarUrl,
+                },
+              },
+            };
+          } catch (error) {
+            set.status = 500;
+            return { message: "Terjadi kesalahan server" };
+          }
+        },
+        loginSchema
+      )
+
+      // 2b. Login Google OAuth
+      .post(
+        "/google",
+        async ({ body, set, jwt, cookie: { auth } }) => {
+          try {
+            const { token } = body;
+
+            // Verifikasi token via Google API Service
+            const googleUser = await AuthService.verifyGoogleToken(token);
+            const { email, name, picture } = googleUser;
+
+            // Cari atau buat user baru
+            const user = await AuthService.findOrCreateGoogleUser({
+              email,
+              name,
+              avatarUrl: picture,
+            });
+
+            const accessToken = await jwt.sign({ id: user.id });
+
+            const isProd = env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+            // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
+            auth.set({
+              value: accessToken,
+              httpOnly: true,
+              secure: isProd, // Harus true jika sameSite adalah "none"
+              sameSite: isProd ? "none" : "lax",
+              path: "/",
+              maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
+            });
+
+            return {
+              message: "Login Google Berhasil",
+              data: {
+                user: {
+                  id: user.id,
+                  name: user.name,
+                  username: user.username,
+                  email: user.email,
+                  role: user.role,
+                  avatarUrl: user.avatarUrl,
+                },
+              },
+            };
+          } catch (error: any) {
+            set.status = 401;
+            return { message: error.message || "Kesalahan server saat Login Google" };
+          }
+        },
+        googleSchema
+      )
   )
 
-  // 3. Login Google OAuth
-  .post(
-    "/google",
-    async ({ body, set, jwt, cookie: { auth } }) => {
-      try {
-        const { token } = body;
-
-        // Verifikasi token via Google API Service
-        const googleUser = await AuthService.verifyGoogleToken(token);
-        const { email, name, picture } = googleUser;
-
-        // Cari atau buat user baru
-        const user = await AuthService.findOrCreateGoogleUser({
-          email,
-          name,
-          avatarUrl: picture,
-        });
-
-        const accessToken = await jwt.sign({ id: user.id });
-
-        // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
-        auth.set({
-          value: accessToken,
-          httpOnly: true,
-          secure: env.NODE_ENV === "production", // HTTPS only di production
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
-        });
-
-        return {
-          message: "Login Google Berhasil",
-          data: {
-            user: {
-              id: user.id,
-              name: user.name,
-              username: user.username,
-              email: user.email,
-              role: user.role,
-              avatarUrl: user.avatarUrl,
-            },
-            // ❌ Tidak kirim accessToken di response body lagi
-          },
-        };
-      } catch (error: any) {
-        set.status = 401;
-        return { message: error.message || "Kesalahan server saat Login Google" };
-      }
-    },
-    googleSchema
-  )
-
-  // 4. Logout (Clear Cookie)
+  // 3. Logout (Clear Cookie)
   .post("/logout", async ({ cookie: { auth }, set }) => {
     auth.remove();
     return { message: "Logout berhasil" };
   });
+

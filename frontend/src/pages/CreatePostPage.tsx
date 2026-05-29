@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { createPost } from "../services/post.service";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Move } from "lucide-react";
+import { ArrowLeft, Loader2, Move, ChevronDown, Sparkles } from "lucide-react";
 import { compressImage } from "../lib/image";
 import { UploadStep } from "./create/UploadStep";
 import { EditorToolPanel } from "./create/EditorToolPanel";
@@ -134,7 +134,6 @@ export default function CreatePostPage() {
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [isDraggingText, setIsDraggingText] = useState(false);
 
-  // Mobile: Collapsible Tool Panel
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -563,7 +562,7 @@ export default function CreatePostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ig-background text-ig-text flex flex-col select-none">
+    <div className="h-screen bg-ig-background text-ig-text flex flex-col select-none overflow-hidden">
       {/* Load Google Fonts */}
       <link
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&family=Outfit:wght@800&family=Courier+Prime:wght@700&family=Rubik+Mono+One&display=swap"
@@ -624,23 +623,35 @@ export default function CreatePostPage() {
         />
       ) : step === "editor" ? (
         /* ── Step 2: Canvas Photo Editor (Reuses story editor layout) ── */
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
           {/* Panel Kiri: Kanvas Postingan */}
-          <div className="flex-1 flex items-center justify-center bg-black/90 p-2 md:p-4 relative min-h-[60vh] md:min-h-[500px]">
+          <div className="flex-grow flex items-center justify-center bg-black/90 p-2 sm:p-3 md:p-4 relative overflow-hidden">
+            {/* Tanda Panduan Editor (Minimalis ala Instagram - Putih Bersih) */}
+            {!isPanelOpen && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none z-10">
+                <span className="text-[11px] font-medium tracking-wider text-white/80">
+                  Sesuaikan foto di bawah
+                </span>
+                <ChevronDown className="w-4 h-4 text-white/60" />
+              </div>
+            )}
+
             <div
               style={{
-                width: "100%",
-                maxWidth:
-                  canvasWidth >= canvasHeight ? "500px" : `${(canvasWidth / canvasHeight) * 500}px`,
                 aspectRatio: `${canvasWidth}/${canvasHeight}`,
               }}
-              className="relative max-h-[65vh] md:max-h-[75vh] rounded-xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center"
+              className={`relative w-full rounded-xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ${
+                isPanelOpen
+                  ? "max-h-[38vh] sm:max-h-[44vh] md:max-h-[75vh] max-w-[280px] sm:max-w-[360px] md:max-w-[500px]"
+                  : "max-h-[62vh] sm:max-h-[68vh] md:max-h-[75vh] max-w-[340px] sm:max-w-[440px] md:max-w-[500px]"
+              }`}
             >
               <canvas
                 ref={canvasRef}
                 width={canvasWidth}
                 height={canvasHeight}
-                className={`max-w-full max-h-full object-contain touch-none ${
+                style={{ touchAction: "none" }} // 🛡️ Mencegah scrolling browser saat menggambar/geser foto
+                className={`max-w-full max-h-full object-contain ${
                   tool === "photo"
                     ? "cursor-move"
                     : tool === "draw"
@@ -660,7 +671,7 @@ export default function CreatePostPage() {
               />
               {tool === "photo" && (
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/85 px-3 py-1.5 rounded-full text-[10px] text-white/95 font-medium pointer-events-none border border-white/10 shadow-lg flex items-center gap-1">
-                  <Move className="w-3 h-3" /> Seret gambar untuk memposisikannya
+                  <Move className="w-3 h-3 animate-bounce" /> Seret gambar untuk memposisikannya
                 </div>
               )}
             </div>
