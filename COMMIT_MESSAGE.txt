@@ -9,6 +9,7 @@ BREAKING CHANGE: JWT token authentication mechanism changed from localStorage to
 - Added /auth/logout endpoint to clear cookie
 - Updated auth plugin to read token from cookie (fallback to Bearer)
 - Cookie config: httpOnly=true, secure=production, sameSite=none (production)
+- Fixed Pusher auth endpoint to support both camelCase and snake_case
 
 ### Frontend:
 - Removed token from Zustand store (only user data persisted)
@@ -16,6 +17,8 @@ BREAKING CHANGE: JWT token authentication mechanism changed from localStorage to
 - Removed Authorization header (token now in cookie)
 - Updated LoginPage to not store token in state
 - Updated Sidebar logout to call API before clearing state
+- Fixed Pusher hooks to use customHandler with credentials: "include"
+- Updated useRealtimeNotifications and useDirectMessagesRealtime
 
 ## Security Improvements:
 - ✅ Token cannot be accessed by JavaScript (XSS protection)
@@ -23,12 +26,18 @@ BREAKING CHANGE: JWT token authentication mechanism changed from localStorage to
 - ✅ Secure flag ensures HTTPS-only in production
 - ✅ SameSite=none allows cross-origin (frontend ↔ backend)
 - ✅ Backward compatible (supports Bearer token for testing)
+- ✅ Pusher realtime authentication secured with cookies
 
 ## Testing:
 - ✅ Local: Cookie set with HttpOnly, document.cookie returns undefined
 - ✅ Local: Refresh persists login state
 - ✅ Local: Logout clears cookie
+- ✅ Local: Pusher auth works with cookie authentication
 - ⏳ Production: Pending deployment test
+
+## Bug Fixes:
+- Fixed Pusher auth endpoint body parsing (camelCase vs snake_case)
+- Fixed Pusher hooks to send cookies in auth requests
 
 Fixes #S3
 Progress: 4/13 bugs fixed (31%)

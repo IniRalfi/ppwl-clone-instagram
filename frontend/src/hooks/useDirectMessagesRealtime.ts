@@ -27,7 +27,7 @@ export interface MessageReadPayload {
 
 export function useDirectMessagesRealtime(
   userId: string | undefined,
-  token: string | null,
+  token: string | null, // ⚠️ Deprecated: token tidak dipakai lagi (sekarang pakai cookie)
   onMessage: (payload: RealtimeMessagePayload) => void,
   onRead?: (payload: MessageReadPayload) => void
 ) {
@@ -43,15 +43,36 @@ export function useDirectMessagesRealtime(
   }, [onRead]);
 
   useEffect(() => {
-    if (!userId || !token || !PUSHER_KEY || !PUSHER_CLUSTER) return;
+    if (!userId || !PUSHER_KEY || !PUSHER_CLUSTER) return;
 
     const pusher = new Pusher(PUSHER_KEY, {
       cluster: PUSHER_CLUSTER,
       channelAuthorization: {
         endpoint: `${API_BASE_URL}/notifications/pusher/auth`,
         transport: "ajax",
-        headers: {
-          Authorization: `Bearer ${token}`,
+        // ❌ REMOVED: Authorization header (token sudah di cookie)
+        // ✅ ADDED: Send credentials (cookies)
+        customHandler: async (params, callback) => {
+          try {
+            const response = await fetch(`${API_BASE_URL}/notifications/pusher/auth`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams(params as unknown as Record<string, string>).toString(),
+              credentials: "include", // ✅ Kirim cookie
+            });
+
+            if (!response.ok) {
+              callback(new Error("Unauthorized"), null);
+              return;
+            }
+
+            const data = await response.json();
+            callback(null, data);
+          } catch (error) {
+            callback(error as Error, null);
+          }
         },
       },
     });
@@ -73,5 +94,5 @@ export function useDirectMessagesRealtime(
       pusher.unsubscribe(`private-user-${userId}`);
       pusher.disconnect();
     };
-  }, [userId, token]);
+  }, [userId]); // ❌ REMOVED: token dependency
 }

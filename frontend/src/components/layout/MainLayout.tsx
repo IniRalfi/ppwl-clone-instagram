@@ -27,9 +27,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <NotificationRealtimeBridge />
 
       {/* Konten Utama Aplikasi */}
-      <main className="flex-1 min-w-0 pb-16 md:pb-0 overflow-y-auto">
-        {children}
-      </main>
+      <main className="flex-1 min-w-0 pb-16 md:pb-0 overflow-y-auto">{children}</main>
 
       {/* BottomNav: Tampil di mobile (di bawah md), tersembunyi di desktop */}
       <BottomNav />
@@ -38,7 +36,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 }
 
 function NotificationRealtimeBridge() {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore(); // ❌ REMOVED: token (tidak dipakai lagi)
   const prependNotification = useNotificationStore((state) => state.prependNotification);
   const fetchUnreadCount = useNotificationStore((state) => state.fetchUnreadCount);
   const setNotifications = useNotificationStore((state) => state.setNotifications);
@@ -56,18 +54,19 @@ function NotificationRealtimeBridge() {
     }
   }, [user, fetchUnreadCount, fetchUnreadMessageCount, setNotifications, markAllRead]);
 
-  useRealtimeNotifications(user?.id, token, (notification) => {
+  useRealtimeNotifications(user?.id, null, (notification) => {
+    // ✅ Pass null (backward compat)
     prependNotification(notification);
 
     // Suppress toast notification for messages if user is inside that chat room
     const isMessageInActiveChat =
-      notification.type === "message" &&
-      notification.refId &&
-      notification.refId === activeRoomId;
+      notification.type === "message" && notification.refId && notification.refId === activeRoomId;
 
     if (!isMessageInActiveChat) {
       toast(formatRealtimeNotification(notification), {
-        description: notification.sender?.username ? `Dari @${notification.sender.username}` : "Notifikasi baru",
+        description: notification.sender?.username
+          ? `Dari @${notification.sender.username}`
+          : "Notifikasi baru",
       });
     }
 

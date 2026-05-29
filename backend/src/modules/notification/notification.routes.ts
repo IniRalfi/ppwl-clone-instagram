@@ -35,11 +35,7 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       const user = await requireUser();
       if (!user) return;
 
-      await NotificationService.savePushSubscription(
-        user.id,
-        body as any,
-        headers["user-agent"]
-      );
+      await NotificationService.savePushSubscription(user.id, body as any, headers["user-agent"]);
 
       return { message: "Push subscription berhasil disimpan" };
     } catch (error: any) {
@@ -76,11 +72,31 @@ export const notificationRoutes = new Elysia({ prefix: "/notifications" })
       return { message: "Pusher belum dikonfigurasi" };
     }
 
-    const { socket_id, channel_name } = body as { socket_id?: string; channel_name?: string };
+    // 🔍 DEBUG: Log request body
+    console.log("🔍 Pusher auth request:", { body, userId: user.id });
+
+    // ✅ Support both camelCase (from Pusher) and snake_case (legacy)
+    const bodyData = body as any;
+    const socket_id = bodyData.socket_id || bodyData.socketId;
+    const channel_name = bodyData.channel_name || bodyData.channelName;
+
+    // 🔍 DEBUG: Log parsed values
+    console.log("🔍 Parsed values:", {
+      socket_id,
+      channel_name,
+      expected: `private-user-${user.id}`,
+    });
+
     if (!socket_id || channel_name !== `private-user-${user.id}`) {
+      console.error("❌ Pusher auth failed: Invalid channel", {
+        socket_id,
+        channel_name,
+        userId: user.id,
+      });
       set.status = 403;
       return { message: "Channel tidak valid" };
     }
 
+    console.log("✅ Pusher auth success for user:", user.id);
     return pusher.authorizeChannel(socket_id, channel_name);
   });
