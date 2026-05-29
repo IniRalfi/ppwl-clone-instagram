@@ -41,6 +41,7 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_PUSHER_KEY: ${{ secrets.VITE_PUSHER_KEY }}
           VITE_PUSHER_CLUSTER: ${{ secrets.VITE_PUSHER_CLUSTER }}
+          VITE_WEB_PUSH_PUBLIC_KEY: ${{ secrets.VITE_WEB_PUSH_PUBLIC_KEY }}
 
       - name: ☁️ Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

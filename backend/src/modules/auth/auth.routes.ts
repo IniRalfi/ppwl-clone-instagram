@@ -1,16 +1,20 @@
 import { Elysia } from "elysia";
-import { requireAuth } from "@/plugins/require-auth.plugin";
+import { jwt } from "@elysiajs/jwt";
+import { env } from "@/config/env";
+import bcrypt from "bcryptjs";
 import { AuthService } from "./auth.service";
 import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
-  .use(requireAuth)
-  
+  // Auth routes adalah PUBLIC endpoint (login/register tidak butuh token)
+  // Hanya perlu jwt plugin untuk jwt.sign() saat login berhasil
+  .use(jwt({ name: "jwt", secret: env.JWT_SECRET, exp: "7d" }))
+
   // 1. Registrasi Akun
   .post("/register", async ({ body, set }) => {
     try {
       const { name, username, email, password } = body;
-      const passwordHash = await Bun.password.hash(password);
+      const passwordHash = await bcrypt.hash(password, 12);
 
       const user = await AuthService.register({
         name,
@@ -39,7 +43,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       if (
         !user ||
         !user.passwordHash ||
-        !(await Bun.password.verify(password, user.passwordHash))
+        !(await bcrypt.compare(password, user.passwordHash))
       ) {
         set.status = 401;
         return { message: "Email/Username atau password salah" };
