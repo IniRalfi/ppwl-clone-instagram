@@ -2,7 +2,7 @@
 
 **Tanggal:** 29 Mei 2026  
 **Last Updated:** 29 Mei 2026 22:30  
-**Progress:** 5/13 bugs fixed (38%)
+**Progress:** 6/13 bugs fixed (46%)
 
 ---
 
@@ -10,9 +10,9 @@
 
 | Category               | Total  | Done  | In Progress | TODO  |
 | ---------------------- | ------ | ----- | ----------- | ----- |
-| 🔥 SECURITY (CRITICAL) | 8      | 5     | 0           | 3     |
+| 🔥 SECURITY (CRITICAL) | 8      | 6     | 0           | 2     |
 | 🐛 FUNCTIONAL (UI/UX)  | 5      | 0     | 0           | 5     |
-| **TOTAL**              | **13** | **5** | **0**       | **8** |
+| **TOTAL**              | **13** | **6** | **0**       | **7** |
 
 ---
 
@@ -159,19 +159,31 @@
 
 ---
 
-## 🔴 SECURITY BUGS (TODO)
+### ✅ Bug #S5: Weak Password Validation (HIGH)
 
-### Bug #S5: Weak Password Validation
+**Status:** ✅ DONE  
+**Fixed:** 29 Mei 2026  
+**Files Changed:**
 
-**Severity:** 🟠 HIGH  
-**Status:** ⏳ TODO  
-**Files:** `backend/src/modules/auth/auth.service.ts`
+- `backend/src/utils/password-validator.ts` (new)
+- `backend/src/modules/auth/auth.routes.ts`
+- `backend/src/modules/auth/auth.schema.ts`
 
-**Fix Needed:**
+**What Was Fixed:**
 
-- Validate password strength (min 8 chars, uppercase, lowercase, number, special char)
+- Created comprehensive password validator utility
+- Minimum 8 characters (increased from 6)
+- Require at least 1 uppercase letter (A-Z)
+- Require at least 1 lowercase letter (a-z)
+- Require at least 1 number (0-9)
+- Require at least 1 special character (!@#$%^&\*...)
+- Block common password patterns (123456, password, qwerty, etc.)
+- Calculate password strength (weak/medium/strong)
+- User-friendly error messages in Indonesian
 
 ---
+
+## 🔴 SECURITY BUGS (TODO)
 
 ### Bug #S6: No CSP Headers
 

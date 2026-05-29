@@ -42,8 +42,31 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (res.status === 401) {
       useAuthStore.getState().logout();
     }
-    const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
+
+    // Clone response agar bisa di-parse berkali-kali
+    const clonedRes = res.clone();
+
+    // Parse error response body
+    let errorMessage = res.statusText || "Terjadi kesalahan.";
+
+    try {
+      // Coba parse sebagai JSON dulu
+      const body = await res.json();
+      errorMessage = body?.message || body?.error || errorMessage;
+    } catch (e) {
+      // Jika gagal parse JSON, coba ambil sebagai text
+      try {
+        const text = await clonedRes.text();
+        // Jika text ada dan bukan HTML, gunakan sebagai error message
+        if (text && !text.startsWith("<") && !text.startsWith("<!")) {
+          errorMessage = text;
+        }
+      } catch (textError) {
+        // Fallback ke statusText
+      }
+    }
+
+    throw new ApiError(res.status, errorMessage);
   }
 
   if (res.status === 204) return undefined as T;
@@ -75,8 +98,31 @@ async function requestForm<T>(
     if (res.status === 401) {
       useAuthStore.getState().logout();
     }
-    const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new ApiError(res.status, body?.message ?? "Terjadi kesalahan.");
+
+    // Clone response agar bisa di-parse berkali-kali
+    const clonedRes = res.clone();
+
+    // Parse error response body
+    let errorMessage = res.statusText || "Terjadi kesalahan.";
+
+    try {
+      // Coba parse sebagai JSON dulu
+      const body = await res.json();
+      errorMessage = body?.message || body?.error || errorMessage;
+    } catch (e) {
+      // Jika gagal parse JSON, coba ambil sebagai text
+      try {
+        const text = await clonedRes.text();
+        // Jika text ada dan bukan HTML, gunakan sebagai error message
+        if (text && !text.startsWith("<") && !text.startsWith("<!")) {
+          errorMessage = text;
+        }
+      } catch (textError) {
+        // Fallback ke statusText
+      }
+    }
+
+    throw new ApiError(res.status, errorMessage);
   }
 
   return res.json() as Promise<T>;

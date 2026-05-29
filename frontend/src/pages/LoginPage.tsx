@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { toast } from "sonner";
@@ -6,7 +6,36 @@ import loginHero from "../assets/login.webp";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { useGoogleLogin } from "@react-oauth/google";
 import { loginUser, registerUser, loginWithGoogle } from "../services/auth.service";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
+
+// ✅ Password strength calculator (client-side)
+function calculatePasswordStrength(password: string): {
+  strength: "weak" | "medium" | "strong";
+  score: number;
+  checks: {
+    length: boolean;
+    uppercase: boolean;
+    lowercase: boolean;
+    number: boolean;
+    special: boolean;
+  };
+} {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+  };
+
+  const score = Object.values(checks).filter(Boolean).length;
+
+  let strength: "weak" | "medium" | "strong" = "weak";
+  if (score >= 5) strength = "strong";
+  else if (score >= 3) strength = "medium";
+
+  return { strength, score, checks };
+}
 
 export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: boolean }) {
   const navigate = useNavigate();
@@ -18,6 +47,12 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // ✅ Calculate password strength in real-time
+  const passwordStrength = useMemo(() => {
+    if (!password || isLogin) return null;
+    return calculatePasswordStrength(password);
+  }, [password, isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +72,60 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
         setPassword("");
       }
     } catch (error: any) {
-      toast.error(error.message || "Terjadi kesalahan.");
+      // ✅ Better error messages in Indonesian
+      let errorMessage = "Terjadi kesalahan. Silakan coba lagi.";
+
+      // Ambil pesan error dari backend
+      const backendMessage = error.message || "";
+
+      // Handle specific error cases dengan pesan yang lebih informatif
+      if (backendMessage.includes("Format email tidak valid")) {
+        errorMessage = "Format email tidak valid. Gunakan format: nama@example.com";
+      } else if (backendMessage.includes("Password terlalu lemah")) {
+        errorMessage = "Password terlalu lemah. Pastikan memenuhi semua persyaratan di atas.";
+      } else if (backendMessage.includes("Password minimal harus 8 karakter")) {
+        errorMessage = "Password minimal harus 8 karakter.";
+      } else if (backendMessage.includes("Nama minimal harus 2 karakter")) {
+        errorMessage = "Nama minimal harus 2 karakter.";
+      } else if (backendMessage.includes("Username minimal harus 3 karakter")) {
+        errorMessage = "Username minimal harus 3 karakter.";
+      } else if (backendMessage.includes("Email atau Username wajib diisi")) {
+        errorMessage = "Email atau Username wajib diisi.";
+      } else if (backendMessage.includes("Password wajib diisi")) {
+        errorMessage = "Password wajib diisi.";
+      } else if (
+        backendMessage.includes("username sudah dipakai") ||
+        backendMessage.includes("Username sudah digunakan")
+      ) {
+        errorMessage = "Username sudah digunakan. Coba username lain.";
+      } else if (
+        backendMessage.includes("email sudah dipakai") ||
+        backendMessage.includes("Email sudah terdaftar")
+      ) {
+        errorMessage = "Email sudah terdaftar. Gunakan email lain atau login.";
+      } else if (backendMessage.includes("Email/Username atau password salah")) {
+        errorMessage = "Email/username atau password salah. Coba lagi.";
+      } else if (backendMessage.includes("tidak ditemukan")) {
+        errorMessage = "Akun tidak ditemukan. Periksa kembali email/username Anda.";
+      } else if (backendMessage.includes("Validasi gagal")) {
+        // Extract pesan validasi yang lebih spesifik
+        const match = backendMessage.match(/Validasi gagal - (.+)/);
+        if (match && match[1]) {
+          // Tampilkan pesan validasi yang lebih spesifik
+          errorMessage = match[1];
+        } else {
+          errorMessage = "Data yang dimasukkan tidak valid. Periksa kembali.";
+        }
+      } else if (
+        backendMessage &&
+        backendMessage !== "Unprocessable Entity" &&
+        backendMessage !== "Terjadi kesalahan."
+      ) {
+        // Jika ada pesan dari backend dan bukan generic error, tampilkan
+        errorMessage = backendMessage;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -172,21 +260,112 @@ export default function LoginPage({ initialIsLogin = true }: { initialIsLogin?: 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Mobile number, username or email"
+                placeholder={isLogin ? "Email atau Username" : "Email"}
                 autoComplete="email"
                 className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
               />
 
               {/* Input Password */}
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Password"
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
-              />
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  className="w-full bg-ig-background border border-ig-border rounded-[14px] px-4 py-3.5 text-ig-text text-sm placeholder:text-ig-secondary-text focus:outline-none focus:border-[#D300C5] focus:ring-2 focus:ring-[#D300C5]/20 transition-all"
+                />
+
+                {/* ✅ Password Strength Indicator (Register only) */}
+                {!isLogin && password && passwordStrength && (
+                  <div className="space-y-2">
+                    {/* Strength Bar */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-ig-border rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            passwordStrength.strength === "strong"
+                              ? "bg-green-500 w-full"
+                              : passwordStrength.strength === "medium"
+                                ? "bg-yellow-500 w-2/3"
+                                : "bg-red-500 w-1/3"
+                          }`}
+                        />
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${
+                          passwordStrength.strength === "strong"
+                            ? "text-green-500"
+                            : passwordStrength.strength === "medium"
+                              ? "text-yellow-500"
+                              : "text-red-500"
+                        }`}
+                      >
+                        {passwordStrength.strength === "strong"
+                          ? "Kuat"
+                          : passwordStrength.strength === "medium"
+                            ? "Sedang"
+                            : "Lemah"}
+                      </span>
+                    </div>
+
+                    {/* Requirements Checklist */}
+                    <div className="text-xs space-y-1 text-ig-secondary-text">
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.length ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.length ? "text-green-500" : ""}>
+                          Minimal 8 karakter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.uppercase ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.uppercase ? "text-green-500" : ""}>
+                          1 huruf besar (A-Z)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.lowercase ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.lowercase ? "text-green-500" : ""}>
+                          1 huruf kecil (a-z)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.number ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.number ? "text-green-500" : ""}>
+                          1 angka (0-9)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {passwordStrength.checks.special ? (
+                          <Check className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <X className="w-3 h-3 text-red-500" />
+                        )}
+                        <span className={passwordStrength.checks.special ? "text-green-500" : ""}>
+                          1 karakter spesial (!@#$%...)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Tombol Utama (Log in / Sign up) */}
               <button

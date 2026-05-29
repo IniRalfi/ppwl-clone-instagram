@@ -1,28 +1,49 @@
-fix(security): strengthen CORS configuration (Bug #S4)
+fix(security): implement strong password validation (Bug #S5)
 
 ## Changes:
 
 ### Backend:
-- Reject requests without origin header for protected endpoints
-- Allow public endpoints (/health, /swagger) without origin for monitoring
-- Whitelist specific origins only (production + localhost)
-- Added logging for blocked CORS requests
-- Explicitly set allowed methods: GET, POST, PUT, DELETE, OPTIONS
-- Explicitly set allowed headers: Content-Type, Authorization
-- Set preflight cache max age to 24 hours
+- Created PasswordValidator utility class with comprehensive validation
+- Minimum password length increased from 6 to 8 characters
+- Require at least 1 uppercase letter (A-Z)
+- Require at least 1 lowercase letter (a-z)
+- Require at least 1 number (0-9)
+- Require at least 1 special character (!@#$%^&*...)
+- Block common password patterns (123456, password, qwerty, admin, etc.)
+- Calculate password strength (weak/medium/strong)
+- User-friendly error messages in Indonesian
 
 ## Security Improvements:
-- ✅ Prevent unauthorized cross-origin requests
-- ✅ Block requests from unknown origins
-- ✅ Log suspicious CORS attempts for monitoring
-- ✅ Reduce preflight requests with cache
-- ✅ Explicit method and header whitelisting
+- ✅ Prevent weak passwords (e.g., "123456", "password")
+- ✅ Enforce password complexity requirements
+- ✅ Block common password patterns
+- ✅ Provide clear feedback to users about password requirements
+- ✅ Calculate and track password strength
+
+## Password Requirements:
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- At least 1 special character
+- Not a common pattern
+
+## Example Valid Passwords:
+- ✅ MyP@ssw0rd
+- ✅ Secure123!
+- ✅ C0mpl3x#Pass
+
+## Example Invalid Passwords:
+- ❌ 123456 (too common)
+- ❌ password (too common, no uppercase, no number, no special char)
+- ❌ Short1! (too short)
+- ❌ alllowercase123! (no uppercase)
 
 ## Testing:
-- ✅ Local: Frontend can access API
-- ✅ Local: /health endpoint accessible without origin
-- ✅ Local: Unknown origins blocked
+- ✅ Local: Weak passwords rejected with clear error messages
+- ✅ Local: Strong passwords accepted
+- ✅ Local: Common patterns blocked
 - ⏳ Production: Pending deployment test
 
-Fixes #S4
-Progress: 5/13 bugs fixed (38%)
+Fixes #S5
+Progress: 6/13 bugs fixed (46%)

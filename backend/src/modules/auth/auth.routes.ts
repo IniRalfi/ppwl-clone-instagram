@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { AuthService } from "./auth.service";
 import { registerSchema, loginSchema, googleSchema } from "./auth.schema";
 import { authRateLimit } from "@/middleware/rate-limit.middleware";
+import { PasswordValidator } from "@/utils/password-validator"; // ✅ ADDED
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   // Auth routes adalah PUBLIC endpoint (login/register tidak butuh token)
@@ -20,6 +21,25 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     async ({ body, set }) => {
       try {
         const { name, username, email, password } = body;
+
+        // ✅ Validate password strength
+        const passwordValidation = PasswordValidator.validate(password);
+        if (!passwordValidation.isValid) {
+          set.status = 400;
+          return {
+            message: "Password terlalu lemah",
+            errors: passwordValidation.errors,
+          };
+        }
+
+        // ✅ Check common patterns
+        if (PasswordValidator.hasCommonPatterns(password)) {
+          set.status = 400;
+          return {
+            message: "Password terlalu umum. Gunakan kombinasi yang lebih unik.",
+          };
+        }
+
         const passwordHash = await bcrypt.hash(password, 12);
 
         const user = await AuthService.register({
@@ -35,6 +55,16 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         };
       } catch (error) {
         set.status = 400;
+
+        // ✅ Handle specific Prisma errors
+        if (error instanceof Error && error.message.includes("Unique constraint")) {
+          if (error.message.includes("email")) {
+            return { message: "Email sudah terdaftar. Gunakan email lain atau login." };
+          } else if (error.message.includes("username")) {
+            return { message: "Username sudah digunakan. Coba username lain." };
+          }
+        }
+
         return { message: "Gagal register, mungkin email atau username sudah dipakai." };
       }
     },

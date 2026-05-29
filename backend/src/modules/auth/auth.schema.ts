@@ -5,7 +5,8 @@ export const registerSchema = {
     name: t.String({ minLength: 2, error: "Nama minimal harus 2 karakter" }),
     username: t.String({ minLength: 3, error: "Username minimal harus 3 karakter" }),
     email: t.String({ format: "email", error: "Format email tidak valid" }),
-    password: t.String({ minLength: 6, error: "Password minimal harus 6 karakter" }),
+    // ✅ Updated: Minimum 8 characters (will be validated further in service)
+    password: t.String({ minLength: 8, error: "Password minimal harus 8 karakter" }),
   }),
 };
 
