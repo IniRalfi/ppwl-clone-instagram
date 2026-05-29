@@ -44,6 +44,9 @@ function NotificationRealtimeBridge() {
   const activeRoomId = useMessageStore((state) => state.activeRoomId);
   const fetchUnreadMessageCount = useMessageStore((state) => state.fetchUnreadCount);
 
+  // ✅ Ambil fungsi Zustand sekali di luar useEffect — referensinya stabil
+  // Jangan masukkan fungsi Zustand ke deps array, karena selector bisa
+  // mengembalikan referensi baru saat state lain di store berubah → infinite loop
   useEffect(() => {
     if (user) {
       fetchUnreadCount().catch(() => null);
@@ -52,7 +55,9 @@ function NotificationRealtimeBridge() {
       setNotifications([]);
       markAllRead();
     }
-  }, [user, fetchUnreadCount, fetchUnreadMessageCount, setNotifications, markAllRead]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // ✅ Hanya re-run saat user ID berubah (login/logout)
+
 
   useRealtimeNotifications(user?.id, null, (notification) => {
     // ✅ Pass null (backward compat)

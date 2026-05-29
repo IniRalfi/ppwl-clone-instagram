@@ -23,7 +23,7 @@ export function EditorToolPanel({
       {/* Mobile: Toggle Button */}
       <button
         onClick={onTogglePanel}
-        className="md:hidden flex items-center justify-between px-4 py-3 bg-ig-elevated-bg/50 border-b border-ig-border"
+        className="md:hidden flex items-center justify-between px-4 py-3 bg-ig-elevated-bg/50 border-b border-ig-border cursor-pointer"
       >
         <span className="text-sm font-semibold">Alat Editor</span>
         {isPanelOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
@@ -32,7 +32,7 @@ export function EditorToolPanel({
       {/* Panel Content */}
       <div
         className={`flex-1 p-4 flex flex-col justify-between overflow-y-auto transition-all duration-300 ${
-          isPanelOpen ? "max-h-[50vh]" : "max-h-0 md:max-h-[calc(100vh-44px)]"
+          isPanelOpen ? "max-h-[45vh]" : "max-h-0 md:max-h-[calc(100vh-44px)]"
         } md:max-h-[calc(100vh-44px)]`}
       >
         <div className="space-y-4 md:space-y-5">
@@ -55,12 +55,12 @@ export function EditorToolPanel({
             ))}
           </div>
 
-          <div className="space-y-3 md:space-y-4 min-h-[150px] md:min-h-[200px]">{children}</div>
+          <div className="space-y-3 md:space-y-4 min-h-[120px] md:min-h-[200px]">{children}</div>
         </div>
 
         <button
           onClick={onRemoveImage}
-          className="mt-4 w-full py-2 md:py-2.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors cursor-pointer border border-red-500/20"
+          className="mt-3 w-full py-2 md:py-2.5 text-xs font-semibold rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors cursor-pointer border border-red-500/20"
         >
           Hapus Gambar & Batalkan
         </button>

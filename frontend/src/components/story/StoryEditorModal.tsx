@@ -291,6 +291,73 @@ export default function StoryEditorModal({
     setIsDraggingPhoto(false);
   };
 
+  // 📱 Penanganan Sentuhan Lintas Perangkat (Touch Events)
+  const getCanvasTouchCoords = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+    return { x, y };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasTouchCoords(e);
+
+    if (tool === "photo") {
+      setIsDraggingPhoto(true);
+      setDragStart({ x: x - imageX, y: y - imageY });
+    } else if (tool === "draw") {
+      setIsDrawing(true);
+      const newStroke: Stroke = {
+        points: [{ x, y }],
+        color: brushColor,
+        size: brushSize,
+      };
+      setStrokes((prev) => [...prev, newStroke]);
+    } else if (tool === "text") {
+      const clickedItem = [...textItems]
+        .reverse()
+        .find((item) => Math.hypot(item.x - x, item.y - y) < item.size * 2);
+
+      if (clickedItem) {
+        setSelectedTextId(clickedItem.id);
+        setIsDraggingText(true);
+        setInputText(clickedItem.text);
+        setFontColor(clickedItem.color);
+        setFontStyle(clickedItem.font);
+        setFontSize(clickedItem.size);
+      } else {
+        setSelectedTextId(null);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasTouchCoords(e);
+
+    if (tool === "photo" && isDraggingPhoto) {
+      setImageX(x - dragStart.x);
+      setImageY(y - dragStart.y);
+    } else if (tool === "draw" && isDrawing) {
+      setStrokes((prev) => {
+        if (prev.length === 0) return prev;
+        const next = [...prev];
+        const last = { ...next[next.length - 1] };
+        last.points = [...last.points, { x, y }];
+        next[next.length - 1] = last;
+        return next;
+      });
+    } else if (tool === "text" && isDraggingText && selectedTextId) {
+      setTextItems((prev) =>
+        prev.map((item) =>
+          item.id === selectedTextId ? { ...item, x, y } : item
+        )
+      );
+    }
+  };
+
   // Reset Posisi & Skala Foto
   const handleResetPhoto = () => {
     setImageScale(100);
@@ -379,7 +446,7 @@ export default function StoryEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-md flex flex-col md:flex-row items-center justify-center p-4 md:p-6 animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-[150] bg-black/95 backdrop-blur-md flex flex-col md:flex-row items-center justify-center p-2 sm:p-4 md:p-6 gap-3 md:gap-6 animate-in fade-in duration-200 select-none">
       {/* Load Google Fonts Secara Dinamis */}
       <link
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&family=Outfit:wght@800&family=Courier+Prime:wght@700&family=Rubik+Mono+One&display=swap"
@@ -387,12 +454,13 @@ export default function StoryEditorModal({
       />
 
       {/* Konten Kiri: Tampilan Kanvas Cerita */}
-      <div className="flex-1 flex items-center justify-center max-h-[70vh] md:max-h-[85vh] w-full relative">
-        <div className="relative aspect-[9/16] h-full max-h-[70vh] md:max-h-[85vh] rounded-2xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center max-h-[50vh] sm:max-h-[60vh] md:max-h-[85vh] w-full relative">
+        <div className="relative aspect-[9/16] h-full max-h-[50vh] sm:max-h-[60vh] md:max-h-[85vh] rounded-2xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center">
           <canvas
             ref={canvasRef}
             width={720}
             height={1280}
+            style={{ touchAction: "none" }} // 🛡️ Mencegah scrolling browser saat menggambar/geser foto
             className={`max-w-full max-h-full aspect-[9/16] object-contain ${
               tool === "photo"
                 ? "cursor-move"
@@ -406,24 +474,30 @@ export default function StoryEditorModal({
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUpOrLeave}
             onMouseLeave={handleMouseUpOrLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleMouseUpOrLeave}
           />
 
           {/* Panduan Layar */}
           {tool === "photo" && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/75 px-3 py-1.5 rounded-full text-[11px] text-white/90 font-medium pointer-events-none backdrop-blur-xs border border-white/10 shadow-lg flex items-center gap-1.5">
-              <Move className="w-3.5 h-3.5" /> Seret foto di layar untuk menyesuaikan posisi
+              <Move className="w-3.5 h-3.5 animate-bounce" /> Seret foto di layar untuk menyesuaikan posisi
             </div>
           )}
         </div>
       </div>
 
       {/* Konten Kanan: Panel Kontrol Editor */}
-      <div className="w-full md:w-[360px] bg-ig-secondary-bg border border-ig-border rounded-2xl p-5 flex flex-col justify-between h-auto md:h-[85vh] md:ml-6 mt-4 md:mt-0 shadow-2xl overflow-y-auto">
+      <div className="w-full md:w-[360px] bg-ig-secondary-bg border border-ig-border rounded-2xl p-5 flex flex-col justify-between h-auto md:h-[85vh] md:ml-0 mt-0 md:mt-0 shadow-2xl overflow-y-auto">
         <div className="space-y-6">
           {/* Header Panel */}
           <div className="flex items-center justify-between border-b border-ig-border pb-3.5">
             <div>
-              <h2 className="font-bold text-ig-text text-base">Instafy Story Editor</h2>
+              <div className="flex items-center gap-2">
+                <span className="bg-ig-primary text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-sm uppercase tracking-wider animate-pulse">Editor Aktif</span>
+                <h2 className="font-bold text-ig-text text-base">Story Editor</h2>
+              </div>
               <p className="text-xs text-ig-secondary-text">Kustomisasi ceritamu sebelum diunggah</p>
             </div>
             <button
