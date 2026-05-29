@@ -1,4 +1,15 @@
-import { Home, Search, PlusSquare, Heart, User, LogOut, Moon, Sun, Activity, Send } from "lucide-react";
+import {
+  Home,
+  Search,
+  PlusSquare,
+  Heart,
+  User,
+  LogOut,
+  Moon,
+  Sun,
+  Activity,
+  Send,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import { useThemeStore } from "../../store/theme.store";
@@ -6,6 +17,7 @@ import { useNotificationDrawerStore } from "../../store/notification-drawer.stor
 import { useNotificationStore } from "../../store/notification.store";
 import { useMessageStore } from "../../store/message.store";
 import { toast } from "sonner";
+import { logoutUser } from "../../services/auth.service"; // ✅ ADDED
 
 const navItems = [
   { icon: Home, label: "Beranda", to: "/", wip: false },
@@ -190,7 +202,17 @@ export function Sidebar() {
         </button>
 
         <button
-          onClick={logout}
+          onClick={async () => {
+            try {
+              await logoutUser(); // ✅ Call API to clear cookie
+              logout(); // Clear local state
+              toast.success("Berhasil logout");
+            } catch (error) {
+              // Tetap logout meskipun API gagal
+              logout();
+              toast.info("Logout berhasil (offline mode)");
+            }
+          }}
           className="flex items-center px-3 py-2.5 rounded-lg hover:bg-ig-elevated-bg text-ig-secondary-text hover:text-ig-text transition-all w-full text-left group cursor-pointer"
         >
           <LogOut

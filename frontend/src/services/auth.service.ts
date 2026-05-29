@@ -3,12 +3,18 @@ import { User } from "../store/auth.store";
 
 export interface AuthResponse {
   user: User;
-  accessToken: string;
+  // ❌ REMOVED: accessToken - sekarang di HttpOnly cookie
 }
 
 /** Login menggunakan email & password */
-export async function loginUser(email: string, password: string): Promise<{ data: AuthResponse; message?: string }> {
-  return await apiClient.post<{ data: AuthResponse; message?: string }>("/auth/login", { email, password });
+export async function loginUser(
+  email: string,
+  password: string
+): Promise<{ data: AuthResponse; message?: string }> {
+  return await apiClient.post<{ data: AuthResponse; message?: string }>("/auth/login", {
+    email,
+    password,
+  });
 }
 
 /** Registrasi pengguna baru */
@@ -22,6 +28,13 @@ export async function registerUser(payload: {
 }
 
 /** Login/Register menggunakan Google OAuth */
-export async function loginWithGoogle(token: string): Promise<{ data: AuthResponse; message?: string }> {
+export async function loginWithGoogle(
+  token: string
+): Promise<{ data: AuthResponse; message?: string }> {
   return await apiClient.post<{ data: AuthResponse; message?: string }>("/auth/google", { token });
+}
+
+/** Logout - Clear cookie di backend */
+export async function logoutUser(): Promise<{ message?: string }> {
+  return await apiClient.post<{ message?: string }>("/auth/logout", {});
 }

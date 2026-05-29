@@ -16,14 +16,18 @@ export const authPlugin = new Elysia()
       exp: "7d",
     })
   )
-  .derive({ as: "global" }, ({ bearer, jwt, set }) => {
+  .derive({ as: "global" }, ({ bearer, jwt, set, cookie }) => {
     return {
       getCurrentUser: async () => {
-        if (!bearer) {
+        // 🔒 Prioritas: Cookie dulu, baru Bearer token (backward compatibility)
+        const token = cookie.auth?.value || bearer;
+
+        if (!token) {
           set.status = 401;
           return null;
         }
-        const payload = await jwt.verify(bearer);
+
+        const payload = await jwt.verify(token as string);
         if (!payload) {
           set.status = 401;
           return null;

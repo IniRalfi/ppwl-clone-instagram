@@ -1,43 +1,34 @@
-feat(security): implement critical security fixes (Bug #0, #0.5, #1)
+fix(security): move JWT token from localStorage to HttpOnly cookie (Bug #S3)
 
-🔒 Security Improvements:
+BREAKING CHANGE: JWT token authentication mechanism changed from localStorage to HttpOnly cookie
 
-1. Credentials Exposure Prevention (Bug #0)
-   - Add pre-commit hook to prevent committing .env files
-   - Create .env.production.example template
-   - Add generate-secrets.sh script for secure key generation
-   - Add comprehensive SECURITY.md documentation
+## Changes:
 
-2. Admin Endpoints Security (Bug #0.5)
-   - Exclude passwordHash and providerId from API responses
-   - Implement strong API key validation (min 32 chars)
-   - Add audit logging for admin endpoint access
-   - Add rate limiting for backup endpoint (1 per 10 min)
+### Backend:
+- Set JWT token via HttpOnly cookie in login/google endpoints
+- Added /auth/logout endpoint to clear cookie
+- Updated auth plugin to read token from cookie (fallback to Bearer)
+- Cookie config: httpOnly=true, secure=production, sameSite=none (production)
 
-3. Rate Limiting Implementation (Bug #1)
-   - Create comprehensive rate limiting middleware
-   - Apply to auth endpoints (5 req/min) - prevent brute force
-   - Apply to comment endpoints (20 req/hour) - prevent spam
-   - Add rate limit headers (X-RateLimit-*)
-   - Add monitoring function for statistics
+### Frontend:
+- Removed token from Zustand store (only user data persisted)
+- Updated API client to send credentials (cookies) automatically
+- Removed Authorization header (token now in cookie)
+- Updated LoginPage to not store token in state
+- Updated Sidebar logout to call API before clearing state
 
-📝 Files Changed:
-- backend/src/middleware/rate-limit.middleware.ts (new)
-- backend/src/modules/auth/auth.routes.ts
-- backend/src/modules/comment/comment.routes.ts
-- backend/src/modules/data/data.service.ts
-- backend/src/modules/data/data.route.ts
-- backend/scripts/generate-secrets.sh (new)
-- backend/.env.production.example (new)
-- .git/hooks/pre-commit (new)
-- docs/SECURITY.md (new)
-- docs/GRADING-API-ACCESS.md (new)
-- docs/RATE-LIMITING-GUIDE.md (new)
-- CHANGELOG.md (new)
+## Security Improvements:
+- ✅ Token cannot be accessed by JavaScript (XSS protection)
+- ✅ HttpOnly cookie prevents token theft via XSS
+- ✅ Secure flag ensures HTTPS-only in production
+- ✅ SameSite=none allows cross-origin (frontend ↔ backend)
+- ✅ Backward compatible (supports Bearer token for testing)
 
-✅ Testing:
-- Admin endpoints verified to exclude sensitive data
-- Rate limiting tested and working (6th request blocked)
-- Production mode rejects weak API keys
+## Testing:
+- ✅ Local: Cookie set with HttpOnly, document.cookie returns undefined
+- ✅ Local: Refresh persists login state
+- ✅ Local: Logout clears cookie
+- ⏳ Production: Pending deployment test
 
-Progress: 3/21 bugs fixed (14%)
+Fixes #S3
+Progress: 4/13 bugs fixed (31%)

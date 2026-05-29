@@ -2,17 +2,17 @@
 
 **Tanggal:** 29 Mei 2026  
 **Last Updated:** 29 Mei 2026 22:30  
-**Progress:** 3/26 bugs fixed (12%)
+**Progress:** 4/13 bugs fixed (31%)
 
 ---
 
 ## 📊 Progress Summary
 
-| Category               | Total  | Done  | In Progress | TODO   |
-| ---------------------- | ------ | ----- | ----------- | ------ |
-| 🔥 SECURITY (CRITICAL) | 8      | 3     | 0           | 5      |
-| 🐛 FUNCTIONAL (UI/UX)  | 5      | 0     | 0           | 5      |
-| **TOTAL**              | **13** | **3** | **0**       | **10** |
+| Category               | Total  | Done  | In Progress | TODO  |
+| ---------------------- | ------ | ----- | ----------- | ----- |
+| 🔥 SECURITY (CRITICAL) | 8      | 4     | 0           | 4     |
+| 🐛 FUNCTIONAL (UI/UX)  | 5      | 0     | 0           | 5     |
+| **TOTAL**              | **13** | **4** | **0**       | **9** |
 
 ---
 
@@ -95,6 +95,31 @@
 
 ---
 
+### ✅ Bug #S3: JWT Token di LocalStorage (CRITICAL)
+
+**Status:** ✅ DONE  
+**Fixed:** 29 Mei 2026  
+**Files Changed:**
+
+- `backend/src/modules/auth/auth.routes.ts`
+- `backend/src/plugins/auth.plugin.ts`
+- `frontend/src/store/auth.store.ts`
+- `frontend/src/services/api.client.ts`
+- `frontend/src/services/auth.service.ts`
+- `frontend/src/pages/LoginPage.tsx`
+- `frontend/src/components/layout/Sidebar.tsx`
+
+**What Was Fixed:**
+
+- Moved JWT token from localStorage to HttpOnly cookie
+- Backend sends token via `Set-Cookie` header
+- Frontend sends cookie automatically via `credentials: 'include'`
+- Added `/auth/logout` endpoint to clear cookie
+- Removed token from Zustand store (only user data persisted)
+- Backward compatible: supports both cookie and Bearer token
+
+---
+
 ## 🔴 SECURITY BUGS (TODO)
 
 ### Bug #S2: No Input Sanitization (XSS)
@@ -114,21 +139,7 @@
 
 ---
 
-### Bug #S3: JWT Token di LocalStorage
-
-**Severity:** 🔴 CRITICAL  
-**Status:** ⏳ TODO  
-**Files:** `frontend/src/store/auth.store.ts`
-
-**Issue:** Token bisa dicuri via XSS attack.
-
-**Fix Needed:**
-
-- Move token to HttpOnly cookie
-- Implement refresh token mechanism
-- Update frontend auth store
-
----
+## 🔴 SECURITY BUGS (TODO)
 
 ### Bug #S4: Weak CORS Configuration
 

@@ -17,10 +17,10 @@ export type User = {
 
 type AuthStore = {
   user: User | null;
-  token: string | null;
+  // ❌ REMOVED: token (sekarang di HttpOnly cookie)
   isAuthenticated: boolean;
 
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User) => void; // ✅ CHANGED: tidak perlu token parameter lagi
   logout: () => void;
   updateUser: (updatedFields: Partial<User>) => void;
 };
@@ -29,20 +29,20 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
+      // ❌ REMOVED: token: null
       isAuthenticated: false,
 
-      setAuth: (user, token) =>
+      setAuth: (user) =>
         set({
           user,
-          token,
+          // ❌ REMOVED: token
           isAuthenticated: true,
         }),
 
       logout: () =>
         set({
           user: null,
-          token: null,
+          // ❌ REMOVED: token: null
           isAuthenticated: false,
         }),
 

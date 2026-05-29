@@ -44,7 +44,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // 2. Login Akun (Email/Username)
   .post(
     "/login",
-    async ({ body, set, jwt }) => {
+    async ({ body, set, jwt, cookie: { auth } }) => {
       try {
         const { email, password } = body;
 
@@ -56,6 +56,17 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         }
 
         const accessToken = await jwt.sign({ id: user.id });
+
+        // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
+        auth.set({
+          value: accessToken,
+          httpOnly: true,
+          secure: env.NODE_ENV === "production", // HTTPS only di production
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
+        });
+
         return {
           message: "Login Berhasil",
           data: {
@@ -67,7 +78,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
               role: user.role,
               avatarUrl: user.avatarUrl,
             },
-            accessToken,
+            // ❌ Tidak kirim accessToken di response body lagi
           },
         };
       } catch (error) {
@@ -81,7 +92,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   // 3. Login Google OAuth
   .post(
     "/google",
-    async ({ body, set, jwt }) => {
+    async ({ body, set, jwt, cookie: { auth } }) => {
       try {
         const { token } = body;
 
@@ -97,6 +108,17 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         });
 
         const accessToken = await jwt.sign({ id: user.id });
+
+        // 🔒 Set HttpOnly cookie (tidak bisa diakses JavaScript)
+        auth.set({
+          value: accessToken,
+          httpOnly: true,
+          secure: env.NODE_ENV === "production", // HTTPS only di production
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60, // 7 hari (sama dengan JWT exp)
+        });
+
         return {
           message: "Login Google Berhasil",
           data: {
@@ -108,7 +130,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
               role: user.role,
               avatarUrl: user.avatarUrl,
             },
-            accessToken,
+            // ❌ Tidak kirim accessToken di response body lagi
           },
         };
       } catch (error: any) {
@@ -117,4 +139,10 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       }
     },
     googleSchema
-  );
+  )
+
+  // 4. Logout (Clear Cookie)
+  .post("/logout", async ({ cookie: { auth }, set }) => {
+    auth.remove();
+    return { message: "Logout berhasil" };
+  });

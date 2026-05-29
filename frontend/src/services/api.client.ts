@@ -3,14 +3,7 @@ import { useAuthStore } from "../store/auth.store";
 // Base URL backend — sesuaikan dengan environment variable Vite
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-// Helper: ambil token dari Zustand store
-function getToken(): string | null {
-  try {
-    return useAuthStore.getState().token ?? null;
-  } catch {
-    return null;
-  }
-}
+// ❌ REMOVED: getToken() function - tidak perlu lagi karena token di cookie
 
 // Tipe generik response dari API
 export interface ApiResponse<T> {
@@ -22,7 +15,7 @@ export interface ApiResponse<T> {
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "ApiError";
@@ -30,21 +23,19 @@ export class ApiError extends Error {
 }
 
 // Fungsi fetch utama untuk JSON request
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = getToken();
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // ❌ REMOVED: const token = getToken();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // ❌ REMOVED: Authorization header - token sudah di cookie
     ...((options.headers as Record<string, string>) ?? {}),
   };
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
+    credentials: "include", // ✅ ADDED: Kirim cookies ke backend
   });
 
   if (!res.ok) {
@@ -62,17 +53,22 @@ async function request<T>(
 
 // Fungsi fetch khusus untuk FormData (upload file)
 // Tidak perlu set Content-Type — browser yang atur boundary-nya
-async function requestForm<T>(path: string, formData: FormData, method: string = "POST"): Promise<T> {
-  const token = getToken();
+async function requestForm<T>(
+  path: string,
+  formData: FormData,
+  method: string = "POST"
+): Promise<T> {
+  // ❌ REMOVED: const token = getToken();
 
   const headers: HeadersInit = {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // ❌ REMOVED: Authorization header - token sudah di cookie
   };
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     body: formData,
     headers,
+    credentials: "include", // ✅ ADDED: Kirim cookies ke backend
   });
 
   if (!res.ok) {
