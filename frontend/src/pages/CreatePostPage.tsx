@@ -134,6 +134,9 @@ export default function CreatePostPage() {
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [isDraggingText, setIsDraggingText] = useState(false);
 
+  // Mobile: Collapsible Tool Panel
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Clean up Object URL to prevent memory leaks
@@ -180,7 +183,18 @@ export default function CreatePostPage() {
   // Render Kanvas Editor
   useEffect(() => {
     renderCanvas();
-  }, [loadedImage, activeFilter, strokes, textItems, imageScale, imageX, imageY, bgColor, canvasWidth, canvasHeight]);
+  }, [
+    loadedImage,
+    activeFilter,
+    strokes,
+    textItems,
+    imageScale,
+    imageX,
+    imageY,
+    bgColor,
+    canvasWidth,
+    canvasHeight,
+  ]);
 
   const renderCanvas = () => {
     const canvas = canvasRef.current;
@@ -316,14 +330,86 @@ export default function CreatePostPage() {
       });
     } else if (tool === "text" && isDraggingText && selectedTextId) {
       setTextItems((prev) =>
-        prev.map((item) =>
-          item.id === selectedTextId ? { ...item, x, y } : item
-        )
+        prev.map((item) => (item.id === selectedTextId ? { ...item, x, y } : item))
       );
     }
   };
 
   const handleMouseUpOrLeave = () => {
+    setIsDrawing(false);
+    setIsDraggingText(false);
+    setIsDraggingPhoto(false);
+  };
+
+  // ── Touch Event Handlers untuk Mobile ──
+  const getTouchCoords = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    if (!touch) return { x: 0, y: 0 };
+    const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+    return { x, y };
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Prevent scrolling saat drawing
+    const { x, y } = getTouchCoords(e);
+
+    if (tool === "photo") {
+      setIsDraggingPhoto(true);
+      setDragStart({ x: x - imageX, y: y - imageY });
+    } else if (tool === "draw") {
+      setIsDrawing(true);
+      const newStroke: Stroke = {
+        points: [{ x, y }],
+        color: brushColor,
+        size: brushSize,
+      };
+      setStrokes((prev) => [...prev, newStroke]);
+    } else if (tool === "text") {
+      const clickedItem = [...textItems]
+        .reverse()
+        .find((item) => Math.hypot(item.x - x, item.y - y) < item.size * 2);
+
+      if (clickedItem) {
+        setSelectedTextId(clickedItem.id);
+        setIsDraggingText(true);
+        setInputText(clickedItem.text);
+        setFontColor(clickedItem.color);
+        setFontStyle(clickedItem.font);
+        setFontSize(clickedItem.size);
+      } else {
+        setSelectedTextId(null);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Prevent scrolling saat drawing
+    const { x, y } = getTouchCoords(e);
+
+    if (tool === "photo" && isDraggingPhoto) {
+      setImageX(x - dragStart.x);
+      setImageY(y - dragStart.y);
+    } else if (tool === "draw" && isDrawing) {
+      setStrokes((prev) => {
+        if (prev.length === 0) return prev;
+        const next = [...prev];
+        const last = { ...next[next.length - 1] };
+        last.points = [...last.points, { x, y }];
+        next[next.length - 1] = last;
+        return next;
+      });
+    } else if (tool === "text" && isDraggingText && selectedTextId) {
+      setTextItems((prev) =>
+        prev.map((item) => (item.id === selectedTextId ? { ...item, x, y } : item))
+      );
+    }
+  };
+
+  const handleTouchEnd = () => {
     setIsDrawing(false);
     setIsDraggingText(false);
     setIsDraggingPhoto(false);
@@ -491,8 +577,8 @@ export default function CreatePostPage() {
             step === "caption"
               ? () => setStep("editor")
               : step === "editor"
-              ? handleRemoveImage
-              : () => navigate(-1)
+                ? handleRemoveImage
+                : () => navigate(-1)
           }
           className="p-1 rounded-full hover:bg-ig-secondary-bg transition-colors"
         >
@@ -502,8 +588,8 @@ export default function CreatePostPage() {
           {step === "upload"
             ? "Buat postingan baru"
             : step === "editor"
-            ? "Edit Foto Postingan"
-            : "Tulis Caption"}
+              ? "Edit Foto Postingan"
+              : "Tulis Caption"}
         </h1>
         {step === "editor" ? (
           <button
@@ -540,32 +626,37 @@ export default function CreatePostPage() {
         /* ── Step 2: Canvas Photo Editor (Reuses story editor layout) ── */
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Panel Kiri: Kanvas Postingan */}
-          <div className="flex-1 flex items-center justify-center bg-black/90 p-4 relative min-h-[400px] md:min-h-[500px]">
+          <div className="flex-1 flex items-center justify-center bg-black/90 p-2 md:p-4 relative min-h-[60vh] md:min-h-[500px]">
             <div
               style={{
                 width: "100%",
-                maxWidth: canvasWidth >= canvasHeight ? "500px" : `${(canvasWidth / canvasHeight) * 500}px`,
+                maxWidth:
+                  canvasWidth >= canvasHeight ? "500px" : `${(canvasWidth / canvasHeight) * 500}px`,
                 aspectRatio: `${canvasWidth}/${canvasHeight}`,
               }}
-              className="relative max-h-[50vh] md:max-h-[75vh] rounded-xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center"
+              className="relative max-h-[65vh] md:max-h-[75vh] rounded-xl overflow-hidden border border-ig-border bg-neutral-900 shadow-2xl flex items-center justify-center"
             >
               <canvas
                 ref={canvasRef}
                 width={canvasWidth}
                 height={canvasHeight}
-                className={`max-w-full max-h-full object-contain ${
+                className={`max-w-full max-h-full object-contain touch-none ${
                   tool === "photo"
                     ? "cursor-move"
                     : tool === "draw"
-                    ? "cursor-crosshair"
-                    : tool === "text"
-                    ? "cursor-move"
-                    : "cursor-default"
+                      ? "cursor-crosshair"
+                      : tool === "text"
+                        ? "cursor-move"
+                        : "cursor-default"
                 }`}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUpOrLeave}
                 onMouseLeave={handleMouseUpOrLeave}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
               />
               {tool === "photo" && (
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-black/85 px-3 py-1.5 rounded-full text-[10px] text-white/95 font-medium pointer-events-none border border-white/10 shadow-lg flex items-center gap-1">
@@ -582,6 +673,8 @@ export default function CreatePostPage() {
               setSelectedTextId(null);
             }}
             onRemoveImage={handleRemoveImage}
+            isPanelOpen={isPanelOpen}
+            onTogglePanel={() => setIsPanelOpen(!isPanelOpen)}
           >
             {tool === "photo" && (
               <LayoutTab

@@ -1,11 +1,21 @@
-// frontend/src/pages/ProfilePage.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
+import { useThemeStore } from "../store/theme.store";
 import { Avatar } from "../components/common/Avatar";
 import { deletePost } from "../services/post.service";
 import { toast } from "sonner";
-import { Heart, MessageCircle, Loader2, UserPlus, Check, Grid3X3, Bookmark } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Loader2,
+  UserPlus,
+  Check,
+  Grid3X3,
+  Bookmark,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { apiClient } from "../services/api.client";
 import { ProfileGridSkeleton } from "../components/ui/Skeleton";
 
@@ -65,6 +75,7 @@ export default function ProfilePage() {
   const loggedInUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
 
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
@@ -191,7 +202,7 @@ export default function ProfilePage() {
           following: number;
           isFollowing: boolean;
         }>(`/follow/stats/${activeUser.id}${params}`);
-        
+
         if (statsRes) {
           setFollowStats({
             followers: statsRes.followers,
@@ -280,7 +291,7 @@ export default function ProfilePage() {
           gender: res.data.gender ?? "",
           suggestions: res.data.suggestions ?? true,
         });
-        
+
         // Sync ke state lokal
         setProfileUser((prev) =>
           prev
@@ -371,18 +382,20 @@ export default function ProfilePage() {
   if (!profileUser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-ig-background gap-4 text-ig-text">
-        <p className="text-neutral-500">Pengguna tidak ditemukan atau silakan login terlebih dahulu.</p>
-        <Link to="/" className="text-ig-primary font-semibold hover:underline">Kembali ke Beranda</Link>
+        <p className="text-neutral-500">
+          Pengguna tidak ditemukan atau silakan login terlebih dahulu.
+        </p>
+        <Link to="/" className="text-ig-primary font-semibold hover:underline">
+          Kembali ke Beranda
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-ig-background max-w-[935px] mx-auto px-4 pb-20 md:pb-0 text-ig-text">
-
       {/* ── Header Profil ── */}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-8 py-6 sm:py-8 border-b border-ig-border">
-
         {/* Custom Avatar dengan Integrasi Story & Plus Icon */}
         <div className="relative group flex-shrink-0 select-none">
           <div
@@ -429,9 +442,7 @@ export default function ProfilePage() {
         {/* Info Profil */}
         <div className="w-full sm:flex-1 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
-            <h1 className="text-ig-text text-xl font-semibold break-all">
-              {profileUser.username}
-            </h1>
+            <h1 className="text-ig-text text-xl font-semibold break-all">{profileUser.username}</h1>
             {isOwnProfile ? (
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3">
                 <button
@@ -516,20 +527,20 @@ export default function ProfilePage() {
             </button>
           </div>
 
-           {/* Nama + Bio */}
+          {/* Nama + Bio */}
           <p className="text-ig-text text-sm font-semibold">{profileUser.name}</p>
           {profileUser.bio ? (
-            <p className="text-ig-text text-sm mt-1 whitespace-pre-line">
-              {profileUser.bio}
-            </p>
+            <p className="text-ig-text text-sm mt-1 whitespace-pre-line">{profileUser.bio}</p>
           ) : (
-            <p className="text-ig-secondary-text text-sm mt-1 italic">
-              Belum ada bio.
-            </p>
+            <p className="text-ig-secondary-text text-sm mt-1 italic">Belum ada bio.</p>
           )}
           {profileUser.website && (
             <a
-              href={profileUser.website.startsWith("http") ? profileUser.website : `https://${profileUser.website}`}
+              href={
+                profileUser.website.startsWith("http")
+                  ? profileUser.website
+                  : `https://${profileUser.website}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#0095f6] text-sm font-semibold hover:underline block mt-1"
@@ -537,10 +548,40 @@ export default function ProfilePage() {
               🔗 {profileUser.website}
             </a>
           )}
+
+          {/* Theme Toggle Section - Hanya untuk profil sendiri */}
+          {isOwnProfile && (
+            <div className="mt-4 pt-4 border-t border-ig-separator">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 px-4 py-3 w-full sm:w-auto rounded-lg bg-ig-elevated-bg hover:bg-neutral-800 transition-all active:scale-95 cursor-pointer border border-ig-border"
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="w-5 h-5 text-ig-text" strokeWidth={1.5} />
+                    <div className="flex flex-col items-start">
+                      <span className="text-ig-text text-sm font-semibold">Mode Terang</span>
+                      <span className="text-ig-secondary-text text-xs">
+                        Aktifkan tampilan terang
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-5 h-5 text-ig-text" strokeWidth={1.5} />
+                    <div className="flex flex-col items-start">
+                      <span className="text-ig-text text-sm font-semibold">Mode Gelap</span>
+                      <span className="text-ig-secondary-text text-xs">
+                        Aktifkan tampilan gelap
+                      </span>
+                    </div>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-
 
       {/* ── Tab Navigation (Hanya jika milik sendiri) ── */}
       {isOwnProfile && (
@@ -585,8 +626,9 @@ export default function ProfilePage() {
         )}
 
         {/* TAB: DISIMPAN */}
-        {activeTab === "saved" && isOwnProfile && (
-          isSavedLoading ? (
+        {activeTab === "saved" &&
+          isOwnProfile &&
+          (isSavedLoading ? (
             <p className="text-ig-secondary-text text-sm text-center py-8">
               Memuat postingan tersimpan...
             </p>
@@ -594,8 +636,7 @@ export default function ProfilePage() {
             <SavedEmptyState />
           ) : (
             <PostGrid posts={savedPosts} emptyMessage="Belum ada postingan disimpan" />
-          )
-        )}
+          ))}
       </div>
 
       {/* ── Modals ── */}
