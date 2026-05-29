@@ -17,12 +17,14 @@ import { monitoringRoutes } from "@/modules/monitoring/monitoring.routes";
 import { swagger } from "@elysiajs/swagger";
 import { runDatabaseBackup } from "@/scripts/backup";
 import { errorPlugin } from "@/plugins/error.plugin";
+import { securityHeadersPlugin } from "@/plugins/security-headers.plugin";
 
 const isProd = process.env.NODE_ENV === "production" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 // Buat app tanpa .listen() agar bisa dipakai oleh Lambda
 export const app = new Elysia()
   .use(errorPlugin)
+  .use(securityHeadersPlugin) // ✅ ADDED: Security headers
   .use(
     cors({
       origin: (request) => {
@@ -67,6 +69,110 @@ export const app = new Elysia()
   )
   .use(isProd ? (a) => a : swagger({ path: "/swagger" }))
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  // 📋 Landing page - List semua endpoint untuk dosen/grading
+  .get("/", ({ request }) => {
+    const url = new URL(request.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const apiKey = env.API_SECRET_KEY;
+
+    return {
+      message: "🎓 PPWL Instagram Clone - Backend API",
+      version: "1.0.0",
+      environment: isProd ? "production" : "development",
+      timestamp: new Date().toISOString(),
+      documentation: {
+        note: "⚠️ Endpoint di bawah memerlukan API key untuk akses. Hubungi developer untuk mendapatkan API key.",
+        authentication: {
+          method: "API Key",
+          options: ["Query parameter: ?key=YOUR_API_KEY", "Header: X-API-Key: YOUR_API_KEY"],
+          configured: !!apiKey && apiKey.length >= 32,
+        },
+      },
+      endpoints: {
+        public: {
+          health: {
+            url: `${baseUrl}/health`,
+            method: "GET",
+            description: "Health check endpoint",
+            requiresAuth: false,
+          },
+          swagger: isProd
+            ? null
+            : {
+                url: `${baseUrl}/swagger`,
+                method: "GET",
+                description: "API documentation (development only)",
+                requiresAuth: false,
+              },
+        },
+        monitoring: {
+          health: {
+            url: `${baseUrl}/monitoring/health`,
+            method: "GET",
+            description: "Detailed health check dengan database status",
+            requiresAuth: true,
+          },
+          metrics: {
+            url: `${baseUrl}/monitoring/metrics`,
+            method: "GET",
+            description: "System metrics (memory, uptime, dll)",
+            requiresAuth: true,
+          },
+        },
+        data: {
+          users: {
+            url: `${baseUrl}/data/users`,
+            method: "GET",
+            description: "List semua users (tanpa password)",
+            requiresAuth: true,
+          },
+          posts: {
+            url: `${baseUrl}/data/posts`,
+            method: "GET",
+            description: "List semua posts",
+            requiresAuth: true,
+          },
+          comments: {
+            url: `${baseUrl}/data/comments`,
+            method: "GET",
+            description: "List semua comments",
+            requiresAuth: true,
+          },
+          likes: {
+            url: `${baseUrl}/data/likes`,
+            method: "GET",
+            description: "List semua likes",
+            requiresAuth: true,
+          },
+          notifications: {
+            url: `${baseUrl}/data/notifications`,
+            method: "GET",
+            description: "List semua notifications",
+            requiresAuth: true,
+          },
+          cacheMetrics: {
+            url: `${baseUrl}/data/cache/metrics`,
+            method: "GET",
+            description: "Cache performance metrics",
+            requiresAuth: true,
+          },
+        },
+        backup: {
+          trigger: {
+            url: `${baseUrl}/data/backup`,
+            method: "POST",
+            description: "Trigger manual database backup ke S3",
+            requiresAuth: true,
+            rateLimit: "1 request per 10 minutes",
+          },
+        },
+      },
+      examples: {
+        withQueryParam: `${baseUrl}/data/users?key=YOUR_API_KEY`,
+        withHeader: `curl -H "X-API-Key: YOUR_API_KEY" ${baseUrl}/data/users`,
+      },
+    };
+  })
   .use(authRoutes)
   .use(postRoutes)
   .use(likeRoutes)

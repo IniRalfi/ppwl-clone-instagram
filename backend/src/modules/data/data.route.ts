@@ -1,22 +1,30 @@
 import { Elysia } from "elysia";
 import { DataService } from "./data.service";
-import { requireAuth } from "@/plugins/require-auth.plugin";
+import { jwt } from "@elysiajs/jwt";
+import { bearer } from "@elysiajs/bearer";
+import { env } from "@/config/env";
+import { db } from "@/db/client";
 
 export const dataRoutes = new Elysia({ prefix: "/data" })
-  .use(requireAuth)
-  // Middleware khusus untuk grup /data
-  .onBeforeHandle(async ({ request, set, requireUser }) => {
+  .use(bearer())
+  .use(
+    jwt({
+      name: "jwt",
+      secret: env.JWT_SECRET,
+      exp: "7d",
+    })
+  )
+  // Middleware khusus untuk grup /data - Custom auth (API key OR admin JWT)
+  .onBeforeHandle(async ({ request, set, jwt, bearer, cookie }) => {
     // Lewati preflight OPTIONS
     if (request.method === "OPTIONS") return;
 
-    // ⚠️ SECURITY: Disable di production untuk mencegah data leak
-    if (process.env.NODE_ENV === "production") {
-      // Hanya izinkan jika ada API key yang KUAT
-      const url = new URL(request.url);
-      const key = url.searchParams.get("key") || request.headers.get("x-api-key");
-      const apiKey = process.env.API_SECRET_KEY;
+    const url = new URL(request.url);
+    const key = url.searchParams.get("key") || request.headers.get("x-api-key");
+    const apiKey = env.API_SECRET_KEY;
 
-      // Validasi API key
+    // ⚠️ SECURITY: Validasi API key configuration
+    if (process.env.NODE_ENV === "production") {
       if (!apiKey || apiKey === "rahasia" || apiKey.length < 32) {
         set.status = 500;
         return {
@@ -24,43 +32,55 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
           hint: "Generate strong key with: openssl rand -base64 32",
         };
       }
+    }
 
-      if (!key || key !== apiKey) {
-        // Log failed attempt
-        console.warn(
-          `⚠️ Unauthorized admin endpoint access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
-        );
-
-        set.status = 403;
-        return { message: "Forbidden: Invalid or missing API key" };
-      }
-
+    // 1️⃣ PRIORITAS PERTAMA: Cek API key (untuk dosen/grading)
+    if (apiKey && key === apiKey) {
       // Log successful access
       console.log(
-        `✅ Admin endpoint accessed: ${request.method} ${url.pathname} from ${request.headers.get("x-forwarded-for") || "unknown"}`
+        `✅ Admin endpoint accessed via API key: ${request.method} ${url.pathname} from ${request.headers.get("x-forwarded-for") || "unknown"}`
       );
-      return;
+      return; // ✅ Izinkan akses
     }
 
-    // Development: Allow dengan JWT admin atau API key
-    const url = new URL(request.url);
-    const key = url.searchParams.get("key") || request.headers.get("x-api-key");
-    const apiKey = process.env.API_SECRET_KEY;
+    // 2️⃣ PRIORITAS KEDUA: Cek JWT token (untuk admin yang login via web)
+    const token = cookie.auth?.value || bearer;
 
-    // Jika API_SECRET_KEY diset dan key cocok, izinkan lewat
-    if (apiKey && key === apiKey) {
-      return;
-    }
+    if (!token) {
+      // Log failed attempt
+      console.warn(
+        `⚠️ Unauthorized admin endpoint access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
+      );
 
-    // 2. Jika tidak ada/tidak cocok, cek session user (JWT token)
-    const user = await requireUser();
-    if (!user) return;
-    const isAdmin = user.role === "ADMIN";
-
-    if (!isAdmin) {
       set.status = 401;
-      return { message: "Unauthorized: Access denied. Valid API Key or Admin session required." };
+      return {
+        message: "Unauthorized: Valid API key or admin JWT token required",
+        hint: "Provide API key via ?key=YOUR_KEY or X-API-Key header, or login as admin",
+      };
     }
+
+    // Verify JWT token
+    const payload = await jwt.verify(token as string);
+    if (!payload) {
+      set.status = 401;
+      return { message: "Unauthorized: Invalid JWT token" };
+    }
+
+    // Cek apakah user adalah admin
+    const user = await db.user.findUnique({
+      where: { id: payload.id as string },
+      select: { id: true, role: true, username: true },
+    });
+
+    if (!user || user.role !== "ADMIN") {
+      set.status = 403;
+      return { message: "Forbidden: Admin access required" };
+    }
+
+    // Log successful access
+    console.log(
+      `✅ Admin endpoint accessed via JWT: ${request.method} ${url.pathname} by ${user.username}`
+    );
   })
 
   // Trigger backup manual ke S3

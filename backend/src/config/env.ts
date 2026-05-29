@@ -9,6 +9,7 @@ export const env = {
   PORT: Number(process.env.PORT ?? 3000),
   DATABASE_URL: required("DATABASE_URL"),
   JWT_SECRET: required("JWT_SECRET"),
+  API_SECRET_KEY: required("API_SECRET_KEY"),
   FRONTEND_URL: process.env.FRONTEND_URL ?? "http://localhost:5173",
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: required("CLOUDINARY_CLOUD_NAME"),
