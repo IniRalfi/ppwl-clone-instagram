@@ -9,9 +9,41 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
     // Lewati preflight OPTIONS
     if (request.method === "OPTIONS") return;
 
-    const url = new URL(request.url);
+    // ⚠️ SECURITY: Disable di production untuk mencegah data leak
+    if (process.env.NODE_ENV === "production") {
+      // Hanya izinkan jika ada API key yang KUAT
+      const url = new URL(request.url);
+      const key = url.searchParams.get("key") || request.headers.get("x-api-key");
+      const apiKey = process.env.API_SECRET_KEY;
 
-    // 1. Cek API Key
+      // Validasi API key
+      if (!apiKey || apiKey === "rahasia" || apiKey.length < 32) {
+        set.status = 500;
+        return {
+          message: "Server configuration error: API_SECRET_KEY not properly configured",
+          hint: "Generate strong key with: openssl rand -base64 32",
+        };
+      }
+
+      if (!key || key !== apiKey) {
+        // Log failed attempt
+        console.warn(
+          `⚠️ Unauthorized admin endpoint access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
+        );
+
+        set.status = 403;
+        return { message: "Forbidden: Invalid or missing API key" };
+      }
+
+      // Log successful access
+      console.log(
+        `✅ Admin endpoint accessed: ${request.method} ${url.pathname} from ${request.headers.get("x-forwarded-for") || "unknown"}`
+      );
+      return;
+    }
+
+    // Development: Allow dengan JWT admin atau API key
+    const url = new URL(request.url);
     const key = url.searchParams.get("key") || request.headers.get("x-api-key");
     const apiKey = process.env.API_SECRET_KEY;
 
@@ -32,12 +64,40 @@ export const dataRoutes = new Elysia({ prefix: "/data" })
   })
 
   // Trigger backup manual ke S3
-  .post("/backup", async ({ set }) => {
+  // ⚠️ SECURITY: Rate limited to prevent spam
+  .post("/backup", async ({ set, request }) => {
+    // Simple in-memory rate limiting (1 backup per 10 minutes)
+    const lastBackupKey = "last-backup-timestamp";
+    const lastBackup = (global as any)[lastBackupKey] || 0;
+    const now = Date.now();
+    const tenMinutes = 10 * 60 * 1000;
+
+    if (now - lastBackup < tenMinutes) {
+      const remainingMs = tenMinutes - (now - lastBackup);
+      const remainingMin = Math.ceil(remainingMs / 60000);
+
+      set.status = 429;
+      return {
+        success: false,
+        message: `Rate limit: Backup dapat dilakukan setiap 10 menit. Coba lagi dalam ${remainingMin} menit.`,
+      };
+    }
+
+    // Log backup attempt
+    console.log(
+      `🔄 Database backup initiated by ${request.headers.get("x-forwarded-for") || "unknown"}`
+    );
+
     const res = await DataService.backupDatabase();
+
     if (!res.success) {
       set.status = 500;
       return { success: false, message: "Gagal membuat backup", error: res.error };
     }
+
+    // Update last backup timestamp
+    (global as any)[lastBackupKey] = now;
+
     return {
       success: true,
       message: "Backup database berhasil dibuat dan diunggah ke S3",

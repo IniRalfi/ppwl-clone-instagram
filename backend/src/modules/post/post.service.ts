@@ -4,6 +4,7 @@ import { uploadMedia, deleteMedia } from "@/config/s3";
 import { MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES } from "@/config/cloudinary";
 import { Prisma } from "@prisma/client";
 import { triggerPublicRealtime } from "@/config/pusher";
+import { sanitizePostCaption, logSanitization } from "@/utils/sanitize";
 
 export const AUTHOR_SELECT = {
   id: true,
@@ -155,7 +156,12 @@ export class PostService {
   }
 
   // Ambal komentar bertahap berbasis kursor
-  static async getPostComments(postId: string, currentUserId?: string, cursor?: string, limit = 15) {
+  static async getPostComments(
+    postId: string,
+    currentUserId?: string,
+    cursor?: string,
+    limit = 15
+  ) {
     const queryOptions: any = {
       where: { postId },
       take: limit + 1,
@@ -202,6 +208,13 @@ export class PostService {
 
   // 4. Buat postingan baru
   static async createPost(userId: string, content: string, imageFile?: File) {
+    // 🛡️ SECURITY: Sanitize post caption
+    const originalContent = content;
+    const sanitizedContent = sanitizePostCaption(content);
+
+    // Log if content was modified
+    logSanitization("post.content", originalContent, sanitizedContent);
+
     let imageUrl: string | null = null;
 
     // Proses upload gambar jika ada
@@ -211,7 +224,9 @@ export class PostService {
       }
 
       if (imageFile.size > MAX_FILE_SIZE_BYTES) {
-        throw new Error(`Ukuran gambar maksimal 5 MB. Ukuran saat ini: ${(imageFile.size / 1024 / 1024).toFixed(2)} MB`);
+        throw new Error(
+          `Ukuran gambar maksimal 5 MB. Ukuran saat ini: ${(imageFile.size / 1024 / 1024).toFixed(2)} MB`
+        );
       }
 
       const arrayBuffer = await imageFile.arrayBuffer();
@@ -223,7 +238,7 @@ export class PostService {
     const [post] = await db.$transaction([
       db.post.create({
         data: {
-          content: content.trim(),
+          content: sanitizedContent, // ✅ Use sanitized content
           imageUrl,
           authorId: userId,
         },
@@ -330,7 +345,7 @@ export class PostService {
             username: true,
             name: true,
             avatarUrl: true,
-          }
+          },
         },
         _count: { select: { likes: true, comments: true } },
       },

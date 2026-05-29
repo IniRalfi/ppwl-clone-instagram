@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --hot src/index.ts",
+    "dev:prod": "NODE_ENV=production bun --hot src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
     "build:lambda": "bun build src/lambda.ts --outdir dist --target node --format cjs --minify",
     "start": "NODE_ENV=production bun dist/index.js",
@@ -27,6 +28,7 @@
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
     "elysia": "latest",
+    "isomorphic-dompurify": "^3.15.0",
     "nanoid": "^5.1.11",
     "pusher": "^5.3.3",
     "web-push": "^3.6.7"
