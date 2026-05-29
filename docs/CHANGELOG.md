@@ -4,20 +4,91 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
 
 ---
 
+## [v1.4.0] - 2026-05-28
+
+### 📊 Documentation & Planning (Dokumentasi & Perencanaan)
+
+- **Code Audit Report** (`docs/CODE_AUDIT_REPORT.md`):
+  - Audit keamanan dan performa menyeluruh terhadap seluruh codebase (Backend ElysiaJS & Frontend React/Vite).
+  - **24 temuan** dikategorikan dalam 3 area: Bug & Kerentanan (11), Performa & Algoritma (7), Spaghetti Code (6).
+  - Tingkat kekritisan: 6 Critical, 6 High, 8 Medium, 4 Low.
+  - Temuan kritis meliputi:
+    - Race condition pada operasi toggle (like, bookmark, follow).
+    - JWT tanpa expiry time.
+    - AdminRoute dengan hardcoded username/email.
+    - Endpoint monitoring terbuka tanpa auth.
+    - Data dumping vulnerability di `/data/*` endpoints.
+    - N+1 query patterns di berbagai service.
+    - Monolithic components (CreatePostPage 988 baris, PostCard 1013 baris).
+- **Development Roadmap** (`docs/ROADMAP.md`):
+  - Roadmap pengembangan 5 fase dengan estimasi ~50 jam total:
+    - **Fase 0 (Darurat)**: Security patches kritis (~50 menit).
+    - **Fase 1 (Security Hardening)**: Perbaikan 7 bug keamanan (~8 jam).
+    - **Fase 2 (Performance Optimization)**: Optimasi 7 bottleneck performa (~8 jam).
+    - **Fase 3 (Database Migration)**: Migrasi dari Neon ke AWS RDS PostgreSQL (~4 jam).
+    - **Fase 4 (Real-time Notifications)**: Implementasi Pusher + Web Push API (~12 jam).
+    - **Fase 5 (Refactoring)**: Technical debt cleanup (~17 jam).
+  - Prioritas perbaikan berdasarkan severity dan impact.
+  - Estimasi biaya infrastruktur AWS RDS (~$17/bulan, gratis 5-6 bulan dengan AWS Credit $100).
+
+### 🔍 Analysis Findings (Temuan Analisis)
+
+**Critical Security Issues Identified:**
+
+- BUG-01: Race condition di toggle operations (like/bookmark/follow).
+- BUG-02: JWT tokens tidak pernah expire.
+- BUG-03 & BUG-09: AdminRoute hardcoded credentials di 2 lokasi.
+- BUG-04: Prisma error messages bocor ke client response.
+- BUG-08: Monitoring endpoint terbuka tanpa authentication.
+- BUG-12: Data dumping endpoints dengan proteksi lemah (default key "ok").
+- BUG-13: Database backup menyimpan password hash ke S3.
+
+**Performance Bottlenecks Identified:**
+
+- PERF-01: `getCurrentUser()` melakukan DB query setiap request (no caching).
+- PERF-02: N+1 query di `getSuggestions` (2 queries bisa jadi 1).
+- PERF-07: N+1 query parah di notification service (loop dengan 2 queries per item).
+- PERF-05: Feed utama tidak ada cursor pagination.
+- PERF-06: Counter increment tanpa database transaction.
+
+**Code Quality Issues Identified:**
+
+- REFACTOR-01: CreatePostPage monolithic (988 lines, 5 responsibilities).
+- REFACTOR-07: PostCard monolithic (1013 lines, 20 state variables).
+- REFACTOR-02: Duplicate `Post` interface definitions di 4 file berbeda.
+- REFACTOR-04: Manual auth checks berulang di setiap route handler.
+
+### 📝 Next Steps (Langkah Selanjutnya)
+
+Berdasarkan audit dan roadmap, prioritas perbaikan immediate:
+
+1. Fix race conditions dengan Prisma upsert/try-catch P2002.
+2. Tambahkan JWT expiry (7 days).
+3. Implementasi RBAC proper dengan field `role` di database.
+4. Sanitasi error responses (jangan expose Prisma errors).
+5. Tambahkan auth middleware ke monitoring endpoints.
+6. Cache `getCurrentUser()` dengan TTL 30 detik.
+7. Refactor N+1 queries menjadi batch queries.
+
+---
+
 ## [v1.2.0] - 2026-05-28
+
 ### Added (Ditambahkan)
+
 - **Stories Component (Adella)**:
   - Integrasi komponen baris cerita horizontal (`StoriesRow`) di bagian atas feed halaman utama (`HomePage`).
   - Fitur modal penampil cerita (`StoryViewer`) dengan pemutar otomatis berlatensi 5 detik per cerita.
   - Dukungan navigasi keyboard di penampil cerita (`Escape` untuk menutup, `ArrowRight` untuk maju, `ArrowLeft` untuk mundur).
 - **Tab Postingan Disimpan (Bagas)**:
-  - Menambahkan tab "Disimpan" (*Saved*) di halaman profil (`ProfilePage`) untuk menampilkan postingan yang di-bookmark.
+  - Menambahkan tab "Disimpan" (_Saved_) di halaman profil (`ProfilePage`) untuk menampilkan postingan yang di-bookmark.
   - Membatasi visibilitas tab "Disimpan" agar hanya dapat diakses oleh pemilik profil yang bersangkutan (menjaga privasi data user).
 
 ### Fixed & Integrated (Diperbaiki & Diintegrasikan)
+
 - **Koneksi Database Riil untuk Bookmark (Bagas)**:
   - Mengintegrasikan tombol bookmark di `PostCard.tsx` dengan API backend (`POST /posts/:id/bookmark`) secara real-time.
-  - Menambahkan *loading state* pada bookmark untuk mencegah klik ganda dan inkonsistensi state data.
+  - Menambahkan _loading state_ pada bookmark untuk mencegah klik ganda dan inkonsistensi state data.
   - Mengintegrasikan data tab "Disimpan" secara riil melalui pemanggilan API backend (`GET /posts/saved`).
 - **Resolusi Konflik Gabungan Tim**:
   - Menyelesaikan konflik merge cabang `adella/stories-feature` and `bagas/saved-posts-tagging` di file `HomePage.tsx`, `PostCard.tsx`, dan `ProfilePage.tsx`.
@@ -26,7 +97,9 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
 ---
 
 ## [v1.1.0] - 2026-05-27
+
 ### Added (Ditambahkan)
+
 - **Sistem Otomatisasi Backup AWS S3**:
   - Membuat skrip backup database PostgreSQL otomatis menggunakan format compressed gzip (`backend/src/scripts/backup.ts`).
   - Menambahkan endpoint REST API `POST /data/backup` untuk memicu backup manual.
@@ -36,8 +109,9 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
   - Otomatis membersihkan Zustand store dan localStorage serta mengarahkan ke `/login` jika token JWT kedaluwarsa atau server di-restart/reseed.
 
 ### Optimized (Dioptimalkan)
+
 - **Sistem Caching In-Memory Backend**:
-  - Membuat modul `MemoryCache` dengan dukungan TTL (*Time-To-Live*) dan pembatalan otomatis berbasis pola (*Pattern Invalidation*).
+  - Membuat modul `MemoryCache` dengan dukungan TTL (_Time-To-Live_) dan pembatalan otomatis berbasis pola (_Pattern Invalidation_).
   - Menerapkan cache pada kueri list postingan (`GET /posts`) dan detail postingan (`GET /posts/:id`) guna menurunkan latensi di bawah 5ms.
   - Menambahkan invalidasi cache otomatis pada mutasi data (membuat postingan, menghapus, like/unlike, komentar, bookmark).
 - **Optimasi Indeks PostgreSQL**:
@@ -62,7 +136,7 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
   - **BUG-11 (Kualitas Kode)**: Menyeragamkan seluruh request REST API di frontend agar melewati `apiClient` terpusat dan tidak mencampuradukkan `fetch` langsung.
   - **BUG-12 (Keamanan)**: Menyaring notifikasi (`GET /notifications`) berdasarkan ID pengguna yang sedang masuk.
   - **BUG-13 (Keamanan)**: Menyembunyikan alamat email pengguna lain dari kembalian data publik endpoint `GET /users`.
-  - **BUG-14 (Memori)**: Menghindari kebocoran memori (*memory leak*) dengan pembersihan otomatis file Object URL pratinjau unggahan gambar.
+  - **BUG-14 (Memori)**: Menghindari kebocoran memori (_memory leak_) dengan pembersihan otomatis file Object URL pratinjau unggahan gambar.
   - **BUG-15 (UI/UX)**: Membangun antarmuka pendaftaran (`RegisterPage.tsx`) yang sebelumnya kosong/placeholder.
   - **BUG-16 (Kestabilan)**: Memasang validasi input pada route pembuatan komentar.
   - **BUG-17 (Kualitas Kode)**: Mengganti tipe data bertipe `any` di `PostDetailPage` dengan tipe bawaan TypeScript.
@@ -73,9 +147,11 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
 ---
 
 ## [v1.0.0] - 2026-05-26
+
 ### Added (Ditambahkan)
+
 - **Halaman Jelajah & Pencarian Langsung (Yasmin)**:
-  - Menambahkan fitur pencarian pengguna (*Live Search*) berbasis filter query parameter `?search=...` (case-insensitive) di backend.
+  - Menambahkan fitur pencarian pengguna (_Live Search_) berbasis filter query parameter `?search=...` (case-insensitive) di backend.
   - Membuat grid postingan dinamis pada halaman `ExplorePage` yang terintegrasi dengan API data riil dari database.
 - **Dasbor Pemantauan Layanan (Monitoring Page)**:
   - Membuat dasbor status kesehatan server, latency koneksi database PostgreSQL, AWS S3 bucket, dan Cloudinary API.
@@ -124,7 +200,7 @@ Dokumen ini mencatat riwayat perubahan, pembaruan fitur, optimasi, dan perbaikan
   - PostCard dan PostSkeleton menggunakan rasio standar **4:5** (`aspect-[4/5]`).
   - Font sidebar `14px`, spacing dan padding diperbaiki.
 - **Navigasi Cerita Lintas Akun** dengan preview tetangga antar-akun.
-- **Suggestions API** limit 5 → 30 untuk modal *See All*.
+- **Suggestions API** limit 5 → 30 untuk modal _See All_.
 - **Share Modal** — user yang di-follow diprioritaskan, tombol jadi "Terkirim" setelah diklik.
 - **Options Menu Postingan** — menu berbeda untuk pemilik vs bukan pemilik post.
 - **Comment Author Clickable** — klik nama penulis navigasi ke profil.

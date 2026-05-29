@@ -1,0 +1,43 @@
+feat(security): implement critical security fixes (Bug #0, #0.5, #1)
+
+🔒 Security Improvements:
+
+1. Credentials Exposure Prevention (Bug #0)
+   - Add pre-commit hook to prevent committing .env files
+   - Create .env.production.example template
+   - Add generate-secrets.sh script for secure key generation
+   - Add comprehensive SECURITY.md documentation
+
+2. Admin Endpoints Security (Bug #0.5)
+   - Exclude passwordHash and providerId from API responses
+   - Implement strong API key validation (min 32 chars)
+   - Add audit logging for admin endpoint access
+   - Add rate limiting for backup endpoint (1 per 10 min)
+
+3. Rate Limiting Implementation (Bug #1)
+   - Create comprehensive rate limiting middleware
+   - Apply to auth endpoints (5 req/min) - prevent brute force
+   - Apply to comment endpoints (20 req/hour) - prevent spam
+   - Add rate limit headers (X-RateLimit-*)
+   - Add monitoring function for statistics
+
+📝 Files Changed:
+- backend/src/middleware/rate-limit.middleware.ts (new)
+- backend/src/modules/auth/auth.routes.ts
+- backend/src/modules/comment/comment.routes.ts
+- backend/src/modules/data/data.service.ts
+- backend/src/modules/data/data.route.ts
+- backend/scripts/generate-secrets.sh (new)
+- backend/.env.production.example (new)
+- .git/hooks/pre-commit (new)
+- docs/SECURITY.md (new)
+- docs/GRADING-API-ACCESS.md (new)
+- docs/RATE-LIMITING-GUIDE.md (new)
+- CHANGELOG.md (new)
+
+✅ Testing:
+- Admin endpoints verified to exclude sensitive data
+- Rate limiting tested and working (6th request blocked)
+- Production mode rejects weak API keys
+
+Progress: 3/21 bugs fixed (14%)
